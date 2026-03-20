@@ -1,0 +1,85 @@
+# OS
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.swp
+*.swo
+*~
+
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# Cursor (track rules, commands, skills)
+.cursor/*
+!.cursor/rules/
+!.cursor/commands/
+!.cursor/skills/
+
+# Flutter / Dart / Pub
+**/doc/api/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+pubspec.overrides.yaml
+devtools_options.yaml
+
+# Android
+/android/.gradle/
+/android/local.properties
+/android/app/debug
+/android/app/profile
+/android/app/release
+**/android/**/GeneratedPluginRegistrant.java
+
+# iOS
+**/ios/Flutter/.last_build_id
+/ios/Pods/
+/ios/.symlinks/
+/ios/Flutter/Flutter.framework
+/ios/Flutter/Flutter.podspec
+/ios/ServiceDefinitions.json
+**/ios/**/GeneratedPluginRegistrant.*
+/ios/Flutter/ephemeral/
+
+# Web
+/web/favicon.png.bak
+
+# Signing & Secrets
+*.jks
+*.keystore
+*.p12
+*.pem
+/android/key.properties
+/android/app/release-keystore.jks
+.env
+.env.*
+!.env.example
+
+# Build artifacts & Symbolication
+app.*.symbols
+app.*.map.json
+
+# Miscellaneous
+*.class
+*.log
+*.pyc
+.buildlog/
+.history
+.svn/
+migrate_working_dir/

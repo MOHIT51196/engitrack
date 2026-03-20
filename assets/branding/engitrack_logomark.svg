@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="81.92" y1="81.92" x2="942.0799999999999" y2="942.0799999999999" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1220"/>
+      <stop offset="1" stop-color="#172033"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="81.92" y1="81.92" x2="81.92" y2="942.0799999999999" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.02"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="20" flood-color="#020617" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" fill="none"/>
+  <g filter="url(#shadow)">
+    <path d="M307.2,81.92 H716.8 A225.28,225.28 0 0 1 942.0799999999999,307.2 V716.8 A225.28,225.28 0 0 1 716.8,942.0799999999999 H307.2 A225.28,225.28 0 0 1 81.92,716.8 V307.2 A225.28,225.28 0 0 1 307.2,81.92 Z" fill="none"/>
+    <path d="M283.1664,84.92 H740.8335999999999 A198.2464,198.2464 0 0 1 939.0799999999999,283.1664 V740.8335999999999 A198.2464,198.2464 0 0 1 740.8335999999999,939.0799999999999 H283.1664 A198.2464,198.2464 0 0 1 84.92,740.8335999999999 V283.1664 A198.2464,198.2464 0 0 1 283.1664,84.92 Z" stroke="url(#shine)" stroke-width="6.0"/>
+  </g>
+  <g stroke="#F8FAFC" stroke-width="88.0" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="300.0" y1="286.0" x2="300.0" y2="738.0"/>
+    <line x1="300.0" y1="300.0" x2="710.0" y2="300.0"/>
+    <line x1="300.0" y1="512.0" x2="610.0" y2="512.0"/>
+    <line x1="610.0" y1="512.0" x2="720.0" y2="622.0"/>
+    <line x1="720.0" y1="622.0" x2="792.0" y2="554.0"/>
+    <line x1="300.0" y1="724.0" x2="710.0" y2="724.0"/>
+  </g>
+  <circle cx="820.0" cy="556.0" r="42.0" fill="#FF6B5E"/>
+</svg>

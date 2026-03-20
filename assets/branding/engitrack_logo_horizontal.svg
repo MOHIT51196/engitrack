@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="500" viewBox="0 0 1600 500" fill="none">
+  <rect width="1600" height="500" rx="32" fill="#FFFFFF"/>
+  <defs>
+    <linearGradient id="bg" x1="40" y1="70" x2="400" y2="430" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1220"/>
+      <stop offset="1" stop-color="#172033"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="40" y1="70" x2="40" y2="430" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.02"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#020617" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <g transform="translate(40,70)" filter="url(#shadow)">
+    <path d="M78,0 H282 A78,78 0 0 1 360,78 V282 A78,78 0 0 1 282,360 H78 A78,78 0 0 1 0,282 V78 A78,78 0 0 1 78,0 Z" fill="url(#bg)"/>
+    <path d="M76,2 H284 A74,74 0 0 1 358,76 V284 A74,74 0 0 1 284,358 H76 A74,74 0 0 1 2,284 V76 A74,74 0 0 1 76,2 Z" stroke="url(#shine)" stroke-width="4"/>
+    <g stroke="#F8FAFC" stroke-width="30" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="102" y1="94" x2="102" y2="267"/>
+      <line x1="102" y1="102" x2="258" y2="102"/>
+      <line x1="102" y1="183" x2="219" y2="183"/>
+      <line x1="219" y1="183" x2="260" y2="224"/>
+      <line x1="260" y1="224" x2="288" y2="198"/>
+      <line x1="102" y1="261" x2="258" y2="261"/>
+    </g>
+    <circle cx="298" cy="199" r="15" fill="#FF6B5E"/>
+  </g>
+  <text x="460" y="250" font-family="DejaVu Sans, Noto Sans, Arial, sans-serif" font-size="120" font-weight="700" fill="#0F172A">Engi<tspan fill="#0F172A">Track</tspan></text>
+  <circle cx="744" cy="160" r="9" fill="#FF6B5E"/>
+  <text x="460" y="320" font-family="DejaVu Sans, Noto Sans, Arial, sans-serif" font-size="36" font-weight="500" letter-spacing="0.5" fill="#6B7280">Engineering productivity, without the tab circus.</text>
+</svg>
