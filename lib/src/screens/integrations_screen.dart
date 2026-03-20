@@ -341,6 +341,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
               final bool granted = await controller.requestNotificationPermissions();
               if (!mounted) return;
               if (granted) setState(() => _notificationsEnabled = true);
+              if (!context.mounted) return;
               showInfoSnackBar(context, granted ? 'Permission granted.' : 'Permission not granted.');
             },
           ),
@@ -349,7 +350,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
           // Git
           // ----------------------------------------------------------------
           const SizedBox(height: 16),
-          _CategoryHeader(icon: Icons.code_rounded, label: 'Git'),
+          const _CategoryHeader(icon: Icons.code_rounded, label: 'Git'),
 
           const SizedBox(height: 8),
           _CollapsibleIntegration(
@@ -392,7 +393,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
           // Management
           // ----------------------------------------------------------------
           const SizedBox(height: 16),
-          _CategoryHeader(icon: Icons.assignment_rounded, label: 'Management'),
+          const _CategoryHeader(icon: Icons.assignment_rounded, label: 'Management'),
 
           const SizedBox(height: 8),
           _CollapsibleIntegration(
@@ -446,7 +447,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
           // Messaging
           // ----------------------------------------------------------------
           const SizedBox(height: 16),
-          _CategoryHeader(icon: Icons.chat_bubble_outline_rounded, label: 'Messaging'),
+          const _CategoryHeader(icon: Icons.chat_bubble_outline_rounded, label: 'Messaging'),
 
           const SizedBox(height: 8),
           _CollapsibleIntegration(
@@ -482,7 +483,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
               _SecretField(controller: _slackTokenController, label: 'Bot token', hint: 'xoxb-... or xoxe.xoxp-...', onSubmitted: _onFieldSubmitted),
               if (_slackTokenIsRotating) ...<Widget>[
                 const SizedBox(height: 8),
-                _InfoBanner(
+                const _InfoBanner(
                   icon: Icons.autorenew_rounded,
                   color: AppColors.warning,
                   bgColor: AppColors.warningLight,
@@ -519,6 +520,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
                 prefixIcon: Icons.notifications_outlined,
                 onSubmitted: _onFieldSubmitted,
               ),
+
             ],
           ),
 
@@ -526,7 +528,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
           // AI Services
           // ----------------------------------------------------------------
           const SizedBox(height: 16),
-          _CategoryHeader(icon: Icons.auto_awesome_rounded, label: 'AI Services'),
+          const _CategoryHeader(icon: Icons.auto_awesome_rounded, label: 'AI Services'),
 
           const SizedBox(height: 8),
           _CollapsibleIntegration(
@@ -677,22 +679,24 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
   int _countFilled(List<String> values) =>
       values.where((String v) => v.trim().isNotEmpty).length;
 
-  Future<void> _exportConfig(BuildContext context) async {
-    final EngiTrackController controller = EngiTrackScope.of(context);
+  Future<void> _exportConfig(BuildContext ctx) async {
+    final EngiTrackController controller = EngiTrackScope.of(ctx);
     try {
       final String? path = await controller.exportConfig();
       if (!mounted) return;
       if (path != null) {
-        showInfoSnackBar(context, 'Config exported successfully.');
+        if (!ctx.mounted) return;
+        showInfoSnackBar(ctx, 'Config exported successfully.');
       }
     } catch (error) {
       if (!mounted) return;
-      showInfoSnackBar(context, 'Export failed: $error');
+      if (!ctx.mounted) return;
+      showInfoSnackBar(ctx, 'Export failed: $error');
     }
   }
 
-  Future<void> _importConfig(BuildContext context) async {
-    final EngiTrackController controller = EngiTrackScope.of(context);
+  Future<void> _importConfig(BuildContext ctx) async {
+    final EngiTrackController controller = EngiTrackScope.of(ctx);
     try {
       final imported = await controller.importConfig();
       if (!mounted) return;
@@ -701,13 +705,16 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
       _didHydrate = false;
       didChangeDependencies();
       setState(() {});
-      showInfoSnackBar(context, 'Config imported and applied.');
+      if (!ctx.mounted) return;
+      showInfoSnackBar(ctx, 'Config imported and applied.');
     } on FormatException catch (error) {
       if (!mounted) return;
-      showInfoSnackBar(context, error.message);
+      if (!ctx.mounted) return;
+      showInfoSnackBar(ctx, error.message);
     } catch (error) {
       if (!mounted) return;
-      showInfoSnackBar(context, 'Import failed: $error');
+      if (!ctx.mounted) return;
+      showInfoSnackBar(ctx, 'Import failed: $error');
     }
   }
 }

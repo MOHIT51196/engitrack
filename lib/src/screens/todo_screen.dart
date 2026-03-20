@@ -318,7 +318,7 @@ class _TodoRow extends StatelessWidget {
                               dense: true,
                             ),
                             const SizedBox(width: 6),
-                            Icon(Icons.schedule_rounded, size: 10, color: AppColors.tertiaryInk),
+                            const Icon(Icons.schedule_rounded, size: 10, color: AppColors.tertiaryInk),
                             const SizedBox(width: 3),
                             Text(
                               formatRelativeTime(todo.createdAt),
@@ -335,11 +335,11 @@ class _TodoRow extends StatelessWidget {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: <Widget>[
-                                    Icon(Icons.notifications_active_rounded, size: 10, color: AppColors.accent),
+                                    const Icon(Icons.notifications_active_rounded, size: 10, color: AppColors.accent),
                                     const SizedBox(width: 3),
                                     Text(
                                       DateFormat('MMM d, h:mm a').format(todo.reminderDate!),
-                                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.accent),
+                                      style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.accent),
                                     ),
                                   ],
                                 ),
@@ -347,7 +347,7 @@ class _TodoRow extends StatelessWidget {
                             ],
                             if (todo.reminderRepeat != 'none') ...<Widget>[
                               const SizedBox(width: 4),
-                              Icon(Icons.repeat_rounded, size: 10, color: AppColors.secondaryInk),
+                              const Icon(Icons.repeat_rounded, size: 10, color: AppColors.secondaryInk),
                             ],
                           ],
                         ),
@@ -580,7 +580,7 @@ class _CreateTodoSheetState extends State<_CreateTodoSheet> {
                           filled: false,
                         ),
                       ),
-                      Divider(height: 0.5, indent: 16, endIndent: 16, color: AppColors.divider),
+                      const Divider(height: 0.5, indent: 16, endIndent: 16, color: AppColors.divider),
                       TextField(
                         controller: _subtitleCtl,
                         maxLines: 3,
@@ -641,7 +641,7 @@ class _CreateTodoSheetState extends State<_CreateTodoSheet> {
                               )
                             : null,
                       ),
-                      Divider(height: 0.5, indent: 48, endIndent: 16, color: AppColors.divider),
+                      const Divider(height: 0.5, indent: 48, endIndent: 16, color: AppColors.divider),
                       _OptionTile(
                         icon: Icons.repeat_rounded,
                         iconColor: _reminderRepeat != 'none' ? AppColors.accent : AppColors.secondaryInk,
@@ -938,7 +938,7 @@ class _TodoDetailSheetState extends State<_TodoDetailSheet> {
                           ),
                           onChanged: (_) => _save(),
                         ),
-                        Divider(height: 0.5, indent: 16, endIndent: 16, color: AppColors.divider),
+                        const Divider(height: 0.5, indent: 16, endIndent: 16, color: AppColors.divider),
                         TextField(
                           controller: _subtitleCtl,
                           maxLines: 4,
@@ -1003,7 +1003,7 @@ class _TodoDetailSheetState extends State<_TodoDetailSheet> {
                                 )
                               : null,
                         ),
-                        Divider(height: 0.5, indent: 48, endIndent: 16, color: AppColors.divider),
+                        const Divider(height: 0.5, indent: 48, endIndent: 16, color: AppColors.divider),
                         _OptionTile(
                           icon: Icons.repeat_rounded,
                           iconColor: _reminderRepeat != 'none' ? AppColors.accent : AppColors.secondaryInk,
@@ -1047,7 +1047,7 @@ class _TodoDetailSheetState extends State<_TodoDetailSheet> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
-                                  Text('Source', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.ink)),
+                                  const Text('Source', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.ink)),
                                   const SizedBox(height: 1),
                                   Text(
                                     widget.todo.sourceUrl,
@@ -1073,7 +1073,7 @@ class _TodoDetailSheetState extends State<_TodoDetailSheet> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
                     children: <Widget>[
-                      Icon(Icons.schedule_rounded, size: 12, color: AppColors.tertiaryInk),
+                      const Icon(Icons.schedule_rounded, size: 12, color: AppColors.tertiaryInk),
                       const SizedBox(width: 5),
                       Text(
                         'Created ${DateFormat('EEE, MMM d, y \u2022 h:mm a').format(widget.todo.createdAt)}',
@@ -1216,7 +1216,7 @@ class _OptionTile extends StatelessWidget {
               const SizedBox(width: 8),
               trailing!,
             ] else
-              Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.tertiaryInk),
+              const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.tertiaryInk),
           ],
         ),
       ),

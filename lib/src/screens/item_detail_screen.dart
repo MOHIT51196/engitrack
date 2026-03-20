@@ -559,7 +559,7 @@ class _AiProviderPicker extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.tertiaryInk),
+                            const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.tertiaryInk),
                           ],
                         ),
                       ),

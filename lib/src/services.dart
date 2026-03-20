@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:http/http.dart' as http;
@@ -331,7 +332,7 @@ class JiraService {
     required String apiToken,
   }) async {
     if (_cachedAccountId != null) {
-      print('[Jira:myself] Using cached accountId: $_cachedAccountId');
+      debugPrint('[Jira:myself] Using cached accountId: $_cachedAccountId');
       return _cachedAccountId!;
     }
 
@@ -344,8 +345,8 @@ class JiraService {
       'Accept': 'application/json',
       'Authorization': 'Basic ${_basicAuth(email, apiToken)}',
     };
-    print('[Jira:myself] GET $url');
-    print('[Jira:myself] Headers: Accept=${headers['Accept']}, Authorization=Basic <${_basicAuth(email, apiToken).length} chars>');
+    debugPrint('[Jira:myself] GET $url');
+    debugPrint('[Jira:myself] Headers: Accept=${headers['Accept']}, Authorization=Basic <${_basicAuth(email, apiToken).length} chars>');
 
     try {
       final http.Response response = await _client.get(
@@ -353,24 +354,24 @@ class JiraService {
         headers: headers,
       );
 
-      print('[Jira:myself] Response status=${response.statusCode}');
-      print('[Jira:myself] Response body: ${response.body.length > 500 ? response.body.substring(0, 500) : response.body}');
+      debugPrint('[Jira:myself] Response status=${response.statusCode}');
+      debugPrint('[Jira:myself] Response body: ${response.body.length > 500 ? response.body.substring(0, 500) : response.body}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json = jsonDecode(response.body) as Map<String, dynamic>;
         final String accountId = json['accountId'] as String? ?? '';
         if (accountId.isNotEmpty) {
           _cachedAccountId = accountId;
-          print('[Jira:myself] Resolved accountId: $accountId');
+          debugPrint('[Jira:myself] Resolved accountId: $accountId');
           return accountId;
         }
-        print('[Jira:myself] accountId was empty in response');
+        debugPrint('[Jira:myself] accountId was empty in response');
       }
     } catch (e) {
-      print('[Jira:myself] Exception: $e');
+      debugPrint('[Jira:myself] Exception: $e');
     }
 
-    print('[Jira:myself] Falling back to email: $email');
+    debugPrint('[Jira:myself] Falling back to email: $email');
     return email;
   }
 
@@ -426,26 +427,26 @@ class JiraService {
         '&maxResults=25'
         '&fields=summary,status,priority,issuetype,project,assignee,updated,parent,duedate';
 
-    print('[Jira:search] JQL: $jql');
-    print('[Jira:search] GET $urlStr');
-    print('[Jira:search] email="$email" tokenLen=${apiToken.length} base64Len=${_basicAuth(email, apiToken).length}');
+    debugPrint('[Jira:search] JQL: $jql');
+    debugPrint('[Jira:search] GET $urlStr');
+    debugPrint('[Jira:search] email="$email" tokenLen=${apiToken.length} base64Len=${_basicAuth(email, apiToken).length}');
 
     final http.Request request = http.Request('GET', Uri.parse(urlStr));
     request.headers['Accept'] = 'application/json';
     request.headers['Authorization'] = 'Basic ${_basicAuth(email, apiToken)}';
 
-    print('[Jira:search] Final request URL: ${request.url}');
+    debugPrint('[Jira:search] Final request URL: ${request.url}');
 
     final http.StreamedResponse streamed = await _client.send(request);
     final http.Response response = await http.Response.fromStream(streamed);
 
-    print('[Jira:search] Response status=${response.statusCode}');
-    print('[Jira:search] Response headers: ${response.headers}');
-    print('[Jira:search] Response body (first 800): ${response.body.length > 800 ? response.body.substring(0, 800) : response.body}');
+    debugPrint('[Jira:search] Response status=${response.statusCode}');
+    debugPrint('[Jira:search] Response headers: ${response.headers}');
+    debugPrint('[Jira:search] Response body (first 800): ${response.body.length > 800 ? response.body.substring(0, 800) : response.body}');
 
     final Map<String, dynamic> json = _decodeJsonBody(response);
     final List<dynamic> issues = json['issues'] as List<dynamic>? ?? const <dynamic>[];
-    print('[Jira:search] Parsed ${issues.length} issues');
+    debugPrint('[Jira:search] Parsed ${issues.length} issues');
 
     return issues.map((dynamic issue) {
       final Map<String, dynamic> map = issue as Map<String, dynamic>;

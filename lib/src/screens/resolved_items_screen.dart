@@ -24,9 +24,9 @@ class ResolvedItemsScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: items.isEmpty
-            ? Center(
+            ? const Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(32),
+                  padding: EdgeInsets.all(32),
                   child: EmptyStateCard(
                     title: 'No resolved items',
                     message: 'Items you resolve from the dashboard will appear here.',
@@ -93,7 +93,7 @@ class _ResolvedItemCard extends StatelessWidget {
                       backgroundColor: _bgForReason(item.reason),
                       dense: true,
                     ),
-                    SoftTag(
+                    const SoftTag(
                       label: 'Resolved',
                       icon: Icons.check_circle_rounded,
                       foregroundColor: AppColors.success,

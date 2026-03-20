@@ -118,7 +118,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
             icon: const Icon(Icons.arrow_back_rounded, size: 20),
             onPressed: () async {
               await _save();
-              if (mounted) Navigator.of(context).pop();
+              if (!context.mounted) return;
+              Navigator.of(context).pop();
             },
           ),
           actions: <Widget>[
@@ -147,7 +148,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                       ? null
                       : () async {
                           await _save();
-                          if (mounted) Navigator.of(context).pop();
+                          if (!context.mounted) return;
+                          Navigator.of(context).pop();
                         },
                   child: const Text('Done'),
                 ),

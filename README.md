@@ -1,5 +1,19 @@
 # EngiTrack
 
+![Flutter](https://img.shields.io/badge/Flutter-3.24+-02569B?logo=flutter&logoColor=white)
+![Dart](https://img.shields.io/badge/Dart-3.5+-0175C2?logo=dart&logoColor=white)
+![Android](https://img.shields.io/badge/Android-7.0+-3DDC84?logo=android&logoColor=white)
+![Material 3](https://img.shields.io/badge/Material_3-Design-757575?logo=materialdesign&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?logo=githubactions&logoColor=white)
+![License](https://img.shields.io/badge/License-Private-red)
+
+[![GitHub](https://img.shields.io/badge/Integration-GitHub-181717?logo=github&logoColor=white)](https://github.com)
+[![Jira](https://img.shields.io/badge/Integration-Jira-0052CC?logo=jira&logoColor=white)](https://www.atlassian.com/software/jira)
+[![Slack](https://img.shields.io/badge/Integration-Slack-4A154B?logo=slack&logoColor=white)](https://slack.com)
+[![OpenAI](https://img.shields.io/badge/AI-OpenAI-412991?logo=openai&logoColor=white)](https://openai.com)
+[![Gemini](https://img.shields.io/badge/AI-Gemini-8E75B2?logo=googlegemini&logoColor=white)](https://deepmind.google/technologies/gemini/)
+[![Claude](https://img.shields.io/badge/AI-Claude-D97757?logo=anthropic&logoColor=white)](https://www.anthropic.com)
+
 A productivity cockpit for software engineers. EngiTrack consolidates pull requests, tickets, review requests, alerts, and AI-powered code reviews into a single interface — so you spend less time context-switching between tools and more time shipping.
 
 ## Why EngiTrack
