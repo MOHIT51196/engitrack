@@ -12,11 +12,13 @@ String buildReviewPrompt(PullRequestContext context) {
   for (final PullRequestFile file in cappedFiles) {
     diffBuffer.writeln('FILE: ${file.filename}');
     diffBuffer.writeln('STATUS: ${file.status}');
-    diffBuffer.writeln('ADDITIONS: ${file.additions}, DELETIONS: ${file.deletions}');
+    diffBuffer
+        .writeln('ADDITIONS: ${file.additions}, DELETIONS: ${file.deletions}');
     final String patch = (file.patch ?? '').trim();
     if (patch.isNotEmpty) {
-      final String boundedPatch =
-          patch.length > 1800 ? '${patch.substring(0, 1800)}\n... [truncated]' : patch;
+      final String boundedPatch = patch.length > 1800
+          ? '${patch.substring(0, 1800)}\n... [truncated]'
+          : patch;
       diffBuffer.writeln(boundedPatch);
     }
     diffBuffer.writeln('---');
@@ -83,11 +85,13 @@ AiReviewResult parseStructuredReview(String output) {
     if (jsonStart >= 0 && jsonEnd > jsonStart) {
       jsonStr = output.substring(jsonStart, jsonEnd + 1);
     }
-    final Map<String, dynamic> parsed = jsonDecode(jsonStr) as Map<String, dynamic>;
-    final List<AiReviewConcern> concerns =
-        (parsed['concerns'] as List<dynamic>? ?? const <dynamic>[])
-            .map((dynamic c) => AiReviewConcern.fromJson(c as Map<String, dynamic>))
-            .toList();
+    final Map<String, dynamic> parsed =
+        jsonDecode(jsonStr) as Map<String, dynamic>;
+    final List<AiReviewConcern> concerns = (parsed['concerns']
+                as List<dynamic>? ??
+            const <dynamic>[])
+        .map((dynamic c) => AiReviewConcern.fromJson(c as Map<String, dynamic>))
+        .toList();
     return AiReviewResult(
       verdict: parsed['verdict'] as String? ?? '',
       concerns: concerns,
@@ -102,11 +106,14 @@ AiReviewResult parseStructuredReview(String output) {
 }
 
 String extractChatCompletionText(Map<String, dynamic> json) {
-  final List<dynamic> choices = json['choices'] as List<dynamic>? ?? const <dynamic>[];
+  final List<dynamic> choices =
+      json['choices'] as List<dynamic>? ?? const <dynamic>[];
   if (choices.isNotEmpty) {
-    final Map<String, dynamic> firstChoice = choices.first as Map<String, dynamic>;
+    final Map<String, dynamic> firstChoice =
+        choices.first as Map<String, dynamic>;
     final Map<String, dynamic> message =
-        firstChoice['message'] as Map<String, dynamic>? ?? const <String, dynamic>{};
+        firstChoice['message'] as Map<String, dynamic>? ??
+            const <String, dynamic>{};
     return message['content'] as String? ?? '';
   }
   return json['output_text'] as String? ?? '';
@@ -141,16 +148,19 @@ Future<http.Response> postChatCompletion({
 
   if (kDebugMode) {
     debugPrint('[$tag] Response status=${response.statusCode}');
-    debugPrint('[$tag] Response body=${response.body.length > 500 ? '${response.body.substring(0, 500)}...' : response.body}');
+    debugPrint(
+        '[$tag] Response body=${response.body.length > 500 ? '${response.body.substring(0, 500)}...' : response.body}');
   }
 
   return response;
 }
 
 Map<String, dynamic> decodeJsonBody(http.Response response) {
-  final dynamic decoded = jsonDecode(response.body.isEmpty ? '{}' : response.body);
+  final dynamic decoded =
+      jsonDecode(response.body.isEmpty ? '{}' : response.body);
   if (response.statusCode < 200 || response.statusCode >= 300) {
-    throw ServiceException('Request failed (${response.statusCode}): ${response.body}');
+    throw ServiceException(
+        'Request failed (${response.statusCode}): ${response.body}');
   }
   if (decoded is Map<String, dynamic>) {
     return decoded;

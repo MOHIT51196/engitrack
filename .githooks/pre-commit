@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DART_FILES=$(git diff --cached --name-only --diff-filter=ACMR -- '*.dart' | head -200)
+
+if [ -z "$DART_FILES" ]; then
+  exit 0
+fi
+
+FILE_COUNT=$(echo "$DART_FILES" | wc -l | tr -d ' ')
+
+printf "\nFound %d staged Dart file(s). Running checks before commit...\n\n" "$FILE_COUNT"
+
+# --- Formatting ---
+printf "  Checking formatting... "
+UNFORMATTED=$(echo "$DART_FILES" | xargs dart format --set-exit-if-changed --output=none 2>&1 || true)
+
+if echo "$UNFORMATTED" | grep -q "^Changed"; then
+  printf "FAILED\n\n"
+  printf "  Some files need formatting:\n"
+  echo "$UNFORMATTED" | grep "^Changed" | sed 's/^/    /'
+  printf "\n  Fix it with: dart format .\n"
+  printf "  Then stage the changes and try again.\n\n"
+  exit 1
+fi
+printf "OK\n"
+
+# --- Static analysis ---
+printf "  Analyzing code...      "
+ANALYZE_OUTPUT=$(flutter analyze --no-pub 2>&1) || {
+  printf "FAILED\n\n"
+  printf "  Analyzer found issues:\n"
+  echo "$ANALYZE_OUTPUT" | sed 's/^/    /'
+  printf "\n  Please fix the issues above and try again.\n\n"
+  exit 1
+}
+printf "OK\n"
+
+printf "\nAll checks passed. Committing.\n\n"

@@ -3,7 +3,8 @@ import '../services.dart';
 import 'integration_provider.dart';
 
 class GitHubProvider implements IntegrationProvider {
-  GitHubProvider({GitHubService? service}) : _service = service ?? GitHubService();
+  GitHubProvider({GitHubService? service})
+      : _service = service ?? GitHubService();
 
   final GitHubService _service;
 

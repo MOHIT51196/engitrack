@@ -26,12 +26,15 @@ class AppStorage {
   static const String _jiraEmailKey = 'engitrack.secret.jiraEmail';
   static const String _jiraApiTokenKey = 'engitrack.secret.jiraApiToken';
   static const String _slackTokenKey = 'engitrack.secret.slackToken';
-  static const String _slackRefreshTokenKey = 'engitrack.secret.slackRefreshToken';
+  static const String _slackRefreshTokenKey =
+      'engitrack.secret.slackRefreshToken';
   static const String _slackClientIdKey = 'engitrack.secret.slackClientId';
-  static const String _slackClientSecretKey = 'engitrack.secret.slackClientSecret';
+  static const String _slackClientSecretKey =
+      'engitrack.secret.slackClientSecret';
   static const String _openAiApiKeyKey = 'engitrack.secret.openAiApiKey';
   static const String _geminiApiKeyKey = 'engitrack.secret.geminiApiKey';
   static const String _claudeApiKeyKey = 'engitrack.secret.claudeApiKey';
+  static const String _grokApiKeyKey = 'engitrack.secret.grokApiKey';
 
   Future<ConnectorConfig> loadConfig() async {
     final rawConfig = await _preferences.getString(_configKey);
@@ -45,28 +48,35 @@ class AppStorage {
       jiraEmail: await _secureStorage.read(key: _jiraEmailKey) ?? '',
       jiraApiToken: await _secureStorage.read(key: _jiraApiTokenKey) ?? '',
       slackToken: await _secureStorage.read(key: _slackTokenKey) ?? '',
-      slackRefreshToken: await _secureStorage.read(key: _slackRefreshTokenKey) ?? '',
+      slackRefreshToken:
+          await _secureStorage.read(key: _slackRefreshTokenKey) ?? '',
       slackClientId: await _secureStorage.read(key: _slackClientIdKey) ?? '',
-      slackClientSecret: await _secureStorage.read(key: _slackClientSecretKey) ?? '',
+      slackClientSecret:
+          await _secureStorage.read(key: _slackClientSecretKey) ?? '',
       openAiApiKey: await _secureStorage.read(key: _openAiApiKeyKey) ?? '',
       geminiApiKey: await _secureStorage.read(key: _geminiApiKeyKey) ?? '',
       claudeApiKey: await _secureStorage.read(key: _claudeApiKeyKey) ?? '',
+      grokApiKey: await _secureStorage.read(key: _grokApiKeyKey) ?? '',
     );
   }
 
   Future<void> saveConfig(ConnectorConfig config) async {
-    await _preferences.setString(_configKey, jsonEncode(config.toPreferencesJson()));
+    await _preferences.setString(
+        _configKey, jsonEncode(config.toPreferencesJson()));
     await Future.wait(<Future<void>>[
       _secureStorage.write(key: _githubTokenKey, value: config.githubToken),
       _secureStorage.write(key: _jiraEmailKey, value: config.jiraEmail),
       _secureStorage.write(key: _jiraApiTokenKey, value: config.jiraApiToken),
       _secureStorage.write(key: _slackTokenKey, value: config.slackToken),
-      _secureStorage.write(key: _slackRefreshTokenKey, value: config.slackRefreshToken),
+      _secureStorage.write(
+          key: _slackRefreshTokenKey, value: config.slackRefreshToken),
       _secureStorage.write(key: _slackClientIdKey, value: config.slackClientId),
-      _secureStorage.write(key: _slackClientSecretKey, value: config.slackClientSecret),
+      _secureStorage.write(
+          key: _slackClientSecretKey, value: config.slackClientSecret),
       _secureStorage.write(key: _openAiApiKeyKey, value: config.openAiApiKey),
       _secureStorage.write(key: _geminiApiKeyKey, value: config.geminiApiKey),
       _secureStorage.write(key: _claudeApiKeyKey, value: config.claudeApiKey),
+      _secureStorage.write(key: _grokApiKeyKey, value: config.grokApiKey),
     ]);
   }
 
@@ -132,13 +142,16 @@ class AppStorage {
     if (raw == null || raw.isEmpty) return <AiChatMessage>[];
     final decoded = jsonDecode(raw) as List<dynamic>;
     return decoded
-        .map((dynamic item) => AiChatMessage.fromJson(item as Map<String, dynamic>))
+        .map((dynamic item) =>
+            AiChatMessage.fromJson(item as Map<String, dynamic>))
         .toList();
   }
 
   Future<void> saveAiChat(String prId, List<AiChatMessage> messages) async {
     final String key = '$_aiChatPrefix${prId.hashCode}';
-    final capped = messages.length > 50 ? messages.sublist(messages.length - 50) : messages;
+    final capped = messages.length > 50
+        ? messages.sublist(messages.length - 50)
+        : messages;
     await _preferences.setString(
       key,
       jsonEncode(capped.map((AiChatMessage m) => m.toJson()).toList()),

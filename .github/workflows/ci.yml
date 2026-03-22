@@ -55,9 +55,11 @@ jobs:
         run: flutter pub get
 
       - name: Verify formatting
+        id: format_check
         run: dart format --set-exit-if-changed .
 
       - name: Run static analysis
+        if: success() || steps.format_check.conclusion == 'failure'
         run: flutter analyze --no-pub
 
       - name: Check for outdated dependencies

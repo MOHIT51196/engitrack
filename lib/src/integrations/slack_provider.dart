@@ -27,7 +27,8 @@ class SlackProvider implements IntegrationProvider {
     final List<IntegrationItem> results = <IntegrationItem>[];
 
     if (config.slackReviewChannels.isNotEmpty) {
-      final List<SlackReviewRequest> reviews = await _service.fetchReviewRequests(
+      final List<SlackReviewRequest> reviews =
+          await _service.fetchReviewRequests(
         token: config.slackToken,
         channels: config.slackReviewChannels,
       );
@@ -43,10 +44,12 @@ class SlackProvider implements IntegrationProvider {
     }
 
     try {
-      final List<SlackReviewRequest> dmMentions = await _service.fetchDmMentions(
+      final List<SlackReviewRequest> dmMentions =
+          await _service.fetchDmMentions(
         token: config.slackToken,
       );
-      results.addAll(dmMentions.map((SlackReviewRequest r) => _mapReview(r, reason: ItemReason.mention)));
+      results.addAll(dmMentions.map(
+          (SlackReviewRequest r) => _mapReview(r, reason: ItemReason.mention)));
     } catch (_) {
       // DM monitoring may fail if scopes are missing.
     }
@@ -58,7 +61,8 @@ class SlackProvider implements IntegrationProvider {
 
   SlackService get service => _service;
 
-  static IntegrationItem _mapReview(SlackReviewRequest review, {ItemReason reason = ItemReason.reviewRequested}) {
+  static IntegrationItem _mapReview(SlackReviewRequest review,
+      {ItemReason reason = ItemReason.reviewRequested}) {
     return IntegrationItem(
       id: review.id,
       providerId: 'slack',

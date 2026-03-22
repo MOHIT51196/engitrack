@@ -28,17 +28,20 @@ class OpenAiProvider extends AiProvider {
   @override
   bool isConfigured(ConnectorConfig config) =>
       config.openAiEnabled &&
-      (config.openAiProxyUrl.trim().isNotEmpty || config.openAiApiKey.trim().isNotEmpty);
+      (config.openAiProxyUrl.trim().isNotEmpty ||
+          config.openAiApiKey.trim().isNotEmpty);
 
   @override
   String apiKey(ConnectorConfig config) => config.openAiApiKey.trim();
 
   @override
-  String model(ConnectorConfig config) =>
-      config.openAiModel.trim().isEmpty ? 'gpt-4.1-mini' : config.openAiModel.trim();
+  String model(ConnectorConfig config) => config.openAiModel.trim().isEmpty
+      ? 'gpt-4.1-mini'
+      : config.openAiModel.trim();
 
   @override
-  Uri get chatCompletionsUri => Uri.https('api.openai.com', '/v1/chat/completions');
+  Uri get chatCompletionsUri =>
+      Uri.https('api.openai.com', '/v1/chat/completions');
 
   @override
   Future<AiReviewResult> reviewPullRequest({
@@ -101,11 +104,10 @@ class OpenAiProvider extends AiProvider {
     );
 
     final Map<String, dynamic> json = decodeJsonBody(response);
-    final String output = (
-      json['review'] as String? ??
-      json['output_text'] as String? ??
-      _extractProxyText(json)
-    ).trim();
+    final String output = (json['review'] as String? ??
+            json['output_text'] as String? ??
+            _extractProxyText(json))
+        .trim();
     if (output.isEmpty) {
       throw ServiceException('The AI review proxy returned an empty review.');
     }
@@ -134,15 +136,20 @@ class OpenAiProvider extends AiProvider {
     late final String responseText;
     if (config.openAiProxyUrl.trim().isNotEmpty) {
       final Uri uri = Uri.parse(config.openAiProxyUrl.trim());
-      final http.Response response = await client.post(uri,
+      final http.Response response = await client.post(
+        uri,
         headers: <String, String>{
           'Content-Type': 'application/json',
-          if (apiKey(config).isNotEmpty) 'Authorization': 'Bearer ${apiKey(config)}',
+          if (apiKey(config).isNotEmpty)
+            'Authorization': 'Bearer ${apiKey(config)}',
         },
-        body: jsonEncode(<String, dynamic>{'model': model(config), 'messages': messages}),
+        body: jsonEncode(
+            <String, dynamic>{'model': model(config), 'messages': messages}),
       );
       final Map<String, dynamic> json = decodeJsonBody(response);
-      responseText = json['review'] as String? ?? json['output_text'] as String? ?? _extractProxyText(json);
+      responseText = json['review'] as String? ??
+          json['output_text'] as String? ??
+          _extractProxyText(json);
     } else {
       final http.Response response = await postChatCompletion(
         uri: chatCompletionsUri,
@@ -165,11 +172,13 @@ class OpenAiProvider extends AiProvider {
   }
 
   String _extractProxyText(Map<String, dynamic> json) {
-    final List<dynamic> output = json['output'] as List<dynamic>? ?? const <dynamic>[];
+    final List<dynamic> output =
+        json['output'] as List<dynamic>? ?? const <dynamic>[];
     final StringBuffer buffer = StringBuffer();
     for (final dynamic item in output) {
       final Map<String, dynamic> map = item as Map<String, dynamic>;
-      final List<dynamic> content = map['content'] as List<dynamic>? ?? const <dynamic>[];
+      final List<dynamic> content =
+          map['content'] as List<dynamic>? ?? const <dynamic>[];
       for (final dynamic piece in content) {
         final Map<String, dynamic> contentMap = piece as Map<String, dynamic>;
         final String text = contentMap['text'] as String? ?? '';

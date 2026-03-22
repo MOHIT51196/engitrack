@@ -83,7 +83,8 @@ class NotificationsService {
     );
     await androidPlugin?.createNotificationChannel(alertsChannel);
 
-    const AndroidNotificationChannel remindersChannel = AndroidNotificationChannel(
+    const AndroidNotificationChannel remindersChannel =
+        AndroidNotificationChannel(
       'engitrack_reminders',
       'ToDo reminders',
       description: 'Notifications for ToDo reminder times.',
@@ -122,8 +123,7 @@ class NotificationsService {
       importance: Importance.max,
       priority: Priority.high,
     );
-    const DarwinNotificationDetails darwinDetails =
-        DarwinNotificationDetails();
+    const DarwinNotificationDetails darwinDetails = DarwinNotificationDetails();
     const NotificationDetails details = NotificationDetails(
       android: androidDetails,
       iOS: darwinDetails,
@@ -204,19 +204,23 @@ class GitHubService {
       headers: _headers(token),
     );
     final Map<String, dynamic> json = _decodeJsonBody(response);
-    final List<dynamic> items = json['items'] as List<dynamic>? ?? const <dynamic>[];
+    final List<dynamic> items =
+        json['items'] as List<dynamic>? ?? const <dynamic>[];
 
     return items.map((dynamic item) {
       final Map<String, dynamic> map = item as Map<String, dynamic>;
       final String repositoryUrl = map['repository_url'] as String? ?? '';
-      final List<String> segments = Uri.tryParse(repositoryUrl)?.pathSegments ?? <String>[];
+      final List<String> segments =
+          Uri.tryParse(repositoryUrl)?.pathSegments ?? <String>[];
       final String owner = segments.length >= 2 ? segments[1] : 'repo-owner';
       final String repo = segments.length >= 3 ? segments[2] : 'repository';
       final int number = map['number'] as int? ?? 0;
-      final List<String> labels = (map['labels'] as List<dynamic>? ?? const <dynamic>[])
-          .map((dynamic label) => (label as Map<String, dynamic>)['name'] as String? ?? '')
-          .where((String name) => name.isNotEmpty)
-          .toList();
+      final List<String> labels =
+          (map['labels'] as List<dynamic>? ?? const <dynamic>[])
+              .map((dynamic label) =>
+                  (label as Map<String, dynamic>)['name'] as String? ?? '')
+              .where((String name) => name.isNotEmpty)
+              .toList();
 
       return GithubPullRequest(
         id: '$owner/$repo#$number',
@@ -224,11 +228,12 @@ class GitHubService {
         repo: repo,
         number: number,
         title: map['title'] as String? ?? 'Untitled pull request',
-        author: (map['user'] as Map<String, dynamic>? ?? const <String, dynamic>{})['login']
-                as String? ??
+        author: (map['user'] as Map<String, dynamic>? ??
+                const <String, dynamic>{})['login'] as String? ??
             'Unknown',
         url: map['html_url'] as String? ?? '',
-        updatedAt: DateTime.tryParse(map['updated_at'] as String? ?? '') ?? DateTime.now(),
+        updatedAt: DateTime.tryParse(map['updated_at'] as String? ?? '') ??
+            DateTime.now(),
         draft: map['draft'] as bool? ?? labels.contains('draft'),
         labels: labels,
       );
@@ -271,16 +276,15 @@ class GitHubService {
     return PullRequestContext(
       pullRequest: pullRequest,
       body: details['body'] as String? ?? '',
-      baseBranch:
-          ((details['base'] as Map<String, dynamic>? ?? const <String, dynamic>{})['ref']
-                  as String?) ??
-              'main',
-      headBranch:
-          ((details['head'] as Map<String, dynamic>? ?? const <String, dynamic>{})['ref']
-                  as String?) ??
-              pullRequest.headBranch ??
-              'feature/unknown',
-      changedFiles: details['changed_files'] as int? ?? pullRequest.changedFiles,
+      baseBranch: ((details['base'] as Map<String, dynamic>? ??
+              const <String, dynamic>{})['ref'] as String?) ??
+          'main',
+      headBranch: ((details['head'] as Map<String, dynamic>? ??
+              const <String, dynamic>{})['ref'] as String?) ??
+          pullRequest.headBranch ??
+          'feature/unknown',
+      changedFiles:
+          details['changed_files'] as int? ?? pullRequest.changedFiles,
       files: files,
     );
   }
@@ -346,7 +350,8 @@ class JiraService {
       'Authorization': 'Basic ${_basicAuth(email, apiToken)}',
     };
     debugPrint('[Jira:myself] GET $url');
-    debugPrint('[Jira:myself] Headers: Accept=${headers['Accept']}, Authorization=Basic <${_basicAuth(email, apiToken).length} chars>');
+    debugPrint(
+        '[Jira:myself] Headers: Accept=${headers['Accept']}, Authorization=Basic <${_basicAuth(email, apiToken).length} chars>');
 
     try {
       final http.Response response = await _client.get(
@@ -355,10 +360,12 @@ class JiraService {
       );
 
       debugPrint('[Jira:myself] Response status=${response.statusCode}');
-      debugPrint('[Jira:myself] Response body: ${response.body.length > 500 ? response.body.substring(0, 500) : response.body}');
+      debugPrint(
+          '[Jira:myself] Response body: ${response.body.length > 500 ? response.body.substring(0, 500) : response.body}');
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> json = jsonDecode(response.body) as Map<String, dynamic>;
+        final Map<String, dynamic> json =
+            jsonDecode(response.body) as Map<String, dynamic>;
         final String accountId = json['accountId'] as String? ?? '';
         if (accountId.isNotEmpty) {
           _cachedAccountId = accountId;
@@ -381,7 +388,9 @@ class JiraService {
     required String apiToken,
   }) async {
     final String identity = await _resolveAccountId(
-      baseUrl: baseUrl, email: email, apiToken: apiToken,
+      baseUrl: baseUrl,
+      email: email,
+      apiToken: apiToken,
     );
     final bool isAccountId = identity.contains(':');
     final String assigneeValue = isAccountId ? identity : '"$identity"';
@@ -389,7 +398,8 @@ class JiraService {
       baseUrl: baseUrl,
       email: email,
       apiToken: apiToken,
-      jql: 'assignee = $assigneeValue AND statusCategory != Done ORDER BY updated DESC',
+      jql:
+          'assignee = $assigneeValue AND statusCategory != Done ORDER BY updated DESC',
     );
   }
 
@@ -399,7 +409,9 @@ class JiraService {
     required String apiToken,
   }) async {
     final String identity = await _resolveAccountId(
-      baseUrl: baseUrl, email: email, apiToken: apiToken,
+      baseUrl: baseUrl,
+      email: email,
+      apiToken: apiToken,
     );
     final bool isAccountId = identity.contains(':');
     final String identityValue = isAccountId ? identity : '"$identity"';
@@ -429,7 +441,8 @@ class JiraService {
 
     debugPrint('[Jira:search] JQL: $jql');
     debugPrint('[Jira:search] GET $urlStr');
-    debugPrint('[Jira:search] email="$email" tokenLen=${apiToken.length} base64Len=${_basicAuth(email, apiToken).length}');
+    debugPrint(
+        '[Jira:search] email="$email" tokenLen=${apiToken.length} base64Len=${_basicAuth(email, apiToken).length}');
 
     final http.Request request = http.Request('GET', Uri.parse(urlStr));
     request.headers['Accept'] = 'application/json';
@@ -442,30 +455,39 @@ class JiraService {
 
     debugPrint('[Jira:search] Response status=${response.statusCode}');
     debugPrint('[Jira:search] Response headers: ${response.headers}');
-    debugPrint('[Jira:search] Response body (first 800): ${response.body.length > 800 ? response.body.substring(0, 800) : response.body}');
+    debugPrint(
+        '[Jira:search] Response body (first 800): ${response.body.length > 800 ? response.body.substring(0, 800) : response.body}');
 
     final Map<String, dynamic> json = _decodeJsonBody(response);
-    final List<dynamic> issues = json['issues'] as List<dynamic>? ?? const <dynamic>[];
+    final List<dynamic> issues =
+        json['issues'] as List<dynamic>? ?? const <dynamic>[];
     debugPrint('[Jira:search] Parsed ${issues.length} issues');
 
     return issues.map((dynamic issue) {
       final Map<String, dynamic> map = issue as Map<String, dynamic>;
-      final Map<String, dynamic> fields = map['fields'] as Map<String, dynamic>? ??
-          const <String, dynamic>{};
-      final Map<String, dynamic> status = fields['status'] as Map<String, dynamic>? ??
-          const <String, dynamic>{};
-      final Map<String, dynamic> priority = fields['priority'] as Map<String, dynamic>? ??
-          const <String, dynamic>{};
-      final Map<String, dynamic> issueType = fields['issuetype'] as Map<String, dynamic>? ??
-          const <String, dynamic>{};
-      final Map<String, dynamic> project = fields['project'] as Map<String, dynamic>? ??
-          const <String, dynamic>{};
-      final Map<String, dynamic> assignee = fields['assignee'] as Map<String, dynamic>? ??
-          const <String, dynamic>{};
-      final Map<String, dynamic> parent = fields['parent'] as Map<String, dynamic>? ??
-          const <String, dynamic>{};
-      final Map<String, dynamic> parentFields = parent['fields'] as Map<String, dynamic>? ??
-          const <String, dynamic>{};
+      final Map<String, dynamic> fields =
+          map['fields'] as Map<String, dynamic>? ?? const <String, dynamic>{};
+      final Map<String, dynamic> status =
+          fields['status'] as Map<String, dynamic>? ??
+              const <String, dynamic>{};
+      final Map<String, dynamic> priority =
+          fields['priority'] as Map<String, dynamic>? ??
+              const <String, dynamic>{};
+      final Map<String, dynamic> issueType =
+          fields['issuetype'] as Map<String, dynamic>? ??
+              const <String, dynamic>{};
+      final Map<String, dynamic> project =
+          fields['project'] as Map<String, dynamic>? ??
+              const <String, dynamic>{};
+      final Map<String, dynamic> assignee =
+          fields['assignee'] as Map<String, dynamic>? ??
+              const <String, dynamic>{};
+      final Map<String, dynamic> parent =
+          fields['parent'] as Map<String, dynamic>? ??
+              const <String, dynamic>{};
+      final Map<String, dynamic> parentFields =
+          parent['fields'] as Map<String, dynamic>? ??
+              const <String, dynamic>{};
       final String key = map['key'] as String? ?? 'UNKNOWN';
 
       return JiraIssue(
@@ -475,7 +497,8 @@ class JiraService {
         status: status['name'] as String? ?? 'Unknown',
         priority: priority['name'] as String? ?? 'Unknown',
         url: '$normalizedBase/browse/$key',
-        updatedAt: DateTime.tryParse(fields['updated'] as String? ?? '') ?? DateTime.now(),
+        updatedAt: DateTime.tryParse(fields['updated'] as String? ?? '') ??
+            DateTime.now(),
         issueType: issueType['name'] as String? ?? 'Issue',
         projectName: project['name'] as String? ?? 'Project',
         assignee: assignee['displayName'] as String? ?? '',
@@ -505,12 +528,14 @@ class SlackService {
 
     final List<SlackReviewRequest> results = <SlackReviewRequest>[];
     for (final String channel in channels) {
-      final _ResolvedSlackChannel resolved = await _resolveChannel(token, channel);
+      final _ResolvedSlackChannel resolved =
+          await _resolveChannel(token, channel);
       final List<Map<String, dynamic>> messages =
-          await _fetchConversationMessages(token: token, channelId: resolved.id);
+          await _fetchConversationMessages(
+              token: token, channelId: resolved.id);
       for (final Map<String, dynamic> message in messages) {
-        final SlackReviewRequest? review =
-            _extractReviewRequest(message: message, channel: resolved.displayName);
+        final SlackReviewRequest? review = _extractReviewRequest(
+            message: message, channel: resolved.displayName);
         if (review != null) {
           results.add(review);
         }
@@ -518,7 +543,8 @@ class SlackService {
     }
 
     results.sort(
-      (SlackReviewRequest a, SlackReviewRequest b) => b.createdAt.compareTo(a.createdAt),
+      (SlackReviewRequest a, SlackReviewRequest b) =>
+          b.createdAt.compareTo(a.createdAt),
     );
     return results;
   }
@@ -531,9 +557,11 @@ class SlackService {
       return <SlackAlert>[];
     }
 
-    final _ResolvedSlackChannel resolved = await _resolveChannel(token, channel);
+    final _ResolvedSlackChannel resolved =
+        await _resolveChannel(token, channel);
     final List<Map<String, dynamic>> messages =
-        await _fetchConversationMessages(token: token, channelId: resolved.id, limit: 25);
+        await _fetchConversationMessages(
+            token: token, channelId: resolved.id, limit: 25);
 
     final List<SlackAlert> alerts = messages
         .map(
@@ -542,12 +570,14 @@ class SlackService {
         )
         .whereType<SlackAlert>()
         .toList()
-      ..sort((SlackAlert a, SlackAlert b) => b.createdAt.compareTo(a.createdAt));
+      ..sort(
+          (SlackAlert a, SlackAlert b) => b.createdAt.compareTo(a.createdAt));
 
     return alerts;
   }
 
-  Future<_ResolvedSlackChannel> _resolveChannel(String token, String rawChannel) async {
+  Future<_ResolvedSlackChannel> _resolveChannel(
+      String token, String rawChannel) async {
     final String cleaned = rawChannel.trim().replaceFirst('#', '');
     if (cleaned.isEmpty) {
       throw ServiceException('Slack channel cannot be empty.');
@@ -607,7 +637,8 @@ class SlackService {
         'limit': '$limit',
       },
     );
-    final http.Response response = await _client.get(uri, headers: _slackHeaders(token));
+    final http.Response response =
+        await _client.get(uri, headers: _slackHeaders(token));
     final Map<String, dynamic> json = _decodeJsonBody(response);
     _throwIfSlackError(json);
     return (json['messages'] as List<dynamic>? ?? const <dynamic>[])
@@ -625,7 +656,9 @@ class SlackService {
 
     final bool hasPrUrl = RegExp(r'https?://[^\s>]+/pull/\d+').hasMatch(text);
     final bool hasDocUrl = RegExp(r'https?://[^\s>]+').hasMatch(text) &&
-        (text.contains('docs.google.com') || text.contains('notion.so') || text.contains('/doc'));
+        (text.contains('docs.google.com') ||
+            text.contains('notion.so') ||
+            text.contains('/doc'));
     final bool looksLikeReview = hasPrUrl ||
         hasDocUrl ||
         RegExp(
@@ -637,10 +670,12 @@ class SlackService {
       return null;
     }
 
-    final SlackReviewKind kind = hasPrUrl ? SlackReviewKind.pr : SlackReviewKind.doc;
+    final SlackReviewKind kind =
+        hasPrUrl ? SlackReviewKind.pr : SlackReviewKind.doc;
     final String url = _extractFirstUrl(text);
     final DateTime createdAt = _timestampFromSlackTs(message['ts'] as String?);
-    final String requester = (message['user'] as String? ?? 'Slack teammate').trim();
+    final String requester =
+        (message['user'] as String? ?? 'Slack teammate').trim();
     final String title = _compactTitle(text);
 
     return SlackReviewRequest(
@@ -666,7 +701,8 @@ class SlackService {
 
     final AlertSeverity severity = _detectSeverity(text);
     final bool looksActionable = severity != AlertSeverity.info ||
-        RegExp(r'(incident|outage|latency|degraded|failing|rollback|backlog)', caseSensitive: false)
+        RegExp(r'(incident|outage|latency|degraded|failing|rollback|backlog)',
+                caseSensitive: false)
             .hasMatch(text);
 
     if (!looksActionable) {
@@ -692,10 +728,14 @@ class SlackService {
         lowered.contains('p0')) {
       return AlertSeverity.critical;
     }
-    if (lowered.contains('sev2') || lowered.contains('high') || lowered.contains('p1')) {
+    if (lowered.contains('sev2') ||
+        lowered.contains('high') ||
+        lowered.contains('p1')) {
       return AlertSeverity.high;
     }
-    if (lowered.contains('sev3') || lowered.contains('medium') || lowered.contains('warning')) {
+    if (lowered.contains('sev3') ||
+        lowered.contains('medium') ||
+        lowered.contains('warning')) {
       return AlertSeverity.medium;
     }
     return AlertSeverity.info;
@@ -740,7 +780,8 @@ class SlackService {
 
   void _throwIfSlackError(Map<String, dynamic> json) {
     if (json['ok'] == false) {
-      throw ServiceException('Slack error: ${json['error'] ?? 'unknown_error'}');
+      throw ServiceException(
+          'Slack error: ${json['error'] ?? 'unknown_error'}');
     }
   }
 
@@ -748,7 +789,8 @@ class SlackService {
     if (_cachedTeamId != null) return _cachedTeamId!;
 
     final Uri uri = Uri.https('slack.com', '/api/auth.test');
-    final http.Response response = await _client.get(uri, headers: _slackHeaders(token));
+    final http.Response response =
+        await _client.get(uri, headers: _slackHeaders(token));
     final Map<String, dynamic> json = _decodeJsonBody(response);
     _throwIfSlackError(json);
     _cachedTeamId = json['team_id'] as String? ?? '';
@@ -764,16 +806,19 @@ class SlackService {
     final Map<String, String> channels = <String, String>{};
     String? cursor;
     do {
-      final Uri uri = Uri.https('slack.com', '/api/conversations.list', <String, String>{
+      final Uri uri =
+          Uri.https('slack.com', '/api/conversations.list', <String, String>{
         'exclude_archived': 'true',
         'limit': '500',
         'types': 'public_channel,private_channel',
         if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
       });
-      final http.Response response = await _client.get(uri, headers: _slackHeaders(token));
+      final http.Response response =
+          await _client.get(uri, headers: _slackHeaders(token));
       final Map<String, dynamic> json = _decodeJsonBody(response);
       _throwIfSlackError(json);
-      for (final dynamic ch in json['channels'] as List<dynamic>? ?? const <dynamic>[]) {
+      for (final dynamic ch
+          in json['channels'] as List<dynamic>? ?? const <dynamic>[]) {
         final Map<String, dynamic> map = ch as Map<String, dynamic>;
         channels[map['name'] as String? ?? ''] = map['id'] as String? ?? '';
       }
@@ -786,11 +831,13 @@ class SlackService {
     return channels;
   }
 
-  String buildSlackDeepLink({required String teamId, required String channelId}) {
+  String buildSlackDeepLink(
+      {required String teamId, required String channelId}) {
     return 'slack://channel?team=$teamId&id=$channelId';
   }
 
-  String buildSlackWebLink({required String teamId, required String channelId}) {
+  String buildSlackWebLink(
+      {required String teamId, required String channelId}) {
     return 'https://app.slack.com/client/$teamId/$channelId';
   }
 
@@ -806,7 +853,9 @@ class SlackService {
     final Uri uri = Uri.https('slack.com', '/api/oauth.v2.access');
     final http.Response response = await _client.post(
       uri,
-      headers: <String, String>{'Content-Type': 'application/x-www-form-urlencoded'},
+      headers: <String, String>{
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
       body: <String, String>{
         'grant_type': 'refresh_token',
         'client_id': clientId.trim(),
@@ -825,23 +874,28 @@ class SlackService {
   /// Validates a token by calling auth.test. Returns the user ID on success.
   Future<String> validateToken({required String token}) async {
     final Uri uri = Uri.https('slack.com', '/api/auth.test');
-    final http.Response response = await _client.get(uri, headers: _slackHeaders(token));
+    final http.Response response =
+        await _client.get(uri, headers: _slackHeaders(token));
     final Map<String, dynamic> json = _decodeJsonBody(response);
     _throwIfSlackError(json);
     return json['user_id'] as String? ?? '';
   }
 
-  Future<List<SlackReviewRequest>> fetchDmMentions({required String token}) async {
-    final Uri uri = Uri.https('slack.com', '/api/conversations.list', <String, String>{
+  Future<List<SlackReviewRequest>> fetchDmMentions(
+      {required String token}) async {
+    final Uri uri =
+        Uri.https('slack.com', '/api/conversations.list', <String, String>{
       'types': 'im',
       'limit': '50',
     });
-    final http.Response response = await _client.get(uri, headers: _slackHeaders(token));
+    final http.Response response =
+        await _client.get(uri, headers: _slackHeaders(token));
     final Map<String, dynamic> json = _decodeJsonBody(response);
     _throwIfSlackError(json);
 
     final List<SlackReviewRequest> results = <SlackReviewRequest>[];
-    final List<dynamic> channels = json['channels'] as List<dynamic>? ?? const <dynamic>[];
+    final List<dynamic> channels =
+        json['channels'] as List<dynamic>? ?? const <dynamic>[];
 
     for (final dynamic ch in channels.take(10)) {
       final Map<String, dynamic> map = ch as Map<String, dynamic>;
@@ -850,7 +904,8 @@ class SlackService {
       if (channelId.isEmpty) continue;
 
       final List<Map<String, dynamic>> messages =
-          await _fetchConversationMessages(token: token, channelId: channelId, limit: 10);
+          await _fetchConversationMessages(
+              token: token, channelId: channelId, limit: 10);
       for (final Map<String, dynamic> msg in messages) {
         final SlackReviewRequest? review =
             _extractReviewRequest(message: msg, channel: 'DM with $userId');
@@ -858,7 +913,8 @@ class SlackService {
       }
     }
 
-    results.sort((SlackReviewRequest a, SlackReviewRequest b) => b.createdAt.compareTo(a.createdAt));
+    results.sort((SlackReviewRequest a, SlackReviewRequest b) =>
+        b.createdAt.compareTo(a.createdAt));
     return results;
   }
 }
@@ -872,18 +928,27 @@ class AiModelService {
     required String apiKey,
   }) async {
     final Uri uri = Uri.https('api.openai.com', '/v1/models');
-    final http.Response response = await _client.get(uri, headers: <String, String>{
+    final http.Response response =
+        await _client.get(uri, headers: <String, String>{
       'Authorization': 'Bearer ${apiKey.trim()}',
     });
     final Map<String, dynamic> json = _decodeJsonBody(response);
-    final List<dynamic> data = json['data'] as List<dynamic>? ?? const <dynamic>[];
-    final List<({String value, String label})> models = <({String value, String label})>[];
+    final List<dynamic> data =
+        json['data'] as List<dynamic>? ?? const <dynamic>[];
+    final List<({String value, String label})> models =
+        <({String value, String label})>[];
     for (final dynamic item in data) {
       final Map<String, dynamic> map = item as Map<String, dynamic>;
       final String id = map['id'] as String? ?? '';
       if (id.isEmpty) continue;
-      if (!id.startsWith('gpt-') && !id.startsWith('o1') && !id.startsWith('o3') && !id.startsWith('o4')) continue;
-      if (id.contains('realtime') || id.contains('audio') || id.contains('search') || id.contains('transcribe')) continue;
+      if (!id.startsWith('gpt-') &&
+          !id.startsWith('o1') &&
+          !id.startsWith('o3') &&
+          !id.startsWith('o4')) continue;
+      if (id.contains('realtime') ||
+          id.contains('audio') ||
+          id.contains('search') ||
+          id.contains('transcribe')) continue;
       models.add((value: id, label: id));
     }
     models.sort((a, b) => a.label.compareTo(b.label));
@@ -900,17 +965,25 @@ class AiModelService {
     );
     final http.Response response = await _client.get(uri);
     final Map<String, dynamic> json = _decodeJsonBody(response);
-    final List<dynamic> data = json['models'] as List<dynamic>? ?? const <dynamic>[];
-    final List<({String value, String label})> models = <({String value, String label})>[];
+    final List<dynamic> data =
+        json['models'] as List<dynamic>? ?? const <dynamic>[];
+    final List<({String value, String label})> models =
+        <({String value, String label})>[];
     for (final dynamic item in data) {
       final Map<String, dynamic> map = item as Map<String, dynamic>;
       final String name = map['name'] as String? ?? '';
       final String displayName = map['displayName'] as String? ?? '';
-      final List<dynamic> methods = map['supportedGenerationMethods'] as List<dynamic>? ?? const <dynamic>[];
+      final List<dynamic> methods =
+          map['supportedGenerationMethods'] as List<dynamic>? ??
+              const <dynamic>[];
       if (!methods.contains('generateContent')) continue;
-      final String modelId = name.startsWith('models/') ? name.substring(7) : name;
+      final String modelId =
+          name.startsWith('models/') ? name.substring(7) : name;
       if (modelId.isEmpty) continue;
-      models.add((value: modelId, label: displayName.isNotEmpty ? displayName : modelId));
+      models.add((
+        value: modelId,
+        label: displayName.isNotEmpty ? displayName : modelId
+      ));
     }
     models.sort((a, b) => a.label.compareTo(b.label));
     return models;
@@ -920,13 +993,16 @@ class AiModelService {
     required String apiKey,
   }) async {
     final Uri uri = Uri.https('api.anthropic.com', '/v1/models');
-    final http.Response response = await _client.get(uri, headers: <String, String>{
+    final http.Response response =
+        await _client.get(uri, headers: <String, String>{
       'x-api-key': apiKey.trim(),
       'anthropic-version': '2023-06-01',
     });
     final Map<String, dynamic> json = _decodeJsonBody(response);
-    final List<dynamic> data = json['data'] as List<dynamic>? ?? const <dynamic>[];
-    final List<({String value, String label})> models = <({String value, String label})>[];
+    final List<dynamic> data =
+        json['data'] as List<dynamic>? ?? const <dynamic>[];
+    final List<({String value, String label})> models =
+        <({String value, String label})>[];
     for (final dynamic item in data) {
       final Map<String, dynamic> map = item as Map<String, dynamic>;
       final String id = map['id'] as String? ?? '';
@@ -937,12 +1013,42 @@ class AiModelService {
     models.sort((a, b) => a.label.compareTo(b.label));
     return models;
   }
+
+  Future<List<({String value, String label})>> fetchGrokModels({
+    required String apiKey,
+  }) async {
+    final Uri uri = Uri.https('api.x.ai', '/v1/models');
+    debugPrint('[Grok:models] GET $uri');
+    final http.Response response =
+        await _client.get(uri, headers: <String, String>{
+      'Authorization': 'Bearer ${apiKey.trim()}',
+    });
+    debugPrint('[Grok:models] Response status=${response.statusCode}');
+    debugPrint(
+        '[Grok:models] Response body=${response.body.length > 500 ? '${response.body.substring(0, 500)}...' : response.body}');
+    final Map<String, dynamic> json = _decodeJsonBody(response);
+    final List<dynamic> data =
+        json['data'] as List<dynamic>? ?? const <dynamic>[];
+    final List<({String value, String label})> models =
+        <({String value, String label})>[];
+    for (final dynamic item in data) {
+      final Map<String, dynamic> map = item as Map<String, dynamic>;
+      final String id = map['id'] as String? ?? '';
+      if (id.isEmpty) continue;
+      if (!id.startsWith('grok')) continue;
+      models.add((value: id, label: id));
+    }
+    models.sort((a, b) => a.label.compareTo(b.label));
+    return models;
+  }
 }
 
 Map<String, dynamic> _decodeJsonBody(http.Response response) {
-  final dynamic decoded = jsonDecode(response.body.isEmpty ? '{}' : response.body);
+  final dynamic decoded =
+      jsonDecode(response.body.isEmpty ? '{}' : response.body);
   if (response.statusCode < 200 || response.statusCode >= 300) {
-    throw ServiceException('Request failed (${response.statusCode}): ${response.body}');
+    throw ServiceException(
+        'Request failed (${response.statusCode}): ${response.body}');
   }
   if (decoded is Map<String, dynamic>) {
     return decoded;
@@ -951,9 +1057,11 @@ Map<String, dynamic> _decodeJsonBody(http.Response response) {
 }
 
 List<dynamic> _decodeJsonListBody(http.Response response) {
-  final dynamic decoded = jsonDecode(response.body.isEmpty ? '[]' : response.body);
+  final dynamic decoded =
+      jsonDecode(response.body.isEmpty ? '[]' : response.body);
   if (response.statusCode < 200 || response.statusCode >= 300) {
-    throw ServiceException('Request failed (${response.statusCode}): ${response.body}');
+    throw ServiceException(
+        'Request failed (${response.statusCode}): ${response.body}');
   }
   if (decoded is List<dynamic>) {
     return decoded;

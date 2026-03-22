@@ -37,6 +37,8 @@ abstract final class AppColors {
   static const Color geminiLight = Color(0xFFE8F0FE);
   static const Color claude = Color(0xFFD97757);
   static const Color claudeLight = Color(0xFFFDF0EB);
+  static const Color grok = Color(0xFF1D1D1B);
+  static const Color grokLight = Color(0xFFEDEDED);
 }
 
 ThemeData buildEngiTrackTheme() {
@@ -107,7 +109,8 @@ ThemeData buildEngiTrackTheme() {
       backgroundColor: Colors.transparent,
       indicatorColor: Color(0xFFEDE9FE),
       selectedIconTheme: IconThemeData(color: AppColors.accent, size: 20),
-      unselectedIconTheme: IconThemeData(color: AppColors.tertiaryInk, size: 20),
+      unselectedIconTheme:
+          IconThemeData(color: AppColors.tertiaryInk, size: 20),
       selectedLabelTextStyle: TextStyle(
         color: AppColors.accent,
         fontWeight: FontWeight.w700,
@@ -200,7 +203,8 @@ ThemeData buildEngiTrackTheme() {
       ),
       hintStyle: const TextStyle(color: AppColors.tertiaryInk, fontSize: 13),
       labelStyle: const TextStyle(color: AppColors.secondaryInk, fontSize: 13),
-      floatingLabelStyle: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600),
+      floatingLabelStyle:
+          const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600),
     ),
     chipTheme: base.chipTheme.copyWith(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -222,7 +226,8 @@ ThemeData buildEngiTrackTheme() {
         disabledForegroundColor: Colors.white.withOpacity(0.7),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
-        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0),
+        textStyle: const TextStyle(
+            fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
@@ -231,7 +236,8 @@ ThemeData buildEngiTrackTheme() {
         side: const BorderSide(color: AppColors.outline, width: 0.8),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, letterSpacing: 0),
+        textStyle: const TextStyle(
+            fontSize: 13, fontWeight: FontWeight.w500, letterSpacing: 0),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
@@ -248,7 +254,8 @@ ThemeData buildEngiTrackTheme() {
     ),
     snackBarTheme: SnackBarThemeData(
       backgroundColor: AppColors.ink,
-      contentTextStyle: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+      contentTextStyle: const TextStyle(
+          color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       elevation: 8,
@@ -294,7 +301,8 @@ ThemeData buildEngiTrackTheme() {
         color: AppColors.ink,
         borderRadius: BorderRadius.circular(8),
       ),
-      textStyle: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+      textStyle: const TextStyle(
+          color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
     ),
   );
 }

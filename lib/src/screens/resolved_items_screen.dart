@@ -16,7 +16,8 @@ class ResolvedItemsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Resolved Items', style: theme.textTheme.titleLarge?.copyWith(fontSize: 17)),
+        title: Text('Resolved Items',
+            style: theme.textTheme.titleLarge?.copyWith(fontSize: 17)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, size: 20),
           onPressed: () => Navigator.of(context).pop(),
@@ -29,7 +30,8 @@ class ResolvedItemsScreen extends StatelessWidget {
                   padding: EdgeInsets.all(32),
                   child: EmptyStateCard(
                     title: 'No resolved items',
-                    message: 'Items you resolve from the dashboard will appear here.',
+                    message:
+                        'Items you resolve from the dashboard will appear here.',
                     icon: Icons.check_circle_rounded,
                   ),
                 ),
@@ -73,7 +75,8 @@ class _ResolvedItemCard extends StatelessWidget {
               children: <Widget>[
                 Text(
                   item.subtitle,
-                  style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.labelMedium
+                      ?.copyWith(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -148,39 +151,57 @@ class _ResolvedItemCard extends StatelessWidget {
 
   String _logoForProvider(String providerId) {
     switch (providerId) {
-      case 'github': return 'assets/logos/github.svg';
-      case 'jira': return 'assets/logos/jira.svg';
-      case 'slack': return 'assets/logos/slack.svg';
-      default: return 'assets/logos/github.svg';
+      case 'github':
+        return 'assets/logos/github.svg';
+      case 'jira':
+        return 'assets/logos/jira.svg';
+      case 'slack':
+        return 'assets/logos/slack.svg';
+      default:
+        return 'assets/logos/github.svg';
     }
   }
 
   Color _bgForProvider(String providerId) {
     switch (providerId) {
-      case 'github': return AppColors.githubLight;
-      case 'jira': return AppColors.jiraLight;
-      case 'slack': return AppColors.slackLight;
-      default: return AppColors.softSurface;
+      case 'github':
+        return AppColors.githubLight;
+      case 'jira':
+        return AppColors.jiraLight;
+      case 'slack':
+        return AppColors.slackLight;
+      default:
+        return AppColors.softSurface;
     }
   }
 
   Color _bgForReason(ItemReason reason) {
     switch (reason) {
-      case ItemReason.assigned: return AppColors.infoLight;
-      case ItemReason.tagged: return AppColors.warningLight;
-      case ItemReason.reviewRequested: return AppColors.accentLight;
-      case ItemReason.alert: return AppColors.dangerLight;
-      case ItemReason.mention: return AppColors.slackLight;
+      case ItemReason.assigned:
+        return AppColors.infoLight;
+      case ItemReason.tagged:
+        return AppColors.warningLight;
+      case ItemReason.reviewRequested:
+        return AppColors.accentLight;
+      case ItemReason.alert:
+        return AppColors.dangerLight;
+      case ItemReason.mention:
+        return AppColors.slackLight;
     }
   }
 
   Color _fgForReason(ItemReason reason) {
     switch (reason) {
-      case ItemReason.assigned: return AppColors.info;
-      case ItemReason.tagged: return AppColors.warning;
-      case ItemReason.reviewRequested: return AppColors.accent;
-      case ItemReason.alert: return AppColors.danger;
-      case ItemReason.mention: return AppColors.slack;
+      case ItemReason.assigned:
+        return AppColors.info;
+      case ItemReason.tagged:
+        return AppColors.warning;
+      case ItemReason.reviewRequested:
+        return AppColors.accent;
+      case ItemReason.alert:
+        return AppColors.danger;
+      case ItemReason.mention:
+        return AppColors.slack;
     }
   }
 }

@@ -24,7 +24,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() => _activeFilter = _activeFilter == filter ? null : filter);
   }
 
-  bool _showSection(_DashFilter section) => _activeFilter == null || _activeFilter == section;
+  bool _showSection(_DashFilter section) =>
+      _activeFilter == null || _activeFilter == section;
 
   @override
   Widget build(BuildContext context) {
@@ -44,14 +45,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
               alignment: Alignment.centerRight,
               child: TextButton.icon(
                 onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(builder: (_) => const ResolvedItemsScreen()),
+                  MaterialPageRoute<void>(
+                      builder: (_) => const ResolvedItemsScreen()),
                 ),
                 icon: const Icon(Icons.check_circle_outline_rounded, size: 14),
                 label: Text('View resolved (${controller.resolvedItemCount})'),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.secondaryInk,
-                  textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  textStyle: const TextStyle(
+                      fontSize: 11, fontWeight: FontWeight.w600),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
@@ -81,7 +85,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onClear: () => setState(() => _activeFilter = null),
             ),
           ],
-          if (controller.config.githubEnabled && _showSection(_DashFilter.pr)) ...<Widget>[
+          if (controller.config.githubEnabled &&
+              _showSection(_DashFilter.pr)) ...<Widget>[
             const SizedBox(height: 24),
             _SectionBlock(
               title: 'Pull Requests',
@@ -93,7 +98,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: controller.codeReviewItems.isEmpty
                   ? const EmptyStateCard(
                       title: 'No pending reviews',
-                      message: 'You\'re all caught up, or GitHub hasn\'t been configured yet.',
+                      message:
+                          'You\'re all caught up, or GitHub hasn\'t been configured yet.',
                       icon: Icons.done_all_rounded,
                     )
                   : Column(
@@ -106,7 +112,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
             ),
           ],
-          if (controller.config.jiraEnabled && _showSection(_DashFilter.jira)) ...<Widget>[
+          if (controller.config.jiraEnabled &&
+              _showSection(_DashFilter.jira)) ...<Widget>[
             const SizedBox(height: 20),
             _SectionBlock(
               title: 'Jira Tickets',
@@ -118,7 +125,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: controller.issueTrackerItems.isEmpty
                   ? const EmptyStateCard(
                       title: 'No open tickets',
-                      message: 'Configure Jira in Integrations to pull your assigned issues.',
+                      message:
+                          'Configure Jira in Integrations to pull your assigned issues.',
                       icon: Icons.assignment_turned_in_rounded,
                     )
                   : Column(
@@ -144,7 +152,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: controller.slackReviewItems.isEmpty
                     ? const EmptyStateCard(
                         title: 'No review requests',
-                        message: 'Configure Slack channels to surface review requests.',
+                        message:
+                            'Configure Slack channels to surface review requests.',
                         icon: Icons.mark_chat_unread_rounded,
                       )
                     : Column(
@@ -190,10 +199,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   String _filterLabel(_DashFilter f) {
     switch (f) {
-      case _DashFilter.pr: return 'PR reviews';
-      case _DashFilter.jira: return 'Jira tickets';
-      case _DashFilter.slackReview: return 'Slack reviews';
-      case _DashFilter.slackAlert: return 'Alerts';
+      case _DashFilter.pr:
+        return 'PR reviews';
+      case _DashFilter.jira:
+        return 'Jira tickets';
+      case _DashFilter.slackReview:
+        return 'Slack reviews';
+      case _DashFilter.slackAlert:
+        return 'Alerts';
     }
   }
 }
@@ -212,12 +225,16 @@ class _ErrorBanner extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 16),
+          const Icon(Icons.warning_amber_rounded,
+              color: AppColors.warning, size: 16),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(fontSize: 12, color: AppColors.ink, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.ink,
+                  fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -240,13 +257,20 @@ class _HeroCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: <Color>[Color(0xFF0B1220), Color(0xFF172033), Color(0xFF1E2A40)],
+          colors: <Color>[
+            Color(0xFF0B1220),
+            Color(0xFF172033),
+            Color(0xFF1E2A40)
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(14),
         boxShadow: <BoxShadow>[
-          BoxShadow(color: const Color(0xFF0B1220).withOpacity(0.18), blurRadius: 12, offset: const Offset(0, 8)),
+          BoxShadow(
+              color: const Color(0xFF0B1220).withOpacity(0.18),
+              blurRadius: 12,
+              offset: const Offset(0, 8)),
         ],
       ),
       child: Row(
@@ -257,7 +281,8 @@ class _HeroCard extends StatelessWidget {
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.white.withOpacity(0.15), width: 0.5),
+              border:
+                  Border.all(color: Colors.white.withOpacity(0.15), width: 0.5),
             ),
             child: SvgPicture.asset(
               'assets/branding/engitrack_logomark.svg',
@@ -271,13 +296,19 @@ class _HeroCard extends StatelessWidget {
               children: <Widget>[
                 Text('Good ${_greeting()}',
                     style: theme.textTheme.titleLarge?.copyWith(
-                      color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.2)),
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2)),
                 const SizedBox(height: 3),
                 Text(
                   count == 0
                       ? 'You\'re all caught up.'
                       : '$count item${count == 1 ? '' : 's'} need${count == 1 ? 's' : ''} attention',
-                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w400, color: Colors.white.withOpacity(0.7)),
+                  style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white.withOpacity(0.7)),
                 ),
               ],
             ),
@@ -293,9 +324,19 @@ class _HeroCard extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Text('$count', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white, height: 1)),
+                  Text('$count',
+                      style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          height: 1)),
                   const SizedBox(height: 1),
-                  Text('pending', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Colors.white.withOpacity(0.55), letterSpacing: 0.5)),
+                  Text('pending',
+                      style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withOpacity(0.55),
+                          letterSpacing: 0.5)),
                 ],
               ),
             ),
@@ -320,7 +361,11 @@ class _OnboardingCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: <Color>[Color(0xFF0B1220), Color(0xFF172033), Color(0xFF1E2A40)],
+          colors: <Color>[
+            Color(0xFF0B1220),
+            Color(0xFF172033),
+            Color(0xFF1E2A40)
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -341,7 +386,8 @@ class _OnboardingCard extends StatelessWidget {
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withOpacity(0.12), width: 0.5),
+              border:
+                  Border.all(color: Colors.white.withOpacity(0.12), width: 0.5),
             ),
             child: SvgPicture.asset(
               'assets/branding/engitrack_logomark.svg',
@@ -351,7 +397,10 @@ class _OnboardingCard extends StatelessWidget {
           const SizedBox(height: 20),
           const Text(
             'Get started with EngiTrack',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFFF8FAFC)),
+            style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFFF8FAFC)),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
@@ -359,7 +408,10 @@ class _OnboardingCard extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 340),
             child: Text(
               'Connect your tools to see PRs, tickets, and alerts in one place. Head to Integrations to enable GitHub, Jira, or Slack.',
-              style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.55), height: 1.5),
+              style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.white.withOpacity(0.55),
+                  height: 1.5),
               textAlign: TextAlign.center,
             ),
           ),
@@ -371,9 +423,11 @@ class _OnboardingCard extends StatelessWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: <Widget>[
               const _OnboardingStep(number: '1', label: 'Go to Integrations'),
-              Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.white.withOpacity(0.3)),
+              Icon(Icons.arrow_forward_rounded,
+                  size: 14, color: Colors.white.withOpacity(0.3)),
               const _OnboardingStep(number: '2', label: 'Enable & configure'),
-              Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.white.withOpacity(0.3)),
+              Icon(Icons.arrow_forward_rounded,
+                  size: 14, color: Colors.white.withOpacity(0.3)),
               const _OnboardingStep(number: '3', label: 'Save & sync'),
             ],
           ),
@@ -394,14 +448,24 @@ class _OnboardingStep extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Container(
-          width: 20, height: 20,
-          decoration: BoxDecoration(color: AppColors.accent, borderRadius: BorderRadius.circular(6)),
+          width: 20,
+          height: 20,
+          decoration: BoxDecoration(
+              color: AppColors.accent, borderRadius: BorderRadius.circular(6)),
           child: Center(
-            child: Text(number, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
+            child: Text(number,
+                style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white)),
           ),
         ),
         const SizedBox(width: 6),
-        Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.white.withOpacity(0.7))),
+        Text(label,
+            style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: Colors.white.withOpacity(0.7))),
       ],
     );
   }
@@ -462,21 +526,24 @@ class _MetricsRow extends StatelessWidget {
         final bool isWide = constraints.maxWidth >= 700 && count >= 3;
         const double gap = 8;
         final int columns = isWide ? count : 2;
-        final double tileWidth = (constraints.maxWidth - gap * (columns - 1)) / columns;
+        final double tileWidth =
+            (constraints.maxWidth - gap * (columns - 1)) / columns;
         return Wrap(
           spacing: gap,
           runSpacing: gap,
-          children: defs.map((_MetricDef d) => SizedBox(
-            width: tileWidth,
-            child: _MetricTileWithLogo(
-              label: d.label,
-              value: d.value,
-              logoAsset: d.logoAsset,
-              accentColor: d.accentColor,
-              selected: activeFilter == d.filter,
-              onTap: () => onFilterTap(d.filter),
-            ),
-          )).toList(),
+          children: defs
+              .map((_MetricDef d) => SizedBox(
+                    width: tileWidth,
+                    child: _MetricTileWithLogo(
+                      label: d.label,
+                      value: d.value,
+                      logoAsset: d.logoAsset,
+                      accentColor: d.accentColor,
+                      selected: activeFilter == d.filter,
+                      onTap: () => onFilterTap(d.filter),
+                    ),
+                  ))
+              .toList(),
         );
       },
     );
@@ -517,16 +584,21 @@ class _ActiveFilterChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              const Icon(Icons.filter_list_rounded, size: 13, color: AppColors.accent),
+              const Icon(Icons.filter_list_rounded,
+                  size: 13, color: AppColors.accent),
               const SizedBox(width: 5),
               Text(
                 'Showing: $label',
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.accent),
+                style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.accent),
               ),
               const SizedBox(width: 6),
               GestureDetector(
                 onTap: onClear,
-                child: const Icon(Icons.close_rounded, size: 13, color: AppColors.accent),
+                child: const Icon(Icons.close_rounded,
+                    size: 13, color: AppColors.accent),
               ),
             ],
           ),
@@ -563,11 +635,18 @@ class _MetricTileWithLogo extends StatelessWidget {
         color: selected ? color.withOpacity(0.06) : AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: selected ? color.withOpacity(0.5) : AppColors.outline.withOpacity(0.12),
+          color: selected
+              ? color.withOpacity(0.5)
+              : AppColors.outline.withOpacity(0.12),
           width: selected ? 1.5 : 0.5,
         ),
         boxShadow: selected
-            ? <BoxShadow>[BoxShadow(color: color.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 2))]
+            ? <BoxShadow>[
+                BoxShadow(
+                    color: color.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2))
+              ]
             : null,
       ),
       child: Material(
@@ -582,17 +661,26 @@ class _MetricTileWithLogo extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: <Widget>[
-                BrandLogo(assetPath: logoAsset, size: 38, backgroundColor: color.withOpacity(0.08), padding: 8),
+                BrandLogo(
+                    assetPath: logoAsset,
+                    size: 38,
+                    backgroundColor: color.withOpacity(0.08),
+                    padding: 8),
                 const SizedBox(width: 14),
                 Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-                    Text(value, style: theme.textTheme.headlineMedium?.copyWith(fontSize: 22, letterSpacing: -0.5)),
-                    const SizedBox(height: 1),
-                    Text(label, style: theme.textTheme.labelMedium),
-                  ]),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(value,
+                            style: theme.textTheme.headlineMedium
+                                ?.copyWith(fontSize: 22, letterSpacing: -0.5)),
+                        const SizedBox(height: 1),
+                        Text(label, style: theme.textTheme.labelMedium),
+                      ]),
                 ),
                 if (selected)
-                  Icon(Icons.filter_list_rounded, size: 16, color: color.withOpacity(0.7)),
+                  Icon(Icons.filter_list_rounded,
+                      size: 16, color: color.withOpacity(0.7)),
               ],
             ),
           ),
@@ -604,8 +692,13 @@ class _MetricTileWithLogo extends StatelessWidget {
 
 class _SectionBlock extends StatelessWidget {
   const _SectionBlock({
-    required this.title, required this.subtitle, required this.logoAsset,
-    required this.logoBg, required this.accentColor, required this.count, required this.child,
+    required this.title,
+    required this.subtitle,
+    required this.logoAsset,
+    required this.logoBg,
+    required this.accentColor,
+    required this.count,
+    required this.child,
   });
   final String title;
   final String subtitle;
@@ -625,13 +718,21 @@ class _SectionBlock extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 10),
           child: Row(
             children: <Widget>[
-              BrandLogo(assetPath: logoAsset, size: 30, backgroundColor: logoBg, padding: 5),
+              BrandLogo(
+                  assetPath: logoAsset,
+                  size: 30,
+                  backgroundColor: logoBg,
+                  padding: 5),
               const SizedBox(width: 10),
               Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-                  Text(title, style: theme.textTheme.titleLarge?.copyWith(fontSize: 15)),
-                  Text(subtitle, style: theme.textTheme.labelMedium),
-                ]),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(title,
+                          style: theme.textTheme.titleLarge
+                              ?.copyWith(fontSize: 15)),
+                      Text(subtitle, style: theme.textTheme.labelMedium),
+                    ]),
               ),
               if (count > 0) CountBadge(count: count, color: accentColor),
             ],
@@ -661,18 +762,27 @@ class _BriefItemCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            BrandLogo(assetPath: _logoForProvider(item.providerId), size: 30, backgroundColor: _bgForProvider(item.providerId)),
+            BrandLogo(
+                assetPath: _logoForProvider(item.providerId),
+                size: 30,
+                backgroundColor: _bgForProvider(item.providerId)),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(item.subtitle, style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600)),
+                  Text(item.subtitle,
+                      style: theme.textTheme.labelMedium
+                          ?.copyWith(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 2),
-                  Text(item.title, style: theme.textTheme.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(item.title,
+                      style: theme.textTheme.titleMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 6),
                   Wrap(
-                    spacing: 4, runSpacing: 4,
+                    spacing: 4,
+                    runSpacing: 4,
                     children: <Widget>[
                       SoftTag(
                         label: item.reason.label,
@@ -681,7 +791,10 @@ class _BriefItemCard extends StatelessWidget {
                         dense: true,
                       ),
                       ..._briefTags(),
-                      SoftTag(label: formatRelativeTime(item.timestamp), icon: Icons.schedule_rounded, dense: true),
+                      SoftTag(
+                          label: formatRelativeTime(item.timestamp),
+                          icon: Icons.schedule_rounded,
+                          dense: true),
                     ],
                   ),
                 ],
@@ -695,7 +808,10 @@ class _BriefItemCard extends StatelessWidget {
                 showInfoSnackBar(context, 'Item resolved.');
               },
               icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
-              style: IconButton.styleFrom(foregroundColor: AppColors.tertiaryInk, padding: EdgeInsets.zero, minimumSize: const Size(28, 28)),
+              style: IconButton.styleFrom(
+                  foregroundColor: AppColors.tertiaryInk,
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(28, 28)),
               tooltip: 'Resolve',
             ),
           ],
@@ -709,70 +825,107 @@ class _BriefItemCard extends StatelessWidget {
       case IntegrationCategory.codeReview:
         return <Widget>[
           if (item.meta<bool>('draft') == true)
-            const SoftTag(label: 'Draft', backgroundColor: AppColors.warningLight, foregroundColor: AppColors.warning, dense: true),
-          SoftTag(label: item.meta<String>('author') ?? '', icon: Icons.person_outline_rounded, dense: true),
+            const SoftTag(
+                label: 'Draft',
+                backgroundColor: AppColors.warningLight,
+                foregroundColor: AppColors.warning,
+                dense: true),
+          SoftTag(
+              label: item.meta<String>('author') ?? '',
+              icon: Icons.person_outline_rounded,
+              dense: true),
         ];
       case IntegrationCategory.issueTracker:
         final String status = item.meta<String>('status') ?? '';
         return <Widget>[
           if (status.isNotEmpty)
-            SoftTag(label: status, icon: Icons.circle, foregroundColor: _statusColor(status),
-                backgroundColor: _statusColor(status).withOpacity(0.08), dense: true),
+            SoftTag(
+                label: status,
+                icon: Icons.circle,
+                foregroundColor: _statusColor(status),
+                backgroundColor: _statusColor(status).withOpacity(0.08),
+                dense: true),
         ];
       case IntegrationCategory.messaging:
         final String channel = item.meta<String>('channel') ?? '';
         return <Widget>[
           if (channel.isNotEmpty)
-            SoftTag(label: channel, icon: Icons.tag_rounded, backgroundColor: AppColors.slackLight,
-                foregroundColor: AppColors.slack, dense: true),
+            SoftTag(
+                label: channel,
+                icon: Icons.tag_rounded,
+                backgroundColor: AppColors.slackLight,
+                foregroundColor: AppColors.slack,
+                dense: true),
         ];
     }
   }
 
   String _logoForProvider(String providerId) {
     switch (providerId) {
-      case 'github': return 'assets/logos/github.svg';
-      case 'jira': return 'assets/logos/jira.svg';
-      case 'slack': return 'assets/logos/slack.svg';
-      default: return 'assets/logos/github.svg';
+      case 'github':
+        return 'assets/logos/github.svg';
+      case 'jira':
+        return 'assets/logos/jira.svg';
+      case 'slack':
+        return 'assets/logos/slack.svg';
+      default:
+        return 'assets/logos/github.svg';
     }
   }
 
   Color _bgForProvider(String providerId) {
     switch (providerId) {
-      case 'github': return AppColors.githubLight;
-      case 'jira': return AppColors.jiraLight;
-      case 'slack': return AppColors.slackLight;
-      default: return AppColors.softSurface;
+      case 'github':
+        return AppColors.githubLight;
+      case 'jira':
+        return AppColors.jiraLight;
+      case 'slack':
+        return AppColors.slackLight;
+      default:
+        return AppColors.softSurface;
     }
   }
 
   Color _bgForReason(ItemReason reason) {
     switch (reason) {
-      case ItemReason.assigned: return AppColors.infoLight;
-      case ItemReason.tagged: return AppColors.warningLight;
-      case ItemReason.reviewRequested: return AppColors.accentLight;
-      case ItemReason.alert: return AppColors.dangerLight;
-      case ItemReason.mention: return AppColors.slackLight;
+      case ItemReason.assigned:
+        return AppColors.infoLight;
+      case ItemReason.tagged:
+        return AppColors.warningLight;
+      case ItemReason.reviewRequested:
+        return AppColors.accentLight;
+      case ItemReason.alert:
+        return AppColors.dangerLight;
+      case ItemReason.mention:
+        return AppColors.slackLight;
     }
   }
 
   Color _fgForReason(ItemReason reason) {
     switch (reason) {
-      case ItemReason.assigned: return AppColors.info;
-      case ItemReason.tagged: return AppColors.warning;
-      case ItemReason.reviewRequested: return AppColors.accent;
-      case ItemReason.alert: return AppColors.danger;
-      case ItemReason.mention: return AppColors.slack;
+      case ItemReason.assigned:
+        return AppColors.info;
+      case ItemReason.tagged:
+        return AppColors.warning;
+      case ItemReason.reviewRequested:
+        return AppColors.accent;
+      case ItemReason.alert:
+        return AppColors.danger;
+      case ItemReason.mention:
+        return AppColors.slack;
     }
   }
 
   Color _statusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'in progress': return AppColors.info;
-      case 'in review': return AppColors.accent;
-      case 'done': return AppColors.success;
-      default: return AppColors.tertiaryInk;
+      case 'in progress':
+        return AppColors.info;
+      case 'in review':
+        return AppColors.accent;
+      case 'done':
+        return AppColors.success;
+      default:
+        return AppColors.tertiaryInk;
     }
   }
 }

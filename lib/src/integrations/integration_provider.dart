@@ -69,12 +69,14 @@ class IntegrationItem {
       title: json['title'] as String? ?? '',
       subtitle: json['subtitle'] as String? ?? '',
       url: json['url'] as String? ?? '',
-      timestamp: DateTime.tryParse(json['timestamp'] as String? ?? '') ?? DateTime.now(),
+      timestamp: DateTime.tryParse(json['timestamp'] as String? ?? '') ??
+          DateTime.now(),
       reason: ItemReason.values.firstWhere(
         (ItemReason r) => r.name == json['reason'],
         orElse: () => ItemReason.assigned,
       ),
-      metadata: (json['metadata'] as Map<String, dynamic>?) ?? const <String, dynamic>{},
+      metadata: (json['metadata'] as Map<String, dynamic>?) ??
+          const <String, dynamic>{},
     );
   }
 

@@ -13,6 +13,7 @@ class ConnectorConfig {
     this.openAiEnabled = false,
     this.geminiEnabled = false,
     this.claudeEnabled = false,
+    this.grokEnabled = false,
     this.githubUsername = '',
     this.githubToken = '',
     this.jiraBaseUrl = '',
@@ -31,6 +32,8 @@ class ConnectorConfig {
     this.geminiModel = 'gemini-2.0-flash',
     this.claudeApiKey = '',
     this.claudeModel = 'claude-sonnet-4-20250514',
+    this.grokApiKey = '',
+    this.grokModel = 'grok-3-mini-fast',
     this.githubSyncMinutes = 5,
     this.jiraSyncMinutes = 5,
     this.slackSyncMinutes = 5,
@@ -43,6 +46,7 @@ class ConnectorConfig {
   final bool openAiEnabled;
   final bool geminiEnabled;
   final bool claudeEnabled;
+  final bool grokEnabled;
   final String githubUsername;
   final String githubToken;
   final String jiraBaseUrl;
@@ -61,6 +65,8 @@ class ConnectorConfig {
   final String geminiModel;
   final String claudeApiKey;
   final String claudeModel;
+  final String grokApiKey;
+  final String grokModel;
   final int githubSyncMinutes;
   final int jiraSyncMinutes;
   final int slackSyncMinutes;
@@ -73,6 +79,7 @@ class ConnectorConfig {
     bool? openAiEnabled,
     bool? geminiEnabled,
     bool? claudeEnabled,
+    bool? grokEnabled,
     String? githubUsername,
     String? githubToken,
     String? jiraBaseUrl,
@@ -91,6 +98,8 @@ class ConnectorConfig {
     String? geminiModel,
     String? claudeApiKey,
     String? claudeModel,
+    String? grokApiKey,
+    String? grokModel,
     int? githubSyncMinutes,
     int? jiraSyncMinutes,
     int? slackSyncMinutes,
@@ -103,6 +112,7 @@ class ConnectorConfig {
       openAiEnabled: openAiEnabled ?? this.openAiEnabled,
       geminiEnabled: geminiEnabled ?? this.geminiEnabled,
       claudeEnabled: claudeEnabled ?? this.claudeEnabled,
+      grokEnabled: grokEnabled ?? this.grokEnabled,
       githubUsername: githubUsername ?? this.githubUsername,
       githubToken: githubToken ?? this.githubToken,
       jiraBaseUrl: jiraBaseUrl ?? this.jiraBaseUrl,
@@ -121,6 +131,8 @@ class ConnectorConfig {
       geminiModel: geminiModel ?? this.geminiModel,
       claudeApiKey: claudeApiKey ?? this.claudeApiKey,
       claudeModel: claudeModel ?? this.claudeModel,
+      grokApiKey: grokApiKey ?? this.grokApiKey,
+      grokModel: grokModel ?? this.grokModel,
       githubSyncMinutes: githubSyncMinutes ?? this.githubSyncMinutes,
       jiraSyncMinutes: jiraSyncMinutes ?? this.jiraSyncMinutes,
       slackSyncMinutes: slackSyncMinutes ?? this.slackSyncMinutes,
@@ -144,6 +156,8 @@ class ConnectorConfig {
       'openAiModel': openAiModel,
       'geminiModel': geminiModel,
       'claudeModel': claudeModel,
+      'grokEnabled': grokEnabled,
+      'grokModel': grokModel,
       'githubSyncMinutes': githubSyncMinutes,
       'jiraSyncMinutes': jiraSyncMinutes,
       'slackSyncMinutes': slackSyncMinutes,
@@ -162,6 +176,7 @@ class ConnectorConfig {
     String openAiApiKey = '',
     String geminiApiKey = '',
     String claudeApiKey = '',
+    String grokApiKey = '',
   }) {
     final data = json ?? <String, dynamic>{};
     return ConnectorConfig(
@@ -172,14 +187,16 @@ class ConnectorConfig {
       openAiEnabled: data['openAiEnabled'] as bool? ?? false,
       geminiEnabled: data['geminiEnabled'] as bool? ?? false,
       claudeEnabled: data['claudeEnabled'] as bool? ?? false,
+      grokEnabled: data['grokEnabled'] as bool? ?? false,
       githubUsername: data['githubUsername'] as String? ?? '',
       githubToken: githubToken,
       jiraBaseUrl: data['jiraBaseUrl'] as String? ?? '',
       jiraEmail: jiraEmail,
       jiraApiToken: jiraApiToken,
-      slackReviewChannels: (data['slackReviewChannels'] as List<dynamic>? ?? const <dynamic>[])
-          .map((dynamic item) => item.toString())
-          .toList(),
+      slackReviewChannels:
+          (data['slackReviewChannels'] as List<dynamic>? ?? const <dynamic>[])
+              .map((dynamic item) => item.toString())
+              .toList(),
       slackAlertChannel: data['slackAlertChannel'] as String? ?? '',
       slackToken: slackToken,
       slackRefreshToken: slackRefreshToken,
@@ -192,6 +209,8 @@ class ConnectorConfig {
       geminiModel: data['geminiModel'] as String? ?? 'gemini-2.0-flash',
       claudeApiKey: claudeApiKey,
       claudeModel: data['claudeModel'] as String? ?? 'claude-sonnet-4-20250514',
+      grokApiKey: grokApiKey,
+      grokModel: data['grokModel'] as String? ?? 'grok-3-mini-fast',
       githubSyncMinutes: data['githubSyncMinutes'] as int? ?? 5,
       jiraSyncMinutes: data['jiraSyncMinutes'] as int? ?? 5,
       slackSyncMinutes: data['slackSyncMinutes'] as int? ?? 5,
@@ -234,6 +253,9 @@ class ConnectorConfig {
       'claudeEnabled': claudeEnabled,
       'claudeApiKey': claudeApiKey,
       'claudeModel': claudeModel,
+      'grokEnabled': grokEnabled,
+      'grokApiKey': grokApiKey,
+      'grokModel': grokModel,
       'githubSyncMinutes': githubSyncMinutes,
       'jiraSyncMinutes': jiraSyncMinutes,
       'slackSyncMinutes': slackSyncMinutes,
@@ -270,6 +292,9 @@ class ConnectorConfig {
       claudeEnabled: json['claudeEnabled'] as bool? ?? false,
       claudeApiKey: json['claudeApiKey'] as String? ?? '',
       claudeModel: json['claudeModel'] as String? ?? 'claude-sonnet-4-20250514',
+      grokEnabled: json['grokEnabled'] as bool? ?? false,
+      grokApiKey: json['grokApiKey'] as String? ?? '',
+      grokModel: json['grokModel'] as String? ?? 'grok-3-mini-fast',
       githubSyncMinutes: json['githubSyncMinutes'] as int? ?? 5,
       jiraSyncMinutes: json['jiraSyncMinutes'] as int? ?? 5,
       slackSyncMinutes: json['slackSyncMinutes'] as int? ?? 5,
@@ -287,7 +312,9 @@ class ConnectorConfig {
   String get slackReviewChannelsDisplay => slackReviewChannels.join('\n');
 
   bool get isGitHubConfigured =>
-      githubEnabled && githubUsername.trim().isNotEmpty && githubToken.trim().isNotEmpty;
+      githubEnabled &&
+      githubUsername.trim().isNotEmpty &&
+      githubToken.trim().isNotEmpty;
 
   bool get isJiraConfigured =>
       jiraEnabled &&
@@ -317,6 +344,8 @@ class ConnectorConfig {
 
   bool get isClaudeConfigured =>
       claudeEnabled && claudeApiKey.trim().isNotEmpty;
+
+  bool get isGrokConfigured => grokEnabled && grokApiKey.trim().isNotEmpty;
 
   bool get hasAnyIntegrationEnabled =>
       githubEnabled || jiraEnabled || slackEnabled;
@@ -390,9 +419,12 @@ class TodoItem {
       subtitle: json['subtitle'] as String? ?? '',
       sourceLabel: json['sourceLabel'] as String? ?? '',
       sourceUrl: json['sourceUrl'] as String? ?? '',
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
       completed: json['completed'] as bool? ?? false,
-      reminderDate: json['reminderDate'] != null ? DateTime.tryParse(json['reminderDate'] as String) : null,
+      reminderDate: json['reminderDate'] != null
+          ? DateTime.tryParse(json['reminderDate'] as String)
+          : null,
       reminderRepeat: json['reminderRepeat'] as String? ?? 'none',
     );
   }
@@ -456,8 +488,10 @@ class NoteItem {
       id: json['id'] as String,
       title: json['title'] as String? ?? '',
       body: json['body'] as String? ?? '',
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
-      updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ?? DateTime.now(),
+      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
+      updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
+          DateTime.now(),
     );
   }
 }
@@ -643,7 +677,8 @@ class PullRequestContext {
     };
   }
 
-  String toCondensedJson() => const JsonEncoder.withIndent('  ').convert(toJson());
+  String toCondensedJson() =>
+      const JsonEncoder.withIndent('  ').convert(toJson());
 }
 
 class AiReviewConcern {
@@ -706,7 +741,9 @@ class AiReviewResult {
     for (final AiReviewConcern c in concerns) {
       buf.writeln('- [${c.severity}] ${c.title}: ${c.description}');
     }
-    if (mergeConfidence.isNotEmpty) buf.writeln('Merge confidence: $mergeConfidence');
+    if (mergeConfidence.isNotEmpty) {
+      buf.writeln('Merge confidence: $mergeConfidence');
+    }
     if (executiveSummary.isNotEmpty) buf.writeln('Summary: $executiveSummary');
     return buf.toString().trim();
   }
@@ -739,7 +776,8 @@ class AiChatMessage {
       id: json['id'] as String? ?? '',
       role: json['role'] as String? ?? 'user',
       content: json['content'] as String? ?? '',
-      timestamp: DateTime.tryParse(json['timestamp'] as String? ?? '') ?? DateTime.now(),
+      timestamp: DateTime.tryParse(json['timestamp'] as String? ?? '') ??
+          DateTime.now(),
     );
   }
 }

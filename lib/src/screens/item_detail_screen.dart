@@ -90,11 +90,15 @@ class ItemDetailScreen extends StatelessWidget {
   void _addCodeReviewTags(List<Widget> tags) {
     final String author = item.meta<String>('author') ?? '';
     if (author.isNotEmpty) {
-      tags.add(SoftTag(label: author, icon: Icons.person_outline_rounded, dense: true));
+      tags.add(SoftTag(
+          label: author, icon: Icons.person_outline_rounded, dense: true));
     }
     final int files = item.meta<int>('changedFiles') ?? 0;
     if (files > 0) {
-      tags.add(SoftTag(label: '$files files', icon: Icons.description_outlined, dense: true));
+      tags.add(SoftTag(
+          label: '$files files',
+          icon: Icons.description_outlined,
+          dense: true));
     }
     final int adds = item.meta<int>('additions') ?? 0;
     final int dels = item.meta<int>('deletions') ?? 0;
@@ -112,9 +116,11 @@ class ItemDetailScreen extends StatelessWidget {
     }
     final String branch = item.meta<String>('headBranch') ?? '';
     if (branch.isNotEmpty) {
-      tags.add(SoftTag(label: branch, icon: Icons.fork_right_rounded, dense: true));
+      tags.add(
+          SoftTag(label: branch, icon: Icons.fork_right_rounded, dense: true));
     }
-    final List<dynamic> labels = item.metadata['labels'] as List<dynamic>? ?? const <dynamic>[];
+    final List<dynamic> labels =
+        item.metadata['labels'] as List<dynamic>? ?? const <dynamic>[];
     for (final dynamic l in labels.take(3)) {
       tags.add(SoftTag(
         label: l.toString(),
@@ -148,7 +154,8 @@ class ItemDetailScreen extends StatelessWidget {
     }
     final String issueType = item.meta<String>('issueType') ?? '';
     if (issueType.isNotEmpty) {
-      tags.add(SoftTag(label: issueType, icon: Icons.category_rounded, dense: true));
+      tags.add(
+          SoftTag(label: issueType, icon: Icons.category_rounded, dense: true));
     }
     final String assignee = item.meta<String>('assignee') ?? '';
     tags.add(SoftTag(
@@ -178,7 +185,8 @@ class ItemDetailScreen extends StatelessWidget {
           label: 'Due ${formatCompactTimestamp(dueDate)}',
           icon: Icons.event_rounded,
           foregroundColor: overdue ? AppColors.danger : AppColors.info,
-          backgroundColor: overdue ? AppColors.dangerLight : AppColors.infoLight,
+          backgroundColor:
+              overdue ? AppColors.dangerLight : AppColors.infoLight,
           dense: true,
         ));
       }
@@ -199,8 +207,13 @@ class ItemDetailScreen extends StatelessWidget {
     final String kind = item.meta<String>('kind') ?? '';
     if (kind.isNotEmpty) {
       tags.add(SoftTag(
-        label: kind == 'pr' ? 'PR' : kind == 'doc' ? 'Doc' : kind,
-        backgroundColor: kind == 'pr' ? AppColors.githubLight : AppColors.infoLight,
+        label: kind == 'pr'
+            ? 'PR'
+            : kind == 'doc'
+                ? 'Doc'
+                : kind,
+        backgroundColor:
+            kind == 'pr' ? AppColors.githubLight : AppColors.infoLight,
         foregroundColor: kind == 'pr' ? AppColors.github : AppColors.info,
         dense: true,
       ));
@@ -221,7 +234,8 @@ class ItemDetailScreen extends StatelessWidget {
     }
     final String requester = item.meta<String>('requester') ?? '';
     if (requester.isNotEmpty) {
-      tags.add(SoftTag(label: requester, icon: Icons.person_outline_rounded, dense: true));
+      tags.add(SoftTag(
+          label: requester, icon: Icons.person_outline_rounded, dense: true));
     }
   }
 
@@ -268,7 +282,8 @@ class ItemDetailScreen extends StatelessWidget {
           onPressed: () async {
             final bool added = await controller.addItemToTodo(item);
             if (!context.mounted) return;
-            showInfoSnackBar(context, added ? 'Added to ToDo.' : 'Already in ToDo.');
+            showInfoSnackBar(
+                context, added ? 'Added to ToDo.' : 'Already in ToDo.');
           },
           icon: const Icon(Icons.add_rounded, size: 14),
           label: const Text('ToDo'),
@@ -291,85 +306,124 @@ class ItemDetailScreen extends StatelessWidget {
 
   String _logoForProvider(String providerId) {
     switch (providerId) {
-      case 'github': return 'assets/logos/github.svg';
-      case 'jira': return 'assets/logos/jira.svg';
-      case 'slack': return 'assets/logos/slack.svg';
-      default: return 'assets/logos/github.svg';
+      case 'github':
+        return 'assets/logos/github.svg';
+      case 'jira':
+        return 'assets/logos/jira.svg';
+      case 'slack':
+        return 'assets/logos/slack.svg';
+      default:
+        return 'assets/logos/github.svg';
     }
   }
 
   IconData _iconForReason(ItemReason reason) {
     switch (reason) {
-      case ItemReason.assigned: return Icons.assignment_ind_rounded;
-      case ItemReason.tagged: return Icons.alternate_email_rounded;
-      case ItemReason.reviewRequested: return Icons.rate_review_rounded;
-      case ItemReason.alert: return Icons.warning_rounded;
-      case ItemReason.mention: return Icons.chat_rounded;
+      case ItemReason.assigned:
+        return Icons.assignment_ind_rounded;
+      case ItemReason.tagged:
+        return Icons.alternate_email_rounded;
+      case ItemReason.reviewRequested:
+        return Icons.rate_review_rounded;
+      case ItemReason.alert:
+        return Icons.warning_rounded;
+      case ItemReason.mention:
+        return Icons.chat_rounded;
     }
   }
 
   Color _bgForReason(ItemReason reason) {
     switch (reason) {
-      case ItemReason.assigned: return AppColors.infoLight;
-      case ItemReason.tagged: return AppColors.warningLight;
-      case ItemReason.reviewRequested: return AppColors.accentLight;
-      case ItemReason.alert: return AppColors.dangerLight;
-      case ItemReason.mention: return AppColors.slackLight;
+      case ItemReason.assigned:
+        return AppColors.infoLight;
+      case ItemReason.tagged:
+        return AppColors.warningLight;
+      case ItemReason.reviewRequested:
+        return AppColors.accentLight;
+      case ItemReason.alert:
+        return AppColors.dangerLight;
+      case ItemReason.mention:
+        return AppColors.slackLight;
     }
   }
 
   Color _fgForReason(ItemReason reason) {
     switch (reason) {
-      case ItemReason.assigned: return AppColors.info;
-      case ItemReason.tagged: return AppColors.warning;
-      case ItemReason.reviewRequested: return AppColors.accent;
-      case ItemReason.alert: return AppColors.danger;
-      case ItemReason.mention: return AppColors.slack;
+      case ItemReason.assigned:
+        return AppColors.info;
+      case ItemReason.tagged:
+        return AppColors.warning;
+      case ItemReason.reviewRequested:
+        return AppColors.accent;
+      case ItemReason.alert:
+        return AppColors.danger;
+      case ItemReason.mention:
+        return AppColors.slack;
     }
   }
 
   Color _statusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'in progress': return AppColors.info;
-      case 'in review': return AppColors.accent;
-      case 'done': return AppColors.success;
-      default: return AppColors.tertiaryInk;
+      case 'in progress':
+        return AppColors.info;
+      case 'in review':
+        return AppColors.accent;
+      case 'done':
+        return AppColors.success;
+      default:
+        return AppColors.tertiaryInk;
     }
   }
 
   Color _priorityColor(String priority) {
     switch (priority.toLowerCase()) {
-      case 'highest': return AppColors.danger;
-      case 'high': return AppColors.warning;
-      case 'medium': return AppColors.info;
-      default: return AppColors.tertiaryInk;
+      case 'highest':
+        return AppColors.danger;
+      case 'high':
+        return AppColors.warning;
+      case 'medium':
+        return AppColors.info;
+      default:
+        return AppColors.tertiaryInk;
     }
   }
 
   IconData _severityIcon(AlertSeverity severity) {
     switch (severity) {
-      case AlertSeverity.critical: return Icons.error_rounded;
-      case AlertSeverity.high: return Icons.warning_rounded;
-      case AlertSeverity.medium: return Icons.info_rounded;
-      case AlertSeverity.info: return Icons.notifications_none_rounded;
+      case AlertSeverity.critical:
+        return Icons.error_rounded;
+      case AlertSeverity.high:
+        return Icons.warning_rounded;
+      case AlertSeverity.medium:
+        return Icons.info_rounded;
+      case AlertSeverity.info:
+        return Icons.notifications_none_rounded;
     }
   }
 
   Color _severityFg(AlertSeverity severity) {
     switch (severity) {
-      case AlertSeverity.critical: return AppColors.danger;
-      case AlertSeverity.high: return AppColors.warning;
-      case AlertSeverity.medium: return AppColors.info;
-      case AlertSeverity.info: return AppColors.tertiaryInk;
+      case AlertSeverity.critical:
+        return AppColors.danger;
+      case AlertSeverity.high:
+        return AppColors.warning;
+      case AlertSeverity.medium:
+        return AppColors.info;
+      case AlertSeverity.info:
+        return AppColors.tertiaryInk;
     }
   }
 
   Color _severityBg(AlertSeverity severity) {
     switch (severity) {
-      case AlertSeverity.critical: return AppColors.dangerLight;
-      case AlertSeverity.high: return AppColors.warningLight;
-      case AlertSeverity.medium: return AppColors.infoLight;
-      case AlertSeverity.info: return AppColors.softSurface;
+      case AlertSeverity.critical:
+        return AppColors.dangerLight;
+      case AlertSeverity.high:
+        return AppColors.warningLight;
+      case AlertSeverity.medium:
+        return AppColors.infoLight;
+      case AlertSeverity.info:
+        return AppColors.softSurface;
     }
   }
 }
@@ -453,8 +507,10 @@ class _AiReviewButton extends StatelessWidget {
           : () => _onPressed(context),
       icon: isReviewing
           ? const SizedBox(
-              width: 13, height: 13,
-              child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white),
+              width: 13,
+              height: 13,
+              child: CircularProgressIndicator(
+                  strokeWidth: 1.5, color: Colors.white),
             )
           : const Icon(Icons.auto_awesome_rounded, size: 14),
       label: Text(isReviewing ? 'Reviewing...' : 'AI Review'),
@@ -500,15 +556,20 @@ class _AiProviderPicker extends StatelessWidget {
                       color: AppColors.accentSuperLight,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.auto_awesome_rounded, size: 18, color: AppColors.accent),
+                    child: const Icon(Icons.auto_awesome_rounded,
+                        size: 18, color: AppColors.accent),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text('AI Review', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, fontSize: 15)),
-                        Text('Choose a provider to review this PR', style: theme.textTheme.bodySmall?.copyWith(color: AppColors.secondaryInk)),
+                        Text('AI Review',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700, fontSize: 15)),
+                        Text('Choose a provider to review this PR',
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(color: AppColors.secondaryInk)),
                       ],
                     ),
                   ),
@@ -526,10 +587,12 @@ class _AiProviderPicker extends StatelessWidget {
                       borderRadius: BorderRadius.circular(14),
                       onTap: () => Navigator.pop(context, p.id),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppColors.divider, width: 0.8),
+                          border:
+                              Border.all(color: AppColors.divider, width: 0.8),
                         ),
                         child: Row(
                           children: <Widget>[
@@ -540,7 +603,8 @@ class _AiProviderPicker extends StatelessWidget {
                                 color: p.brandColorLight,
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: Icon(p.icon, color: p.brandColor, size: 20),
+                              child:
+                                  Icon(p.icon, color: p.brandColor, size: 20),
                             ),
                             const SizedBox(width: 14),
                             Expanded(
@@ -549,17 +613,22 @@ class _AiProviderPicker extends StatelessWidget {
                                 children: <Widget>[
                                   Text(
                                     p.displayName,
-                                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600, fontSize: 14),
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     modelName,
-                                    style: theme.textTheme.bodySmall?.copyWith(color: AppColors.tertiaryInk, fontSize: 11.5),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                        color: AppColors.tertiaryInk,
+                                        fontSize: 11.5),
                                   ),
                                 ],
                               ),
                             ),
-                            const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.tertiaryInk),
+                            const Icon(Icons.arrow_forward_ios_rounded,
+                                size: 14, color: AppColors.tertiaryInk),
                           ],
                         ),
                       ),
@@ -634,37 +703,52 @@ class _AiReviewSectionState extends State<_AiReviewSection> {
             children: <Widget>[
               Row(
                 children: <Widget>[
-                  const Icon(Icons.auto_awesome_rounded, size: 15, color: AppColors.accent),
+                  const Icon(Icons.auto_awesome_rounded,
+                      size: 15, color: AppColors.accent),
                   const SizedBox(width: 6),
-                  Text('AI Review', style: theme.textTheme.labelLarge?.copyWith(color: AppColors.accent)),
+                  Text('AI Review',
+                      style: theme.textTheme.labelLarge
+                          ?.copyWith(color: AppColors.accent)),
                   const Spacer(),
-                  Text(formatCompactTimestamp(review.generatedAt), style: theme.textTheme.labelMedium?.copyWith(fontSize: 10)),
+                  Text(formatCompactTimestamp(review.generatedAt),
+                      style:
+                          theme.textTheme.labelMedium?.copyWith(fontSize: 10)),
                 ],
               ),
               if (review.verdict.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 10),
-                Text('Verdict', style: theme.textTheme.labelLarge?.copyWith(fontSize: 12)),
+                Text('Verdict',
+                    style: theme.textTheme.labelLarge?.copyWith(fontSize: 12)),
                 const SizedBox(height: 4),
                 Text(review.verdict, style: theme.textTheme.bodyMedium),
               ],
               if (review.concerns.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 12),
-                Text('Concerns', style: theme.textTheme.labelLarge?.copyWith(fontSize: 12)),
+                Text('Concerns',
+                    style: theme.textTheme.labelLarge?.copyWith(fontSize: 12)),
                 const SizedBox(height: 6),
-                ...review.concerns.map((AiReviewConcern c) => _ConcernCard(item: widget.item, concern: c)),
+                ...review.concerns.map((AiReviewConcern c) =>
+                    _ConcernCard(item: widget.item, concern: c)),
               ],
               if (review.mergeConfidence.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 10),
-                SoftTag(label: 'Merge: ${review.mergeConfidence}', icon: Icons.merge_rounded, dense: true),
+                SoftTag(
+                    label: 'Merge: ${review.mergeConfidence}',
+                    icon: Icons.merge_rounded,
+                    dense: true),
               ],
               if (review.executiveSummary.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 10),
-                Text(review.executiveSummary, style: theme.textTheme.bodyMedium),
+                Text(review.executiveSummary,
+                    style: theme.textTheme.bodyMedium),
               ],
-              if (review.concerns.isEmpty && review.rawReview.isNotEmpty) ...<Widget>[
+              if (review.concerns.isEmpty &&
+                  review.rawReview.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 8),
                 Text(
-                  review.rawReview.length <= 600 ? review.rawReview : '${review.rawReview.substring(0, 597)}...',
+                  review.rawReview.length <= 600
+                      ? review.rawReview
+                      : '${review.rawReview.substring(0, 597)}...',
                   style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12),
                 ),
               ],
@@ -677,7 +761,8 @@ class _AiReviewSectionState extends State<_AiReviewSection> {
     );
   }
 
-  Widget _buildChatSection(BuildContext context, AiReviewResult review, ThemeData theme) {
+  Widget _buildChatSection(
+      BuildContext context, AiReviewResult review, ThemeData theme) {
     return AppSurface(
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -687,11 +772,15 @@ class _AiReviewSectionState extends State<_AiReviewSection> {
             onTap: () => setState(() => _chatExpanded = !_chatExpanded),
             child: Row(
               children: <Widget>[
-                const Icon(Icons.chat_rounded, size: 15, color: AppColors.accent),
+                const Icon(Icons.chat_rounded,
+                    size: 15, color: AppColors.accent),
                 const SizedBox(width: 6),
-                Text('Chat about this review', style: theme.textTheme.labelLarge?.copyWith(color: AppColors.accent, fontSize: 12)),
+                Text('Chat about this review',
+                    style: theme.textTheme.labelLarge
+                        ?.copyWith(color: AppColors.accent, fontSize: 12)),
                 const Spacer(),
-                Icon(_chatExpanded ? Icons.expand_less : Icons.expand_more, size: 18, color: AppColors.tertiaryInk),
+                Icon(_chatExpanded ? Icons.expand_less : Icons.expand_more,
+                    size: 18, color: AppColors.tertiaryInk),
               ],
             ),
           ),
@@ -707,16 +796,22 @@ class _AiReviewSectionState extends State<_AiReviewSection> {
                     final AiChatMessage msg = _chatHistory[index];
                     final bool isUser = msg.role == 'user';
                     return Align(
-                      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                      alignment:
+                          isUser ? Alignment.centerRight : Alignment.centerLeft,
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 6),
                         padding: const EdgeInsets.all(10),
-                        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+                        constraints: BoxConstraints(
+                            maxWidth: MediaQuery.of(context).size.width * 0.7),
                         decoration: BoxDecoration(
-                          color: isUser ? AppColors.accentLight : AppColors.softSurface,
+                          color: isUser
+                              ? AppColors.accentLight
+                              : AppColors.softSurface,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Text(msg.content, style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12)),
+                        child: Text(msg.content,
+                            style: theme.textTheme.bodyMedium
+                                ?.copyWith(fontSize: 12)),
                       ),
                     );
                   },
@@ -728,7 +823,8 @@ class _AiReviewSectionState extends State<_AiReviewSection> {
                   child: TextField(
                     controller: _chatController,
                     style: const TextStyle(fontSize: 13),
-                    decoration: const InputDecoration(hintText: 'Ask about this review...', isDense: true),
+                    decoration: const InputDecoration(
+                        hintText: 'Ask about this review...', isDense: true),
                     onSubmitted: (_) => _sendMessage(review),
                   ),
                 ),
@@ -736,7 +832,10 @@ class _AiReviewSectionState extends State<_AiReviewSection> {
                 IconButton(
                   onPressed: _chatLoading ? null : () => _sendMessage(review),
                   icon: _chatLoading
-                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.send_rounded, size: 18),
                 ),
               ],
@@ -747,7 +846,8 @@ class _AiReviewSectionState extends State<_AiReviewSection> {
                 child: TextButton.icon(
                   onPressed: _clearChat,
                   icon: const Icon(Icons.delete_outline_rounded, size: 14),
-                  label: const Text('Clear conversation', style: TextStyle(fontSize: 11)),
+                  label: const Text('Clear conversation',
+                      style: TextStyle(fontSize: 11)),
                 ),
               ),
           ],
@@ -815,7 +915,8 @@ class _ConcernCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.outline.withOpacity(0.5), width: 0.5),
+        border:
+            Border.all(color: AppColors.outline.withOpacity(0.5), width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -825,20 +926,26 @@ class _ConcernCard extends StatelessWidget {
               SoftTag(
                 label: concern.severity,
                 foregroundColor: _severityColor(concern.severity),
-                backgroundColor: _severityColor(concern.severity).withOpacity(0.1),
+                backgroundColor:
+                    _severityColor(concern.severity).withOpacity(0.1),
                 dense: true,
               ),
               const SizedBox(width: 6),
-              Expanded(child: Text(concern.title, style: theme.textTheme.titleMedium?.copyWith(fontSize: 12))),
+              Expanded(
+                  child: Text(concern.title,
+                      style:
+                          theme.textTheme.titleMedium?.copyWith(fontSize: 12))),
             ],
           ),
           const SizedBox(height: 4),
-          Text(concern.description, style: theme.textTheme.bodyMedium?.copyWith(fontSize: 11)),
+          Text(concern.description,
+              style: theme.textTheme.bodyMedium?.copyWith(fontSize: 11)),
           if (concern.filePath != null) ...<Widget>[
             const SizedBox(height: 4),
             Text(
               '${concern.filePath}${concern.lineNumber != null ? ':${concern.lineNumber}' : ''}',
-              style: theme.textTheme.labelMedium?.copyWith(fontSize: 10, fontFamily: 'monospace'),
+              style: theme.textTheme.labelMedium
+                  ?.copyWith(fontSize: 10, fontFamily: 'monospace'),
             ),
           ],
           const SizedBox(height: 6),
@@ -848,7 +955,8 @@ class _ConcernCard extends StatelessWidget {
               onPressed: () => _addComment(context, controller),
               icon: const Icon(Icons.comment_outlined, size: 12),
               label: const Text('Add comment', style: TextStyle(fontSize: 10)),
-              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+              style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8)),
             ),
           ),
         ],
@@ -856,9 +964,11 @@ class _ConcernCard extends StatelessWidget {
     );
   }
 
-  Future<void> _addComment(BuildContext context, EngiTrackController controller) async {
+  Future<void> _addComment(
+      BuildContext context, EngiTrackController controller) async {
     final TextEditingController textController = TextEditingController(
-      text: '**[${concern.severity}] ${concern.title}**\n\n${concern.description}'
+      text:
+          '**[${concern.severity}] ${concern.title}**\n\n${concern.description}'
           '${concern.filePath != null ? '\n\nFile: `${concern.filePath}${concern.lineNumber != null ? ':${concern.lineNumber}' : ''}`' : ''}',
     );
 
@@ -873,11 +983,14 @@ class _ConcernCard extends StatelessWidget {
               controller: textController,
               maxLines: 8,
               style: const TextStyle(fontSize: 13),
-              decoration: const InputDecoration(hintText: 'Edit your comment...'),
+              decoration:
+                  const InputDecoration(hintText: 'Edit your comment...'),
             ),
           ),
           actions: <Widget>[
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel')),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, textController.text),
               child: const Text('Post comment'),
@@ -893,7 +1006,8 @@ class _ConcernCard extends StatelessWidget {
       try {
         final String url = await controller.postPrComment(item, result);
         if (!context.mounted) return;
-        showInfoSnackBar(context, url.isNotEmpty ? 'Comment posted!' : 'Comment posted.');
+        showInfoSnackBar(
+            context, url.isNotEmpty ? 'Comment posted!' : 'Comment posted.');
       } catch (error) {
         if (!context.mounted) return;
         showInfoSnackBar(context, 'Failed to post: $error');
@@ -903,10 +1017,14 @@ class _ConcernCard extends StatelessWidget {
 
   Color _severityColor(String severity) {
     switch (severity.toLowerCase()) {
-      case 'critical': return AppColors.danger;
-      case 'suggestion': return AppColors.info;
-      case 'nitpick': return AppColors.tertiaryInk;
-      default: return AppColors.warning;
+      case 'critical':
+        return AppColors.danger;
+      case 'suggestion':
+        return AppColors.info;
+      case 'nitpick':
+        return AppColors.tertiaryInk;
+      default:
+        return AppColors.warning;
     }
   }
 }

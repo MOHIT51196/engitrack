@@ -125,9 +125,11 @@ The version is declared in `pubspec.yaml` and propagated to Android builds via t
 ### Setup
 
 ```bash
-flutter pub get
-flutter run
+make setup
+make run
 ```
+
+Run `make help` to see all available commands.
 
 ### Integration Setup
 
@@ -171,19 +173,23 @@ git clone https://github.com/<your-username>/engitrack.git
 cd engitrack
 ```
 
-2. Create a feature branch from `main`:
+2. Install dependencies and set up git hooks:
+
+```bash
+make setup
+```
+
+3. Create a feature branch from `main`:
 
 ```bash
 git checkout -b feat/your-feature-name
 ```
 
-3. Install dependencies and verify the project builds:
+4. Verify the project builds:
 
 ```bash
-flutter pub get
-flutter analyze
-dart format --set-exit-if-changed .
-flutter run
+make check
+make run
 ```
 
 ### Branch Naming Convention
@@ -199,8 +205,8 @@ flutter run
 
 ### Coding Standards
 
-- **Formatting** — run `dart format .` before committing. CI enforces this.
-- **Static analysis** — run `flutter analyze` and resolve all warnings. CI enforces this.
+- **Formatting** — run `dart format .` before committing. The pre-commit hook and CI both enforce this.
+- **Static analysis** — run `flutter analyze` and resolve all warnings. The pre-commit hook and CI both enforce this.
 - **Lint rules** — the project uses `flutter_lints` with additional rules in `analysis_options.yaml`. Do not disable lint rules without justification.
 - **No hardcoded secrets** — never commit API keys, tokens, or credentials. Use `flutter_secure_storage` for sensitive data at runtime.
 
@@ -234,11 +240,10 @@ git fetch origin
 git rebase origin/main
 ```
 
-2. **Run the full check suite locally** before pushing:
+2. **Run the full check suite locally** before pushing (this runs automatically via git hooks if you ran `make setup`, but you can also run it manually):
 
 ```bash
-dart format --set-exit-if-changed .
-flutter analyze --no-pub
+make check
 ```
 
 3. **Push your branch** and open a pull request against `main`.

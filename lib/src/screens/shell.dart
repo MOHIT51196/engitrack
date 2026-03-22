@@ -25,10 +25,14 @@ class _EngiTrackShellState extends State<EngiTrackShell> {
 
   Widget _buildPage() {
     switch (_currentIndex) {
-      case 0: return const DashboardScreen(key: ValueKey<int>(0));
-      case 1: return const WorkspaceScreen(key: ValueKey<int>(1));
-      case 2: return const IntegrationsScreen(key: ValueKey<int>(2));
-      default: return const DashboardScreen(key: ValueKey<int>(0));
+      case 0:
+        return const DashboardScreen(key: ValueKey<int>(0));
+      case 1:
+        return const WorkspaceScreen(key: ValueKey<int>(1));
+      case 2:
+        return const IntegrationsScreen(key: ValueKey<int>(2));
+      default:
+        return const DashboardScreen(key: ValueKey<int>(0));
     }
   }
 
@@ -50,7 +54,8 @@ class _EngiTrackShellState extends State<EngiTrackShell> {
         decoration: BoxDecoration(
           color: AppColors.surface,
           border: Border(
-            top: BorderSide(color: AppColors.divider.withOpacity(0.5), width: 0.5),
+            top: BorderSide(
+                color: AppColors.divider.withOpacity(0.5), width: 0.5),
           ),
         ),
         child: NavigationBar(
@@ -114,7 +119,6 @@ class _EngiTrackShellState extends State<EngiTrackShell> {
       actions: const <Widget>[SizedBox(width: 6)],
     );
   }
-
 }
 
 class _ShellDestination {

@@ -23,6 +23,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
   bool _openAiEnabled = false;
   bool _geminiEnabled = false;
   bool _claudeEnabled = false;
+  bool _grokEnabled = false;
 
   late final TextEditingController _githubUsernameController;
   late final TextEditingController _githubTokenController;
@@ -37,18 +38,26 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
   late final TextEditingController _openAiApiKeyController;
   late final TextEditingController _geminiApiKeyController;
   late final TextEditingController _claudeApiKeyController;
+  late final TextEditingController _grokApiKeyController;
 
   bool _slackTokenIsRotating = false;
   String _selectedModel = 'gpt-4.1-mini';
   String _selectedGeminiModel = 'gemini-2.0-flash';
   String _selectedClaudeModel = 'claude-sonnet-4-20250514';
+  String _selectedGrokModel = 'grok-3-mini-fast';
 
-  List<({String value, String label})> _openAiModels = <({String value, String label})>[];
-  List<({String value, String label})> _geminiModelList = <({String value, String label})>[];
-  List<({String value, String label})> _claudeModelList = <({String value, String label})>[];
+  List<({String value, String label})> _openAiModels =
+      <({String value, String label})>[];
+  List<({String value, String label})> _geminiModelList =
+      <({String value, String label})>[];
+  List<({String value, String label})> _claudeModelList =
+      <({String value, String label})>[];
+  List<({String value, String label})> _grokModelList =
+      <({String value, String label})>[];
   bool _loadingOpenAiModels = false;
   bool _loadingGeminiModels = false;
   bool _loadingClaudeModels = false;
+  bool _loadingGrokModels = false;
 
   int _githubSyncMinutes = 5;
   int _jiraSyncMinutes = 5;
@@ -76,6 +85,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
     _openAiApiKeyController = TextEditingController();
     _geminiApiKeyController = TextEditingController();
     _claudeApiKeyController = TextEditingController();
+    _grokApiKeyController = TextEditingController();
 
     _slackTokenController.addListener(_onSlackTokenChanged);
   }
@@ -100,6 +110,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
     _openAiEnabled = config.openAiEnabled;
     _geminiEnabled = config.geminiEnabled;
     _claudeEnabled = config.claudeEnabled;
+    _grokEnabled = config.grokEnabled;
     _githubUsernameController.text = config.githubUsername;
     _githubTokenController.text = config.githubToken;
     _jiraBaseUrlController.text = config.jiraBaseUrl;
@@ -113,11 +124,18 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
     _slackClientSecretController.text = config.slackClientSecret;
     _slackTokenIsRotating = config.isSlackTokenRotating;
     _openAiApiKeyController.text = config.openAiApiKey;
-    _selectedModel = config.openAiModel.isNotEmpty ? config.openAiModel : 'gpt-4.1-mini';
+    _selectedModel =
+        config.openAiModel.isNotEmpty ? config.openAiModel : 'gpt-4.1-mini';
     _geminiApiKeyController.text = config.geminiApiKey;
-    _selectedGeminiModel = config.geminiModel.isNotEmpty ? config.geminiModel : 'gemini-2.0-flash';
+    _selectedGeminiModel =
+        config.geminiModel.isNotEmpty ? config.geminiModel : 'gemini-2.0-flash';
     _claudeApiKeyController.text = config.claudeApiKey;
-    _selectedClaudeModel = config.claudeModel.isNotEmpty ? config.claudeModel : 'claude-sonnet-4-20250514';
+    _selectedClaudeModel = config.claudeModel.isNotEmpty
+        ? config.claudeModel
+        : 'claude-sonnet-4-20250514';
+    _grokApiKeyController.text = config.grokApiKey;
+    _selectedGrokModel =
+        config.grokModel.isNotEmpty ? config.grokModel : 'grok-3-mini-fast';
     _githubSyncMinutes = config.githubSyncMinutes;
     _jiraSyncMinutes = config.jiraSyncMinutes;
     _slackSyncMinutes = config.slackSyncMinutes;
@@ -126,6 +144,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
     if (config.openAiApiKey.trim().isNotEmpty) _fetchOpenAiModels();
     if (config.geminiApiKey.trim().isNotEmpty) _fetchGeminiModels();
     if (config.claudeApiKey.trim().isNotEmpty) _fetchClaudeModels();
+    if (config.grokApiKey.trim().isNotEmpty) _fetchGrokModels();
   }
 
   @override
@@ -144,6 +163,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
     _openAiApiKeyController.dispose();
     _geminiApiKeyController.dispose();
     _claudeApiKeyController.dispose();
+    _grokApiKeyController.dispose();
     super.dispose();
   }
 
@@ -161,7 +181,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
       if (mounted) {
         setState(() {
           _openAiModels = models;
-          if (models.isNotEmpty && !models.any((m) => m.value == _selectedModel)) {
+          if (models.isNotEmpty &&
+              !models.any((m) => m.value == _selectedModel)) {
             _selectedModel = models.first.value;
           }
         });
@@ -183,7 +204,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
       if (mounted) {
         setState(() {
           _geminiModelList = models;
-          if (models.isNotEmpty && !models.any((m) => m.value == _selectedGeminiModel)) {
+          if (models.isNotEmpty &&
+              !models.any((m) => m.value == _selectedGeminiModel)) {
             _selectedGeminiModel = models.first.value;
           }
         });
@@ -205,7 +227,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
       if (mounted) {
         setState(() {
           _claudeModelList = models;
-          if (models.isNotEmpty && !models.any((m) => m.value == _selectedClaudeModel)) {
+          if (models.isNotEmpty &&
+              !models.any((m) => m.value == _selectedClaudeModel)) {
             _selectedClaudeModel = models.first.value;
           }
         });
@@ -214,6 +237,40 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
       if (mounted) showInfoSnackBar(context, 'Could not fetch Claude models.');
     } finally {
       if (mounted) setState(() => _loadingClaudeModels = false);
+    }
+  }
+
+  Future<void> _fetchGrokModels() async {
+    final String key = _grokApiKeyController.text.trim();
+    if (key.isEmpty) return;
+    setState(() => _loadingGrokModels = true);
+    try {
+      final List<({String value, String label})> models =
+          await _aiModelService.fetchGrokModels(apiKey: key);
+      if (mounted) {
+        setState(() {
+          _grokModelList = models;
+          if (models.isNotEmpty &&
+              !models.any((m) => m.value == _selectedGrokModel)) {
+            _selectedGrokModel = models.first.value;
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('[Grok:models] Error fetching models: $e');
+      if (mounted) {
+        final String msg = e.toString();
+        if (msg.contains('credits') ||
+            msg.contains('license') ||
+            msg.contains('permission')) {
+          showInfoSnackBar(
+              context, 'Grok: Activate API credits at console.x.ai');
+        } else {
+          showInfoSnackBar(context, 'Could not fetch Grok models.');
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _loadingGrokModels = false);
     }
   }
 
@@ -231,6 +288,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
       openAiEnabled: _openAiEnabled,
       geminiEnabled: _geminiEnabled,
       claudeEnabled: _claudeEnabled,
+      grokEnabled: _grokEnabled,
       githubUsername: _githubUsernameController.text.trim(),
       githubToken: _githubTokenController.text.trim(),
       jiraBaseUrl: _jiraBaseUrlController.text.trim(),
@@ -248,6 +306,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
       geminiModel: _selectedGeminiModel,
       claudeApiKey: _claudeApiKeyController.text.trim(),
       claudeModel: _selectedClaudeModel,
+      grokApiKey: _grokApiKeyController.text.trim(),
+      grokModel: _selectedGrokModel,
       githubSyncMinutes: _githubSyncMinutes,
       jiraSyncMinutes: _jiraSyncMinutes,
       slackSyncMinutes: _slackSyncMinutes,
@@ -276,17 +336,15 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
       _jiraEmailController.text.trim().isNotEmpty &&
       _jiraApiTokenController.text.trim().isNotEmpty;
 
-  bool get _canEnableSlack =>
-      _slackTokenController.text.trim().isNotEmpty;
+  bool get _canEnableSlack => _slackTokenController.text.trim().isNotEmpty;
 
-  bool get _canEnableOpenAi =>
-      _openAiApiKeyController.text.trim().isNotEmpty;
+  bool get _canEnableOpenAi => _openAiApiKeyController.text.trim().isNotEmpty;
 
-  bool get _canEnableGemini =>
-      _geminiApiKeyController.text.trim().isNotEmpty;
+  bool get _canEnableGemini => _geminiApiKeyController.text.trim().isNotEmpty;
 
-  bool get _canEnableClaude =>
-      _claudeApiKeyController.text.trim().isNotEmpty;
+  bool get _canEnableClaude => _claudeApiKeyController.text.trim().isNotEmpty;
+
+  bool get _canEnableGrok => _grokApiKeyController.text.trim().isNotEmpty;
 
   // ---------------------------------------------------------------------------
   // Slack channels
@@ -338,11 +396,13 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
               _saveCurrentConfig();
             },
             onRequestNotifications: () async {
-              final bool granted = await controller.requestNotificationPermissions();
+              final bool granted =
+                  await controller.requestNotificationPermissions();
               if (!mounted) return;
               if (granted) setState(() => _notificationsEnabled = true);
               if (!context.mounted) return;
-              showInfoSnackBar(context, granted ? 'Permission granted.' : 'Permission not granted.');
+              showInfoSnackBar(context,
+                  granted ? 'Permission granted.' : 'Permission not granted.');
             },
           ),
 
@@ -385,7 +445,11 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
                 onSubmitted: _onFieldSubmitted,
               ),
               const SizedBox(height: 10),
-              _SecretField(controller: _githubTokenController, label: 'Personal access token', hint: 'ghp_...', onSubmitted: _onFieldSubmitted),
+              _SecretField(
+                  controller: _githubTokenController,
+                  label: 'Personal access token',
+                  hint: 'ghp_...',
+                  onSubmitted: _onFieldSubmitted),
             ],
           ),
 
@@ -393,7 +457,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
           // Management
           // ----------------------------------------------------------------
           const SizedBox(height: 16),
-          const _CategoryHeader(icon: Icons.assignment_rounded, label: 'Management'),
+          const _CategoryHeader(
+              icon: Icons.assignment_rounded, label: 'Management'),
 
           const SizedBox(height: 8),
           _CollapsibleIntegration(
@@ -439,7 +504,11 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
                 onSubmitted: _onFieldSubmitted,
               ),
               const SizedBox(height: 10),
-              _SecretField(controller: _jiraApiTokenController, label: 'API token', hint: 'Atlassian API token', onSubmitted: _onFieldSubmitted),
+              _SecretField(
+                  controller: _jiraApiTokenController,
+                  label: 'API token',
+                  hint: 'Atlassian API token',
+                  onSubmitted: _onFieldSubmitted),
             ],
           ),
 
@@ -447,7 +516,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
           // Messaging
           // ----------------------------------------------------------------
           const SizedBox(height: 16),
-          const _CategoryHeader(icon: Icons.chat_bubble_outline_rounded, label: 'Messaging'),
+          const _CategoryHeader(
+              icon: Icons.chat_bubble_outline_rounded, label: 'Messaging'),
 
           const SizedBox(height: 8),
           _CollapsibleIntegration(
@@ -480,28 +550,52 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
               ],
             ]),
             children: <Widget>[
-              _SecretField(controller: _slackTokenController, label: 'Bot token', hint: 'xoxb-... or xoxe.xoxp-...', onSubmitted: _onFieldSubmitted),
+              _SecretField(
+                  controller: _slackTokenController,
+                  label: 'Bot token',
+                  hint: 'xoxb-... or xoxe.xoxp-...',
+                  onSubmitted: _onFieldSubmitted),
               if (_slackTokenIsRotating) ...<Widget>[
                 const SizedBox(height: 8),
                 const _InfoBanner(
                   icon: Icons.autorenew_rounded,
                   color: AppColors.warning,
                   bgColor: AppColors.warningLight,
-                  text: 'Rotating token detected. Provide refresh credentials for auto-renewal.',
+                  text:
+                      'Rotating token detected. Provide refresh credentials for auto-renewal.',
                 ),
                 const SizedBox(height: 10),
-                _SecretField(controller: _slackRefreshTokenController, label: 'Refresh token', hint: 'xoxe-1-...', onSubmitted: _onFieldSubmitted),
+                _SecretField(
+                    controller: _slackRefreshTokenController,
+                    label: 'Refresh token',
+                    hint: 'xoxe-1-...',
+                    onSubmitted: _onFieldSubmitted),
                 const SizedBox(height: 10),
-                _LabeledField(controller: _slackClientIdController, label: 'Client ID', hint: '1234567890.1234567890', prefixIcon: Icons.badge_outlined, onSubmitted: _onFieldSubmitted),
+                _LabeledField(
+                    controller: _slackClientIdController,
+                    label: 'Client ID',
+                    hint: '1234567890.1234567890',
+                    prefixIcon: Icons.badge_outlined,
+                    onSubmitted: _onFieldSubmitted),
                 const SizedBox(height: 10),
-                _SecretField(controller: _slackClientSecretController, label: 'Client secret', hint: 'f2f77b...', onSubmitted: _onFieldSubmitted),
+                _SecretField(
+                    controller: _slackClientSecretController,
+                    label: 'Client secret',
+                    hint: 'f2f77b...',
+                    onSubmitted: _onFieldSubmitted),
               ],
               const SizedBox(height: 12),
               _SectionLabel(
                 label: 'Review channels',
                 trailing: _loadingChannels
-                    ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                    : _SmallAction(label: 'Load channels', icon: Icons.refresh_rounded, onTap: _fetchSlackChannels),
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : _SmallAction(
+                        label: 'Load channels',
+                        icon: Icons.refresh_rounded,
+                        onTap: _fetchSlackChannels),
               ),
               const SizedBox(height: 6),
               _ChannelChipInput(
@@ -520,7 +614,6 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
                 prefixIcon: Icons.notifications_outlined,
                 onSubmitted: _onFieldSubmitted,
               ),
-
             ],
           ),
 
@@ -528,7 +621,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
           // AI Services
           // ----------------------------------------------------------------
           const SizedBox(height: 16),
-          const _CategoryHeader(icon: Icons.auto_awesome_rounded, label: 'AI Services'),
+          const _CategoryHeader(
+              icon: Icons.auto_awesome_rounded, label: 'AI Services'),
 
           const SizedBox(height: 8),
           _CollapsibleIntegration(
@@ -670,6 +764,53 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             ],
           ),
 
+          const SizedBox(height: 8),
+
+          _CollapsibleIntegration(
+            brandName: 'xAI Grok',
+            brandSubtitle: 'AI-powered pull request review',
+            logoAsset: null,
+            brandIcon: Icons.bolt_rounded,
+            brandColor: AppColors.grok,
+            brandBg: AppColors.grokLight,
+            enabled: _grokEnabled,
+            canEnable: _canEnableGrok,
+            isConfigured: controller.config.isGrokConfigured,
+            onEnabledChanged: (bool v) {
+              setState(() => _grokEnabled = v);
+              _saveCurrentConfig();
+            },
+            fieldCount: 1,
+            filledCount: _countFilled(<String>[
+              _grokApiKeyController.text,
+            ]),
+            children: <Widget>[
+              _SecretField(
+                controller: _grokApiKeyController,
+                label: 'API key',
+                hint: 'xai-...',
+                onSubmitted: (String v) {
+                  _onFieldSubmitted(v);
+                  _fetchGrokModels();
+                },
+              ),
+              _RevealModelSection(
+                visible: _grokApiKeyController.text.trim().isNotEmpty,
+                loading: _loadingGrokModels,
+                child: _DynamicModelDropdown(
+                  value: _selectedGrokModel,
+                  models: _grokModelList,
+                  loading: _loadingGrokModels,
+                  theme: theme,
+                  onChanged: (String v) {
+                    setState(() => _selectedGrokModel = v);
+                    _saveCurrentConfig();
+                  },
+                ),
+              ),
+            ],
+          ),
+
           const SizedBox(height: 24),
         ],
       ),
@@ -746,8 +887,10 @@ class _ExportImportButtons extends StatelessWidget {
               label: const Text('Export'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.secondaryInk,
-                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                textStyle:
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 side: BorderSide(color: AppColors.outline.withOpacity(0.5)),
               ),
             ),
@@ -760,8 +903,10 @@ class _ExportImportButtons extends StatelessWidget {
               label: const Text('Import'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.secondaryInk,
-                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                textStyle:
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 side: BorderSide(color: AppColors.outline.withOpacity(0.5)),
               ),
             ),
@@ -779,7 +924,8 @@ class _ExportImportButtons extends StatelessWidget {
           label: const Text('Export'),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.secondaryInk,
-            textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            textStyle:
+                const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             side: BorderSide(color: AppColors.outline.withOpacity(0.5)),
           ),
@@ -791,7 +937,8 @@ class _ExportImportButtons extends StatelessWidget {
           label: const Text('Import'),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.secondaryInk,
-            textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            textStyle:
+                const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             side: BorderSide(color: AppColors.outline.withOpacity(0.5)),
           ),
@@ -905,7 +1052,9 @@ class _DynamicModelDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool disabled = loading || models.isEmpty;
-    final String displayValue = models.any((m) => m.value == value) ? value : (models.isNotEmpty ? models.first.value : value);
+    final String displayValue = models.any((m) => m.value == value)
+        ? value
+        : (models.isNotEmpty ? models.first.value : value);
 
     if (disabled) {
       return Container(
@@ -916,16 +1065,21 @@ class _DynamicModelDropdown extends StatelessWidget {
         ),
         child: Row(
           children: <Widget>[
-            const Icon(Icons.psychology_outlined, size: 18, color: AppColors.tertiaryInk),
+            const Icon(Icons.psychology_outlined,
+                size: 18, color: AppColors.tertiaryInk),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 loading ? 'Loading models...' : 'Enter API key to load models',
-                style: theme.textTheme.bodyMedium?.copyWith(fontSize: 13, color: AppColors.tertiaryInk),
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(fontSize: 13, color: AppColors.tertiaryInk),
               ),
             ),
             if (loading)
-              const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+              const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2)),
           ],
         ),
       );
@@ -937,25 +1091,39 @@ class _DynamicModelDropdown extends StatelessWidget {
       decoration: InputDecoration(
         filled: true,
         fillColor: AppColors.softSurface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         prefixIcon: const Icon(Icons.psychology_outlined, size: 18),
         prefixIconConstraints: const BoxConstraints(minWidth: 40),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.accent, width: 1.5)),
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: AppColors.accent, width: 1.5)),
       ),
       dropdownColor: AppColors.surface,
       borderRadius: BorderRadius.circular(12),
-      style: theme.textTheme.bodyMedium?.copyWith(fontSize: 13, fontWeight: FontWeight.w500),
+      style: theme.textTheme.bodyMedium
+          ?.copyWith(fontSize: 13, fontWeight: FontWeight.w500),
       isExpanded: true,
-      selectedItemBuilder: (BuildContext ctx) => models.map((m) => Align(
-        alignment: Alignment.centerLeft,
-        child: Text(m.label, overflow: TextOverflow.ellipsis),
-      )).toList(),
-      items: models.map((m) => DropdownMenuItem<String>(
-        value: m.value,
-        child: Text(m.label, style: theme.textTheme.bodyMedium?.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
-      )).toList(),
+      selectedItemBuilder: (BuildContext ctx) => models
+          .map((m) => Align(
+                alignment: Alignment.centerLeft,
+                child: Text(m.label, overflow: TextOverflow.ellipsis),
+              ))
+          .toList(),
+      items: models
+          .map((m) => DropdownMenuItem<String>(
+                value: m.value,
+                child: Text(m.label,
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
+              ))
+          .toList(),
       onChanged: (String? v) {
         if (v != null) onChanged(v);
       },
@@ -988,23 +1156,31 @@ class _GeneralSettingsCard extends StatelessWidget {
         children: <Widget>[
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: AppColors.accentLight, borderRadius: BorderRadius.circular(10)),
-            child: const Icon(Icons.tune_rounded, color: AppColors.accent, size: 18),
+            decoration: BoxDecoration(
+                color: AppColors.accentLight,
+                borderRadius: BorderRadius.circular(10)),
+            child: const Icon(Icons.tune_rounded,
+                color: AppColors.accent, size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text('Alert notifications', style: theme.textTheme.titleMedium?.copyWith(fontSize: 13)),
-                Text('Slack alerts as local notifications', style: theme.textTheme.labelMedium),
+                Text('Alert notifications',
+                    style: theme.textTheme.titleMedium?.copyWith(fontSize: 13)),
+                Text('Slack alerts as local notifications',
+                    style: theme.textTheme.labelMedium),
               ],
             ),
           ),
           const SizedBox(width: 8),
           SizedBox(
             height: 28,
-            child: FittedBox(child: Switch.adaptive(value: notificationsEnabled, onChanged: onNotificationsChanged)),
+            child: FittedBox(
+                child: Switch.adaptive(
+                    value: notificationsEnabled,
+                    onChanged: onNotificationsChanged)),
           ),
           const SizedBox(width: 4),
           SizedBox(
@@ -1017,7 +1193,8 @@ class _GeneralSettingsCard extends StatelessWidget {
               tooltip: 'Request permissions',
               style: IconButton.styleFrom(
                 backgroundColor: AppColors.softSurface,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
               ),
             ),
           ),
@@ -1067,7 +1244,8 @@ class _CollapsibleIntegration extends StatefulWidget {
   final int filledCount;
 
   @override
-  State<_CollapsibleIntegration> createState() => _CollapsibleIntegrationState();
+  State<_CollapsibleIntegration> createState() =>
+      _CollapsibleIntegrationState();
 }
 
 class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
@@ -1077,7 +1255,8 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final double progress = widget.fieldCount > 0 ? widget.filledCount / widget.fieldCount : 0;
+    final double progress =
+        widget.fieldCount > 0 ? widget.filledCount / widget.fieldCount : 0;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -1087,7 +1266,9 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: widget.enabled
-              ? (widget.isConfigured ? AppColors.success.withOpacity(0.25) : widget.brandColor.withOpacity(0.15))
+              ? (widget.isConfigured
+                  ? AppColors.success.withOpacity(0.25)
+                  : widget.brandColor.withOpacity(0.15))
               : AppColors.outline.withOpacity(0.4),
           width: 0.5,
         ),
@@ -1126,18 +1307,24 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
                               widget.brandName,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontSize: 14,
-                                color: widget.enabled ? AppColors.ink : AppColors.tertiaryInk,
+                                color: widget.enabled
+                                    ? AppColors.ink
+                                    : AppColors.tertiaryInk,
                               ),
                             ),
                             const SizedBox(width: 8),
-                            _StatusChip(enabled: widget.enabled, isConfigured: widget.isConfigured),
+                            _StatusChip(
+                                enabled: widget.enabled,
+                                isConfigured: widget.isConfigured),
                           ],
                         ),
                         const SizedBox(height: 2),
                         Text(
                           widget.brandSubtitle,
                           style: theme.textTheme.labelMedium?.copyWith(
-                            color: widget.enabled ? AppColors.secondaryInk : AppColors.tertiaryInk,
+                            color: widget.enabled
+                                ? AppColors.secondaryInk
+                                : AppColors.tertiaryInk,
                           ),
                         ),
                       ],
@@ -1148,7 +1335,8 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
                     child: FittedBox(
                       child: Switch.adaptive(
                         value: widget.enabled,
-                        onChanged: widget.canEnable ? widget.onEnabledChanged : null,
+                        onChanged:
+                            widget.canEnable ? widget.onEnabledChanged : null,
                       ),
                     ),
                   ),
@@ -1159,14 +1347,15 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
                     child: Icon(
                       Icons.expand_more_rounded,
                       size: 22,
-                      color: widget.enabled ? AppColors.secondaryInk : AppColors.tertiaryInk,
+                      color: widget.enabled
+                          ? AppColors.secondaryInk
+                          : AppColors.tertiaryInk,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-
           if (widget.enabled) ...<Widget>[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1179,7 +1368,9 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
                       minHeight: 2,
                       backgroundColor: AppColors.divider,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        widget.isConfigured ? AppColors.success : widget.brandColor.withOpacity(0.5),
+                        widget.isConfigured
+                            ? AppColors.success
+                            : widget.brandColor.withOpacity(0.5),
                       ),
                     ),
                   ),
@@ -1188,17 +1379,24 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
                     children: <Widget>[
                       Text(
                         '${widget.filledCount}/${widget.fieldCount} fields',
-                        style: theme.textTheme.labelMedium?.copyWith(fontSize: 10),
+                        style:
+                            theme.textTheme.labelMedium?.copyWith(fontSize: 10),
                       ),
                       const Spacer(),
-                      if (widget.syncMinutes != null && widget.onSyncMinutesChanged != null)
+                      if (widget.syncMinutes != null &&
+                          widget.onSyncMinutesChanged != null)
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
-                            const Icon(Icons.sync_rounded, size: 11, color: AppColors.tertiaryInk),
+                            const Icon(Icons.sync_rounded,
+                                size: 11, color: AppColors.tertiaryInk),
                             const SizedBox(width: 3),
-                            Text('every ', style: theme.textTheme.labelMedium?.copyWith(fontSize: 10)),
-                            _SyncIntervalDropdown(value: widget.syncMinutes!, onChanged: widget.onSyncMinutesChanged!),
+                            Text('every ',
+                                style: theme.textTheme.labelMedium
+                                    ?.copyWith(fontSize: 10)),
+                            _SyncIntervalDropdown(
+                                value: widget.syncMinutes!,
+                                onChanged: widget.onSyncMinutesChanged!),
                           ],
                         ),
                     ],
@@ -1207,7 +1405,6 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
               ),
             ),
           ],
-
           AnimatedCrossFade(
             duration: const Duration(milliseconds: 250),
             sizeCurve: Curves.easeInOut,
@@ -1263,7 +1460,11 @@ class _BrandAvatar extends StatelessWidget {
     if (logoAsset != null) {
       return Opacity(
         opacity: opacity,
-        child: BrandLogo(assetPath: logoAsset!, size: 38, backgroundColor: brandBg, padding: 8),
+        child: BrandLogo(
+            assetPath: logoAsset!,
+            size: 38,
+            backgroundColor: brandBg,
+            padding: 8),
       );
     }
     return Opacity(
@@ -1271,8 +1472,10 @@ class _BrandAvatar extends StatelessWidget {
       child: Container(
         width: 38,
         height: 38,
-        decoration: BoxDecoration(color: brandBg, borderRadius: BorderRadius.circular(10)),
-        child: Icon(brandIcon ?? Icons.extension_rounded, color: brandColor, size: 18),
+        decoration: BoxDecoration(
+            color: brandBg, borderRadius: BorderRadius.circular(10)),
+        child: Icon(brandIcon ?? Icons.extension_rounded,
+            color: brandColor, size: 18),
       ),
     );
   }
@@ -1287,7 +1490,8 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!enabled) {
-      return _buildChip('Disabled', AppColors.tertiaryInk, AppColors.softSurface);
+      return _buildChip(
+          'Disabled', AppColors.tertiaryInk, AppColors.softSurface);
     }
     if (isConfigured) {
       return _buildChip('Connected', AppColors.success, AppColors.successLight);
@@ -1304,7 +1508,11 @@ class _StatusChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: fg, letterSpacing: 0.2),
+        style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w600,
+            color: fg,
+            letterSpacing: 0.2),
       ),
     );
   }
@@ -1338,7 +1546,11 @@ class _InfoBanner extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: color, height: 1.3),
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: color,
+                  height: 1.3),
             ),
           ),
         ],
@@ -1359,7 +1571,10 @@ class _SectionLabel extends StatelessWidget {
       children: <Widget>[
         Text(
           label,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 12, color: AppColors.secondaryInk),
+          style: Theme.of(context)
+              .textTheme
+              .labelLarge
+              ?.copyWith(fontSize: 12, color: AppColors.secondaryInk),
         ),
         const Spacer(),
         if (trailing != null) trailing!,
@@ -1369,7 +1584,8 @@ class _SectionLabel extends StatelessWidget {
 }
 
 class _SmallAction extends StatelessWidget {
-  const _SmallAction({required this.label, required this.icon, required this.onTap});
+  const _SmallAction(
+      {required this.label, required this.icon, required this.onTap});
 
   final String label;
   final IconData icon;
@@ -1387,7 +1603,11 @@ class _SmallAction extends StatelessWidget {
           children: <Widget>[
             Icon(icon, size: 12, color: AppColors.accent),
             const SizedBox(width: 4),
-            Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.accent)),
+            Text(label,
+                style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.accent)),
           ],
         ),
       ),
@@ -1416,8 +1636,13 @@ class _SyncIntervalDropdown extends StatelessWidget {
           value: _options.contains(value) ? value : 5,
           isDense: true,
           style: const TextStyle(fontSize: 11, color: AppColors.ink),
-          items: _options.map((int v) => DropdownMenuItem<int>(value: v, child: Text('$v min'))).toList(),
-          onChanged: (int? v) { if (v != null) onChanged(v); },
+          items: _options
+              .map((int v) =>
+                  DropdownMenuItem<int>(value: v, child: Text('$v min')))
+              .toList(),
+          onChanged: (int? v) {
+            if (v != null) onChanged(v);
+          },
         ),
       ),
     );
@@ -1457,8 +1682,10 @@ class _ChannelChipInputState extends State<_ChannelChipInput> {
     final String cleaned = channel.trim().replaceFirst('#', '');
     if (cleaned.isEmpty) return;
 
-    if (widget.cachedChannels != null && !widget.cachedChannels!.containsKey(cleaned)) {
-      setState(() => _validationError = '"$cleaned" not found in your workspace');
+    if (widget.cachedChannels != null &&
+        !widget.cachedChannels!.containsKey(cleaned)) {
+      setState(
+          () => _validationError = '"$cleaned" not found in your workspace');
       return;
     }
 
@@ -1486,7 +1713,8 @@ class _ChannelChipInputState extends State<_ChannelChipInput> {
                   label: Text('#$ch', style: const TextStyle(fontSize: 11)),
                   deleteIcon: const Icon(Icons.close, size: 14),
                   onDeleted: () {
-                    final List<String> updated = List<String>.from(widget.selectedChannels)..remove(ch);
+                    final List<String> updated =
+                        List<String>.from(widget.selectedChannels)..remove(ch);
                     widget.onChanged(updated);
                   },
                   backgroundColor: AppColors.slackLight,
@@ -1498,22 +1726,27 @@ class _ChannelChipInputState extends State<_ChannelChipInput> {
         if (widget.cachedChannels != null)
           Autocomplete<String>(
             optionsBuilder: (TextEditingValue value) {
-              if (value.text.trim().isEmpty) return const Iterable<String>.empty();
-              final String query = value.text.trim().replaceFirst('#', '').toLowerCase();
+              if (value.text.trim().isEmpty) {
+                return const Iterable<String>.empty();
+              }
+              final String query =
+                  value.text.trim().replaceFirst('#', '').toLowerCase();
               return widget.cachedChannels!.keys
                   .where((String name) => name.toLowerCase().contains(query))
                   .take(15);
             },
             displayStringForOption: (String option) => '#$option',
             onSelected: _addChannel,
-            fieldViewBuilder: (BuildContext ctx, TextEditingController ctrl, FocusNode node, VoidCallback onSubmit) {
+            fieldViewBuilder: (BuildContext ctx, TextEditingController ctrl,
+                FocusNode node, VoidCallback onSubmit) {
               return TextField(
                 controller: ctrl,
                 focusNode: node,
                 style: const TextStyle(fontSize: 13),
                 decoration: const InputDecoration(
                   hintText: 'Search channels...',
-                  prefixIcon: Icon(Icons.search_rounded, size: 16, color: AppColors.tertiaryInk),
+                  prefixIcon: Icon(Icons.search_rounded,
+                      size: 16, color: AppColors.tertiaryInk),
                   fillColor: AppColors.surface,
                   isDense: true,
                 ),
@@ -1529,11 +1762,13 @@ class _ChannelChipInputState extends State<_ChannelChipInput> {
             style: const TextStyle(fontSize: 13),
             decoration: const InputDecoration(
               hintText: '#eng-reviews (load channels for autocomplete)',
-              prefixIcon: Icon(Icons.tag_rounded, size: 16, color: AppColors.tertiaryInk),
+              prefixIcon: Icon(Icons.tag_rounded,
+                  size: 16, color: AppColors.tertiaryInk),
               fillColor: AppColors.surface,
             ),
             onSubmitted: (String value) {
-              for (final String ch in ConnectorConfig.parseChannelsInput(value)) {
+              for (final String ch
+                  in ConnectorConfig.parseChannelsInput(value)) {
                 _addChannel(ch);
               }
             },
@@ -1543,7 +1778,8 @@ class _ChannelChipInputState extends State<_ChannelChipInput> {
             padding: const EdgeInsets.only(top: 4),
             child: Text(
               _validationError!,
-              style: theme.textTheme.labelMedium?.copyWith(color: AppColors.danger, fontSize: 10),
+              style: theme.textTheme.labelMedium
+                  ?.copyWith(color: AppColors.danger, fontSize: 10),
             ),
           ),
       ],
@@ -1557,8 +1793,12 @@ class _ChannelChipInputState extends State<_ChannelChipInput> {
 
 class _LabeledField extends StatelessWidget {
   const _LabeledField({
-    required this.controller, required this.label, required this.hint,
-    this.keyboardType, this.prefixIcon, this.onSubmitted,
+    required this.controller,
+    required this.label,
+    required this.hint,
+    this.keyboardType,
+    this.prefixIcon,
+    this.onSubmitted,
   });
   final TextEditingController controller;
   final String label;
@@ -1576,7 +1816,9 @@ class _LabeledField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 16, color: AppColors.tertiaryInk) : null,
+        prefixIcon: prefixIcon != null
+            ? Icon(prefixIcon, size: 16, color: AppColors.tertiaryInk)
+            : null,
         fillColor: AppColors.surface,
       ),
       onSubmitted: onSubmitted,
@@ -1585,7 +1827,11 @@ class _LabeledField extends StatelessWidget {
 }
 
 class _SecretField extends StatefulWidget {
-  const _SecretField({required this.controller, required this.label, required this.hint, this.onSubmitted});
+  const _SecretField(
+      {required this.controller,
+      required this.label,
+      required this.hint,
+      this.onSubmitted});
   final TextEditingController controller;
   final String label;
   final String hint;
@@ -1607,11 +1853,17 @@ class _SecretFieldState extends State<_SecretField> {
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hint,
-        prefixIcon: const Icon(Icons.key_rounded, size: 16, color: AppColors.tertiaryInk),
+        prefixIcon: const Icon(Icons.key_rounded,
+            size: 16, color: AppColors.tertiaryInk),
         fillColor: AppColors.surface,
         suffixIcon: IconButton(
           onPressed: () => setState(() => _obscure = !_obscure),
-          icon: Icon(_obscure ? Icons.visibility_rounded : Icons.visibility_off_rounded, size: 16, color: AppColors.tertiaryInk),
+          icon: Icon(
+              _obscure
+                  ? Icons.visibility_rounded
+                  : Icons.visibility_off_rounded,
+              size: 16,
+              color: AppColors.tertiaryInk),
         ),
       ),
       onSubmitted: widget.onSubmitted,

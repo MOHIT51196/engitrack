@@ -34,8 +34,9 @@ class ClaudeProvider extends AiProvider {
   String apiKey(ConnectorConfig config) => config.claudeApiKey.trim();
 
   @override
-  String model(ConnectorConfig config) =>
-      config.claudeModel.trim().isEmpty ? 'claude-sonnet-4-20250514' : config.claudeModel.trim();
+  String model(ConnectorConfig config) => config.claudeModel.trim().isEmpty
+      ? 'claude-sonnet-4-20250514'
+      : config.claudeModel.trim();
 
   @override
   Uri get chatCompletionsUri => Uri.https('api.anthropic.com', '/v1/messages');
@@ -136,14 +137,16 @@ class ClaudeProvider extends AiProvider {
 
     if (kDebugMode) {
       debugPrint('[$tag] Response status=${response.statusCode}');
-      debugPrint('[$tag] Response body=${response.body.length > 500 ? '${response.body.substring(0, 500)}...' : response.body}');
+      debugPrint(
+          '[$tag] Response body=${response.body.length > 500 ? '${response.body.substring(0, 500)}...' : response.body}');
     }
 
     return response;
   }
 
   String _extractClaudeText(Map<String, dynamic> json) {
-    final List<dynamic> content = json['content'] as List<dynamic>? ?? const <dynamic>[];
+    final List<dynamic> content =
+        json['content'] as List<dynamic>? ?? const <dynamic>[];
     final StringBuffer buffer = StringBuffer();
     for (final dynamic block in content) {
       final Map<String, dynamic> map = block as Map<String, dynamic>;

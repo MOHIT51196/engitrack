@@ -7,37 +7,36 @@ import '../theme.dart';
 import 'ai_provider.dart';
 import 'ai_review_helpers.dart';
 
-class GeminiProvider extends AiProvider {
+class GrokProvider extends AiProvider {
   @override
-  String get id => 'gemini';
+  String get id => 'grok';
 
   @override
-  String get displayName => 'Google Gemini';
+  String get displayName => 'xAI Grok';
 
   @override
-  IconData get icon => Icons.diamond_outlined;
+  IconData get icon => Icons.bolt_rounded;
 
   @override
-  Color get brandColor => AppColors.gemini;
+  Color get brandColor => AppColors.grok;
 
   @override
-  Color get brandColorLight => AppColors.geminiLight;
+  Color get brandColorLight => AppColors.grokLight;
 
   @override
   bool isConfigured(ConnectorConfig config) =>
-      config.geminiEnabled && config.geminiApiKey.trim().isNotEmpty;
+      config.grokEnabled && config.grokApiKey.trim().isNotEmpty;
 
   @override
-  String apiKey(ConnectorConfig config) => config.geminiApiKey.trim();
+  String apiKey(ConnectorConfig config) => config.grokApiKey.trim();
 
   @override
-  String model(ConnectorConfig config) => config.geminiModel.trim().isEmpty
-      ? 'gemini-2.0-flash'
-      : config.geminiModel.trim();
+  String model(ConnectorConfig config) => config.grokModel.trim().isEmpty
+      ? 'grok-3-mini-fast'
+      : config.grokModel.trim();
 
   @override
-  Uri get chatCompletionsUri => Uri.https(
-      'generativelanguage.googleapis.com', '/v1beta/openai/chat/completions');
+  Uri get chatCompletionsUri => Uri.https('api.x.ai', '/v1/chat/completions');
 
   @override
   Future<AiReviewResult> reviewPullRequest({
@@ -46,7 +45,7 @@ class GeminiProvider extends AiProvider {
     required http.Client client,
   }) async {
     if (apiKey(config).isEmpty) {
-      throw ServiceException('Gemini API key is missing.');
+      throw ServiceException('Grok API key is missing.');
     }
     final String prompt = buildReviewPrompt(context);
     final http.Response response = await postChatCompletion(
@@ -63,7 +62,7 @@ class GeminiProvider extends AiProvider {
     final Map<String, dynamic> json = decodeJsonBody(response);
     final String output = extractChatCompletionText(json).trim();
     if (output.isEmpty) {
-      throw ServiceException('Gemini returned an empty review.');
+      throw ServiceException('Grok returned an empty review.');
     }
     return parseStructuredReview(output);
   }
