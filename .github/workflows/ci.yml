@@ -39,6 +39,7 @@ jobs:
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
+          architecture: x64
           cache: true
 
       - name: Cache pub dependencies
@@ -79,6 +80,7 @@ jobs:
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
+          architecture: x64
           cache: true
 
       - name: Cache pub dependencies
@@ -131,6 +133,7 @@ jobs:
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
+          architecture: x64
           cache: true
 
       - name: Install dependencies
@@ -167,6 +170,7 @@ jobs:
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
+          architecture: x64
           cache: true
 
       - name: Cache pub dependencies
@@ -281,6 +285,7 @@ jobs:
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
+          architecture: x64
           cache: true
 
       - name: Install dependencies
@@ -335,6 +340,7 @@ jobs:
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
+          architecture: x64
           cache: true
 
       - name: Install dependencies
