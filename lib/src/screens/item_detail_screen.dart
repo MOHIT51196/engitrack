@@ -138,7 +138,7 @@ class ItemDetailScreen extends StatelessWidget {
         label: status,
         icon: Icons.circle,
         foregroundColor: _statusColor(status),
-        backgroundColor: _statusColor(status).withOpacity(0.08),
+        backgroundColor: _statusColor(status).withValues(alpha: 0.08),
         dense: true,
       ));
     }
@@ -148,7 +148,7 @@ class ItemDetailScreen extends StatelessWidget {
         label: priority,
         icon: Icons.arrow_upward_rounded,
         foregroundColor: _priorityColor(priority),
-        backgroundColor: _priorityColor(priority).withOpacity(0.08),
+        backgroundColor: _priorityColor(priority).withValues(alpha: 0.08),
         dense: true,
       ));
     }
@@ -915,8 +915,8 @@ class _ConcernCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
-        border:
-            Border.all(color: AppColors.outline.withOpacity(0.5), width: 0.5),
+        border: Border.all(
+            color: AppColors.outline.withValues(alpha: 0.5), width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -927,7 +927,7 @@ class _ConcernCard extends StatelessWidget {
                 label: concern.severity,
                 foregroundColor: _severityColor(concern.severity),
                 backgroundColor:
-                    _severityColor(concern.severity).withOpacity(0.1),
+                    _severityColor(concern.severity).withValues(alpha: 0.1),
                 dense: true,
               ),
               const SizedBox(width: 6),

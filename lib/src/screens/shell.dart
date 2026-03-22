@@ -55,7 +55,7 @@ class _EngiTrackShellState extends State<EngiTrackShell> {
           color: AppColors.surface,
           border: Border(
             top: BorderSide(
-                color: AppColors.divider.withOpacity(0.5), width: 0.5),
+                color: AppColors.divider.withValues(alpha: 0.5), width: 0.5),
           ),
         ),
         child: NavigationBar(

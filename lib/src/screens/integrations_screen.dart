@@ -257,7 +257,6 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
         });
       }
     } catch (e) {
-      debugPrint('[Grok:models] Error fetching models: $e');
       if (mounted) {
         final String msg = e.toString();
         if (msg.contains('credits') ||
@@ -891,7 +890,8 @@ class _ExportImportButtons extends StatelessWidget {
                     const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                side: BorderSide(color: AppColors.outline.withOpacity(0.5)),
+                side:
+                    BorderSide(color: AppColors.outline.withValues(alpha: 0.5)),
               ),
             ),
           ),
@@ -907,7 +907,8 @@ class _ExportImportButtons extends StatelessWidget {
                     const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                side: BorderSide(color: AppColors.outline.withOpacity(0.5)),
+                side:
+                    BorderSide(color: AppColors.outline.withValues(alpha: 0.5)),
               ),
             ),
           ),
@@ -927,7 +928,7 @@ class _ExportImportButtons extends StatelessWidget {
             textStyle:
                 const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            side: BorderSide(color: AppColors.outline.withOpacity(0.5)),
+            side: BorderSide(color: AppColors.outline.withValues(alpha: 0.5)),
           ),
         ),
         const SizedBox(width: 6),
@@ -940,7 +941,7 @@ class _ExportImportButtons extends StatelessWidget {
             textStyle:
                 const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            side: BorderSide(color: AppColors.outline.withOpacity(0.5)),
+            side: BorderSide(color: AppColors.outline.withValues(alpha: 0.5)),
           ),
         ),
       ],
@@ -1060,7 +1061,7 @@ class _DynamicModelDropdown extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.softSurface.withOpacity(0.5),
+          color: AppColors.softSurface.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -1086,7 +1087,7 @@ class _DynamicModelDropdown extends StatelessWidget {
     }
 
     return DropdownButtonFormField<String>(
-      value: displayValue,
+      initialValue: displayValue,
       icon: const Icon(Icons.unfold_more_rounded, size: 18),
       decoration: InputDecoration(
         filled: true,
@@ -1267,14 +1268,14 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
         border: Border.all(
           color: widget.enabled
               ? (widget.isConfigured
-                  ? AppColors.success.withOpacity(0.25)
-                  : widget.brandColor.withOpacity(0.15))
-              : AppColors.outline.withOpacity(0.4),
+                  ? AppColors.success.withValues(alpha: 0.25)
+                  : widget.brandColor.withValues(alpha: 0.15))
+              : AppColors.outline.withValues(alpha: 0.4),
           width: 0.5,
         ),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Colors.black.withOpacity(widget.enabled ? 0.04 : 0.02),
+            color: Colors.black.withValues(alpha: widget.enabled ? 0.04 : 0.02),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1370,7 +1371,7 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
                       valueColor: AlwaysStoppedAnimation<Color>(
                         widget.isConfigured
                             ? AppColors.success
-                            : widget.brandColor.withOpacity(0.5),
+                            : widget.brandColor.withValues(alpha: 0.5),
                       ),
                     ),
                   ),

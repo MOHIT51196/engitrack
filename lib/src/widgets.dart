@@ -93,18 +93,18 @@ class AppSurface extends StatelessWidget {
         color: elevated ? AppColors.surfaceElevated : AppColors.surface,
         borderRadius: BorderRadius.circular(radius),
         border: Border.all(
-          color: borderColor ?? AppColors.outline.withOpacity(0.6),
+          color: borderColor ?? AppColors.outline.withValues(alpha: 0.6),
           width: 0.5,
         ),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Colors.black.withOpacity(elevated ? 0.06 : 0.03),
+            color: Colors.black.withValues(alpha: elevated ? 0.06 : 0.03),
             blurRadius: elevated ? 20 : 8,
             offset: Offset(0, elevated ? 6 : 2),
           ),
           if (!elevated)
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 2,
               offset: const Offset(0, 1),
             ),
@@ -232,7 +232,7 @@ class MetricTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.08),
+              color: color.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 18),
@@ -282,7 +282,7 @@ class EmptyStateCard extends StatelessWidget {
         color: AppColors.softSurface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: AppColors.outline.withOpacity(0.3),
+          color: AppColors.outline.withValues(alpha: 0.3),
           width: 0.5,
           strokeAlign: BorderSide.strokeAlignInside,
         ),
@@ -297,7 +297,7 @@ class EmptyStateCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               boxShadow: <BoxShadow>[
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -348,7 +348,7 @@ class IntegrationIcon extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: lightColor ?? color.withOpacity(0.08),
+        color: lightColor ?? color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(size * 0.26),
       ),
       child: Icon(icon, color: color, size: size * 0.47),
@@ -402,8 +402,8 @@ class StatusBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isConfigured
-              ? AppColors.success.withOpacity(0.2)
-              : AppColors.outline.withOpacity(0.5),
+              ? AppColors.success.withValues(alpha: 0.2)
+              : AppColors.outline.withValues(alpha: 0.5),
           width: 0.5,
         ),
       ),
@@ -449,7 +449,7 @@ class CountBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(

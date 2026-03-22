@@ -175,7 +175,7 @@ ThemeData buildEngiTrackTheme() {
         letterSpacing: 0.2,
       ),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       elevation: 0,
       color: AppColors.surface,
       surfaceTintColor: Colors.transparent,
@@ -222,8 +222,8 @@ ThemeData buildEngiTrackTheme() {
         elevation: 0,
         backgroundColor: AppColors.accent,
         foregroundColor: Colors.white,
-        disabledBackgroundColor: AppColors.accent.withOpacity(0.4),
-        disabledForegroundColor: Colors.white.withOpacity(0.7),
+        disabledBackgroundColor: AppColors.accent.withValues(alpha: 0.4),
+        disabledForegroundColor: Colors.white.withValues(alpha: 0.7),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
         textStyle: const TextStyle(
@@ -247,7 +247,7 @@ ThemeData buildEngiTrackTheme() {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     ),
-    dialogTheme: DialogTheme(
+    dialogTheme: DialogThemeData(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       surfaceTintColor: Colors.transparent,
       backgroundColor: AppColors.surface,

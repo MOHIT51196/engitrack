@@ -68,12 +68,14 @@ class _TodoScreenState extends State<TodoScreen> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                        color: AppColors.outline.withOpacity(0.5), width: 0.5),
+                        color: AppColors.outline.withValues(alpha: 0.5),
+                        width: 0.5),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                        color: AppColors.outline.withOpacity(0.5), width: 0.5),
+                        color: AppColors.outline.withValues(alpha: 0.5),
+                        width: 0.5),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -281,7 +283,8 @@ class _TodoRow extends StatelessWidget {
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                    color: AppColors.outline.withOpacity(0.4), width: 0.5),
+                    color: AppColors.outline.withValues(alpha: 0.4),
+                    width: 0.5),
               ),
               child: Row(
                 children: <Widget>[
@@ -341,7 +344,7 @@ class _TodoRow extends StatelessWidget {
                             SoftTag(
                               label: todo.sourceLabel,
                               backgroundColor: _sourceColor(todo.sourceLabel)
-                                  .withOpacity(0.08),
+                                  .withValues(alpha: 0.08),
                               foregroundColor: _sourceColor(todo.sourceLabel),
                               dense: true,
                             ),
@@ -954,8 +957,8 @@ class _TodoDetailSheetState extends State<_TodoDetailSheet> {
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: widget.todo.completed
-                                  ? AppColors.success.withOpacity(0.3)
-                                  : AppColors.accent.withOpacity(0.2),
+                                  ? AppColors.success.withValues(alpha: 0.3)
+                                  : AppColors.accent.withValues(alpha: 0.2),
                               width: 0.5,
                             ),
                           ),
@@ -990,7 +993,7 @@ class _TodoDetailSheetState extends State<_TodoDetailSheet> {
                       SoftTag(
                         label: widget.todo.sourceLabel,
                         backgroundColor: _sourceColor(widget.todo.sourceLabel)
-                            .withOpacity(0.08),
+                            .withValues(alpha: 0.08),
                         foregroundColor: _sourceColor(widget.todo.sourceLabel),
                         dense: true,
                       ),

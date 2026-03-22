@@ -140,7 +140,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
               onPressed: _deleteNote,
               icon: const Icon(Icons.delete_outline_rounded, size: 18),
               style: IconButton.styleFrom(
-                  foregroundColor: AppColors.danger.withOpacity(0.7)),
+                  foregroundColor: AppColors.danger.withValues(alpha: 0.7)),
             ),
             Padding(
               padding: const EdgeInsets.only(right: 10),

@@ -99,12 +99,13 @@ class _SplashScreenState extends State<SplashScreen>
                           borderRadius: BorderRadius.circular(22),
                           boxShadow: <BoxShadow>[
                             BoxShadow(
-                              color: const Color(0xFFFF6B5E).withOpacity(0.15),
+                              color: const Color(0xFFFF6B5E)
+                                  .withValues(alpha: 0.15),
                               blurRadius: 40,
                               spreadRadius: 4,
                             ),
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withValues(alpha: 0.3),
                               blurRadius: 20,
                               offset: const Offset(0, 8),
                             ),
@@ -156,7 +157,7 @@ class _SplashScreenState extends State<SplashScreen>
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: const Color(0xFFFF6B5E).withOpacity(0.6),
+                    color: const Color(0xFFFF6B5E).withValues(alpha: 0.6),
                   ),
                 ),
               ),

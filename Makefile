@@ -1,4 +1,4 @@
-.PHONY: setup get format lint analyze check test clean build-apk build-apk-split build-ios build-web icons outdated deps run doctor help
+.PHONY: setup get format fix lint analyze check test clean build-apk build-apk-split build-ios build-web icons outdated deps run doctor help
 
 setup: get ## First-time project setup (dependencies + git hooks)
 	@git config core.hooksPath .githooks
@@ -12,6 +12,10 @@ format: ## Auto-format all Dart files
 
 lint: ## Run static analysis
 	flutter analyze --no-pub
+
+fix: ## Auto-fix lint issues and format
+	dart fix --apply
+	dart format .
 
 check: ## Run format check + analysis (same as CI)
 	dart format --set-exit-if-changed .

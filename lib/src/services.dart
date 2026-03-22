@@ -51,8 +51,8 @@ class NotificationsService {
 
   Future<void> initialize() async {
     tz.initializeTimeZones();
-    final String timezone = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(timezone));
+    final timezoneInfo = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(timezoneInfo.identifier));
 
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -69,7 +69,7 @@ class NotificationsService {
       macOS: darwinSettings,
     );
 
-    await _plugin.initialize(settings);
+    await _plugin.initialize(settings: settings);
 
     final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
         _plugin.resolvePlatformSpecificImplementation<
@@ -131,10 +131,10 @@ class NotificationsService {
     );
 
     await _plugin.show(
-      alert.id.hashCode & 0x7fffffff,
-      alert.title,
-      alert.message,
-      details,
+      id: alert.id.hashCode & 0x7fffffff,
+      title: alert.title,
+      body: alert.message,
+      notificationDetails: details,
       payload: alert.url,
     );
   }
@@ -151,27 +151,27 @@ class NotificationsService {
 
     if (tzDate.isBefore(tz.TZDateTime.now(tz.local))) {
       await _plugin.show(
-        _notificationId(todoId),
-        title,
-        subtitle ?? 'Your ToDo reminder is due.',
-        _reminderDetails,
+        id: _notificationId(todoId),
+        title: title,
+        body: subtitle ?? 'Your ToDo reminder is due.',
+        notificationDetails: _reminderDetails,
       );
       return;
     }
 
     await _plugin.zonedSchedule(
-      _notificationId(todoId),
-      title,
-      subtitle ?? 'Your ToDo reminder is due.',
-      tzDate,
-      _reminderDetails,
+      id: _notificationId(todoId),
+      title: title,
+      body: subtitle ?? 'Your ToDo reminder is due.',
+      scheduledDate: tzDate,
+      notificationDetails: _reminderDetails,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       matchDateTimeComponents: null,
     );
   }
 
   Future<void> cancelTodoReminder(String todoId) async {
-    await _plugin.cancel(_notificationId(todoId));
+    await _plugin.cancel(id: _notificationId(todoId));
   }
 
   Future<void> cancelAllTodoReminders() async {
@@ -944,11 +944,15 @@ class AiModelService {
       if (!id.startsWith('gpt-') &&
           !id.startsWith('o1') &&
           !id.startsWith('o3') &&
-          !id.startsWith('o4')) continue;
+          !id.startsWith('o4')) {
+        continue;
+      }
       if (id.contains('realtime') ||
           id.contains('audio') ||
           id.contains('search') ||
-          id.contains('transcribe')) continue;
+          id.contains('transcribe')) {
+        continue;
+      }
       models.add((value: id, label: id));
     }
     models.sort((a, b) => a.label.compareTo(b.label));
@@ -1018,14 +1022,10 @@ class AiModelService {
     required String apiKey,
   }) async {
     final Uri uri = Uri.https('api.x.ai', '/v1/models');
-    debugPrint('[Grok:models] GET $uri');
     final http.Response response =
         await _client.get(uri, headers: <String, String>{
       'Authorization': 'Bearer ${apiKey.trim()}',
     });
-    debugPrint('[Grok:models] Response status=${response.statusCode}');
-    debugPrint(
-        '[Grok:models] Response body=${response.body.length > 500 ? '${response.body.substring(0, 500)}...' : response.body}');
     final Map<String, dynamic> json = _decodeJsonBody(response);
     final List<dynamic> data =
         json['data'] as List<dynamic>? ?? const <dynamic>[];

@@ -268,7 +268,7 @@ class _HeroCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         boxShadow: <BoxShadow>[
           BoxShadow(
-              color: const Color(0xFF0B1220).withOpacity(0.18),
+              color: const Color(0xFF0B1220).withValues(alpha: 0.18),
               blurRadius: 12,
               offset: const Offset(0, 8)),
         ],
@@ -281,8 +281,8 @@ class _HeroCard extends StatelessWidget {
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              border:
-                  Border.all(color: Colors.white.withOpacity(0.15), width: 0.5),
+              border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.15), width: 0.5),
             ),
             child: SvgPicture.asset(
               'assets/branding/engitrack_logomark.svg',
@@ -308,7 +308,7 @@ class _HeroCard extends StatelessWidget {
                   style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w400,
-                      color: Colors.white.withOpacity(0.7)),
+                      color: Colors.white.withValues(alpha: 0.7)),
                 ),
               ],
             ),
@@ -317,9 +317,9 @@ class _HeroCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.12),
+                color: Colors.white.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.white.withOpacity(0.08)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -335,7 +335,7 @@ class _HeroCard extends StatelessWidget {
                       style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white.withOpacity(0.55),
+                          color: Colors.white.withValues(alpha: 0.55),
                           letterSpacing: 0.5)),
                 ],
               ),
@@ -372,7 +372,7 @@ class _OnboardingCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: const Color(0xFF0B1220).withOpacity(0.3),
+            color: const Color(0xFF0B1220).withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -386,8 +386,8 @@ class _OnboardingCard extends StatelessWidget {
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
-              border:
-                  Border.all(color: Colors.white.withOpacity(0.12), width: 0.5),
+              border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.12), width: 0.5),
             ),
             child: SvgPicture.asset(
               'assets/branding/engitrack_logomark.svg',
@@ -410,7 +410,7 @@ class _OnboardingCard extends StatelessWidget {
               'Connect your tools to see PRs, tickets, and alerts in one place. Head to Integrations to enable GitHub, Jira, or Slack.',
               style: TextStyle(
                   fontSize: 13,
-                  color: Colors.white.withOpacity(0.55),
+                  color: Colors.white.withValues(alpha: 0.55),
                   height: 1.5),
               textAlign: TextAlign.center,
             ),
@@ -424,10 +424,10 @@ class _OnboardingCard extends StatelessWidget {
             children: <Widget>[
               const _OnboardingStep(number: '1', label: 'Go to Integrations'),
               Icon(Icons.arrow_forward_rounded,
-                  size: 14, color: Colors.white.withOpacity(0.3)),
+                  size: 14, color: Colors.white.withValues(alpha: 0.3)),
               const _OnboardingStep(number: '2', label: 'Enable & configure'),
               Icon(Icons.arrow_forward_rounded,
-                  size: 14, color: Colors.white.withOpacity(0.3)),
+                  size: 14, color: Colors.white.withValues(alpha: 0.3)),
               const _OnboardingStep(number: '3', label: 'Save & sync'),
             ],
           ),
@@ -465,7 +465,7 @@ class _OnboardingStep extends StatelessWidget {
             style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
-                color: Colors.white.withOpacity(0.7))),
+                color: Colors.white.withValues(alpha: 0.7))),
       ],
     );
   }
@@ -579,7 +579,7 @@ class _ActiveFilterChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.accentLight,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.accent.withOpacity(0.25)),
+            border: Border.all(color: AppColors.accent.withValues(alpha: 0.25)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -632,18 +632,18 @@ class _MetricTileWithLogo extends StatelessWidget {
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeInOut,
       decoration: BoxDecoration(
-        color: selected ? color.withOpacity(0.06) : AppColors.surface,
+        color: selected ? color.withValues(alpha: 0.06) : AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: selected
-              ? color.withOpacity(0.5)
-              : AppColors.outline.withOpacity(0.12),
+              ? color.withValues(alpha: 0.5)
+              : AppColors.outline.withValues(alpha: 0.12),
           width: selected ? 1.5 : 0.5,
         ),
         boxShadow: selected
             ? <BoxShadow>[
                 BoxShadow(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2))
               ]
@@ -655,8 +655,8 @@ class _MetricTileWithLogo extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
-          splashColor: color.withOpacity(0.08),
-          highlightColor: color.withOpacity(0.04),
+          splashColor: color.withValues(alpha: 0.08),
+          highlightColor: color.withValues(alpha: 0.04),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -664,7 +664,7 @@ class _MetricTileWithLogo extends StatelessWidget {
                 BrandLogo(
                     assetPath: logoAsset,
                     size: 38,
-                    backgroundColor: color.withOpacity(0.08),
+                    backgroundColor: color.withValues(alpha: 0.08),
                     padding: 8),
                 const SizedBox(width: 14),
                 Expanded(
@@ -680,7 +680,7 @@ class _MetricTileWithLogo extends StatelessWidget {
                 ),
                 if (selected)
                   Icon(Icons.filter_list_rounded,
-                      size: 16, color: color.withOpacity(0.7)),
+                      size: 16, color: color.withValues(alpha: 0.7)),
               ],
             ),
           ),
@@ -843,7 +843,7 @@ class _BriefItemCard extends StatelessWidget {
                 label: status,
                 icon: Icons.circle,
                 foregroundColor: _statusColor(status),
-                backgroundColor: _statusColor(status).withOpacity(0.08),
+                backgroundColor: _statusColor(status).withValues(alpha: 0.08),
                 dense: true),
         ];
       case IntegrationCategory.messaging:
