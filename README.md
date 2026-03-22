@@ -13,6 +13,7 @@
 [![OpenAI](https://img.shields.io/badge/AI-OpenAI-412991?logo=openai&logoColor=white)](https://openai.com)
 [![Gemini](https://img.shields.io/badge/AI-Gemini-8E75B2?logo=googlegemini&logoColor=white)](https://deepmind.google/technologies/gemini/)
 [![Claude](https://img.shields.io/badge/AI-Claude-D97757?logo=anthropic&logoColor=white)](https://www.anthropic.com)
+[![Grok](https://img.shields.io/badge/AI-Grok-1D1D1B?logo=x&logoColor=white)](https://x.ai)
 
 A productivity cockpit for software engineers. EngiTrack consolidates pull requests, tickets, review requests, alerts, and AI-powered code reviews into a single interface — so you spend less time context-switching between tools and more time shipping.
 
@@ -40,7 +41,7 @@ Monitors configured review channels for PR and document review requests. Detects
 
 ### AI-Powered Code Review
 
-Connect OpenAI, Google Gemini, or Anthropic Claude to get instant code reviews on any PR. The AI analyzes the diff (metadata, description, changed files) and returns a structured review with a verdict, merge confidence score, executive summary, and a list of concerns — each tagged with severity (critical, suggestion, nitpick), file path, and line number. Follow up with conversational Q&A about the review, or post an AI-generated concern directly as a comment on the GitHub PR.
+Connect OpenAI, Google Gemini, Anthropic Claude, or xAI Grok to get instant code reviews on any PR. The AI analyzes the diff (metadata, description, changed files) and returns a structured review with a verdict, merge confidence score, executive summary, and a list of concerns — each tagged with severity (critical, suggestion, nitpick), file path, and line number. Follow up with conversational Q&A about the review, or post an AI-generated concern directly as a comment on the GitHub PR.
 
 ### ToDo Workspace
 
@@ -88,9 +89,9 @@ The version is declared in `pubspec.yaml` and propagated to Android builds via t
 | Dart SDK | >= 3.5.0 < 4.0.0 |
 | Android compileSdk | 36 |
 | Android minSdk | 24 (Android 7.0) |
-| Gradle | 8.7 |
+| Gradle | 8.11.1 |
 | Java (CI) | 17 (Temurin) |
-| Kotlin | Android Gradle Plugin default |
+| Kotlin | 2.1.0 |
 | NDK | 25.1.8937393 |
 
 ### Key Dependencies
@@ -99,13 +100,13 @@ The version is declared in `pubspec.yaml` and propagated to Android builds via t
 |---------|---------|
 | http | ^1.6.0 |
 | flutter_secure_storage | ^10.0.0 |
-| flutter_local_notifications | ^19.5.0 |
+| flutter_local_notifications | ^21.0.0 |
 | flutter_svg | ^2.0.17 |
 | shared_preferences | ^2.5.3 |
 | url_launcher | ^6.3.1 |
 | intl | ^0.20.2 |
-| file_picker | ^8.0.0 |
-| flutter_timezone | ^4.1.1 |
+| file_picker | ^10.3.10 |
+| flutter_timezone | ^5.0.2 |
 
 ### Release Process
 
@@ -143,6 +144,7 @@ Open the Integrations screen in the app and configure each service:
 | OpenAI | API Key or Proxy URL |
 | Gemini | API Key |
 | Claude | API Key |
+| Grok | API Key |
 
 All credentials are stored in platform secure storage and never leave the device.
 
@@ -205,8 +207,8 @@ make run
 
 ### Coding Standards
 
-- **Formatting** — run `dart format .` before committing. The pre-commit hook and CI both enforce this.
-- **Static analysis** — run `flutter analyze` and resolve all warnings. The pre-commit hook and CI both enforce this.
+- **Formatting** — run `dart format .` before committing, or `make fix` to auto-fix lint issues and format in one step. The pre-commit hook and CI both enforce this.
+- **Static analysis** — run `flutter analyze` and resolve all warnings. `make fix` can auto-fix many common issues. The pre-commit hook and CI both enforce this.
 - **Lint rules** — the project uses `flutter_lints` with additional rules in `analysis_options.yaml`. Do not disable lint rules without justification.
 - **No hardcoded secrets** — never commit API keys, tokens, or credentials. Use `flutter_secure_storage` for sensitive data at runtime.
 
