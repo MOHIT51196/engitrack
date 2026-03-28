@@ -22,7 +22,23 @@ check: ## Run format check + analysis (same as CI)
 	flutter analyze --no-pub
 
 test: ## Run unit tests with coverage
-	flutter test --coverage --reporter=expanded
+	@flutter test --coverage --reporter=expanded 2>&1 | tee /tmp/_engitrack_test.log; \
+	EXIT_CODE=$${PIPESTATUS[0]}; \
+	SUMMARY=$$(grep -oE '\+[0-9]+( -[0-9]+)?' /tmp/_engitrack_test.log | tail -1); \
+	PASSED=$$(echo "$$SUMMARY" | grep -oE '\+[0-9]+' | tr -d '+'); \
+	FAILED=$$(echo "$$SUMMARY" | grep -oE '\-[0-9]+' | tr -d '-'); \
+	PASSED=$${PASSED:-0}; FAILED=$${FAILED:-0}; \
+	TOTAL=$$((PASSED + FAILED)); \
+	echo ""; \
+	echo "┌──────────────────────────────────────┐"; \
+	echo "│         TEST SUITE SUMMARY            │"; \
+	echo "├──────────────────────────────────────┤"; \
+	printf "│  Total:   %-27s│\n" "$$TOTAL"; \
+	printf "│  Passed:  \033[32m%-27s\033[0m│\n" "$$PASSED"; \
+	printf "│  Failed:  \033[31m%-27s\033[0m│\n" "$$FAILED"; \
+	echo "└──────────────────────────────────────┘"; \
+	rm -f /tmp/_engitrack_test.log; \
+	exit $$EXIT_CODE
 
 build-apk: ## Build universal release APK
 	flutter build apk --release --dart-define=FLUTTER_BUILD_MODE=release
