@@ -120,7 +120,6 @@ jobs:
 
   test:
     name: Unit Tests
-    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: analyze

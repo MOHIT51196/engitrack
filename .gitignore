@@ -78,6 +78,9 @@ app.*.map.json
 # Local tooling
 .actrc
 
+# Test coverage
+coverage/
+
 # Miscellaneous
 *.class
 *.log
