@@ -24,13 +24,7 @@ check: ## Run format check + analysis (same as CI)
 test: ## Run unit tests with coverage
 	@flutter test --coverage --reporter=expanded 2>&1 | tee /tmp/_engitrack_test.log; \
 	EXIT_CODE=$${PIPESTATUS[0]}; \
-	CLEAN=$$(sed 's/\x1B\[[0-9;]*m//g' /tmp/_engitrack_test.log); \
-	PASSED=$$(echo "$$CLEAN" | grep -oE '\+[0-9]+' | tail -1 | tr -d '+'); \
-	FAILED=$$(echo "$$CLEAN" | grep -oE ' -[0-9]+' | tail -1 | tr -d ' -'); \
-	PASSED=$${PASSED:-0}; FAILED=$${FAILED:-0}; \
-	TOTAL=$$((PASSED + FAILED)); \
-	echo ""; \
-	echo "Total: $$TOTAL  |  \033[32mPassed: $$PASSED\033[0m  |  \033[31mFailed: $$FAILED\033[0m"; \
+	sh scripts/test_summary.sh /tmp/_engitrack_test.log; \
 	rm -f /tmp/_engitrack_test.log; \
 	exit $$EXIT_CODE
 
