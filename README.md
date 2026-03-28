@@ -96,17 +96,19 @@ The version is declared in `pubspec.yaml` and propagated to Android builds via t
 
 ### Key Dependencies
 
-| Package | Version |
-|---------|---------|
-| http | ^1.6.0 |
-| flutter_secure_storage | ^10.0.0 |
-| flutter_local_notifications | ^21.0.0 |
-| flutter_svg | ^2.0.17 |
-| shared_preferences | ^2.5.3 |
-| url_launcher | ^6.3.1 |
-| intl | ^0.20.2 |
-| file_picker | ^10.3.10 |
-| flutter_timezone | ^5.0.2 |
+| Package | Version | Dev |
+|---------|---------|-----|
+| http | ^1.6.0 | |
+| flutter_secure_storage | ^10.0.0 | |
+| flutter_local_notifications | ^21.0.0 | |
+| flutter_svg | ^2.0.17 | |
+| shared_preferences | ^2.5.3 | |
+| url_launcher | ^6.3.1 | |
+| intl | ^0.20.2 | |
+| file_picker | ^10.3.10 | |
+| flutter_timezone | ^5.0.2 | |
+| mocktail | ^1.0.4 | yes |
+| flutter_lints | ^6.0.0 | yes |
 
 ### Release Process
 
@@ -148,11 +150,40 @@ Open the Integrations screen in the app and configure each service:
 
 All credentials are stored in platform secure storage and never leave the device.
 
+## Testing
+
+EngiTrack has a comprehensive unit test suite covering models, services, integration providers, AI helpers, AI providers, and the controller layer. All tests run completely offline using mocked dependencies (`mocktail`).
+
+### Running Tests
+
+```bash
+make test
+```
+
+This runs `flutter test --coverage --reporter=expanded` and prints a dynamic summary:
+
+```
+Total: 174  |  Passed: 174  |  Failed: 0
+```
+
+### Test Structure
+
+| File | Coverage |
+|------|----------|
+| `test/models_test.dart` | ConnectorConfig, TodoItem, NoteItem, AI models, enums |
+| `test/services_test.dart` | GitHubService, JiraService, SlackService, AiModelService |
+| `test/integration_provider_test.dart` | IntegrationItem, GitHub/Jira/Slack providers |
+| `test/ai_review_helpers_test.dart` | Prompt builders, parsers, JSON decoders |
+| `test/ai_provider_registry_test.dart` | Registry lookup and filtering |
+| `test/ai_providers_test.dart` | OpenAI, Gemini, Claude, Grok providers |
+| `test/controller_test.dart` | Todo/Note CRUD, resolve, filtering, AI review |
+
 ## CI/CD
 
 The project includes a GitHub Actions pipeline (`.github/workflows/ci.yml`) with:
 
 - Static analysis and formatting checks
+- Unit tests with coverage reporting
 - Dependency vulnerability scanning (OSV-Scanner, TruffleHog)
 - Production Android APK builds (split per ABI + universal)
 - Downloadable build artifacts with 30-day retention
@@ -187,10 +218,11 @@ make setup
 git checkout -b feat/your-feature-name
 ```
 
-4. Verify the project builds:
+4. Verify the project builds and tests pass:
 
 ```bash
 make check
+make test
 make run
 ```
 
@@ -242,10 +274,11 @@ git fetch origin
 git rebase origin/main
 ```
 
-2. **Run the full check suite locally** before pushing (this runs automatically via git hooks if you ran `make setup`, but you can also run it manually):
+2. **Run the full check suite and tests locally** before pushing (formatting and analysis run automatically via git hooks if you ran `make setup`, but you can also run everything manually):
 
 ```bash
 make check
+make test
 ```
 
 3. **Push your branch** and open a pull request against `main`.
@@ -257,7 +290,7 @@ make check
    - Screenshots or screen recordings for UI changes.
    - A note on any breaking changes.
 
-5. **CI must pass** — the pipeline runs formatting checks, static analysis, security scanning, and a production Android build. PRs with failing checks will not be merged.
+5. **CI must pass** — the pipeline runs formatting checks, static analysis, unit tests, security scanning, and a production Android build. PRs with failing checks will not be merged.
 
 6. **Code review** — at least one maintainer review is required. Address review feedback by pushing additional commits (do not force-push during review).
 

@@ -1,0 +1,19 @@
+---
+description: EngiTrack project architecture and layering rules
+alwaysApply: true
+---
+
+# Architecture
+
+EngiTrack follows a layered architecture. Respect these boundaries:
+
+- **models.dart** -- Pure data classes and enums. No imports from Flutter or services. JSON serialization lives here.
+- **services.dart** -- HTTP API clients (GitHub, Jira, Slack, AI models). Depend only on `models.dart` and `http`. No Flutter widget imports.
+- **storage.dart** -- Persistence via SharedPreferences + FlutterSecureStorage. Depends on `models.dart` only.
+- **integrations/** -- Provider adapters that map service responses to `IntegrationItem`. Depend on services + models.
+- **ai/** -- AI provider implementations. Depend on models + services + `ai_review_helpers.dart`.
+- **controller.dart** -- Orchestrator (`ChangeNotifier`). Depends on all layers above. Screens depend on this.
+- **screens/** -- UI only. Access state through `EngiTrackScope.of(context)`. No direct HTTP calls.
+- **widgets.dart / theme.dart** -- Shared UI primitives and theming. No business logic.
+
+Secrets (API keys, tokens) go through `FlutterSecureStorage`, never `SharedPreferences`.

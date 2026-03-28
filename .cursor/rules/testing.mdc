@@ -1,0 +1,15 @@
+---
+description: Testing conventions for EngiTrack
+globs: "test/**/*_test.dart"
+alwaysApply: false
+---
+
+# Testing
+
+- Tests must be completely offline -- no real HTTP calls. Mock `http.Client` with `mocktail`.
+- Mock services/storage at the boundary, not internal methods. Inject mocks via constructor DI.
+- Register fallback values in `setUpAll` for any types used with `any()` matchers.
+- Test file naming: `test/<module>_test.dart` mirroring the source file.
+- Use `group()` to organize by class or feature, keep test descriptions concise.
+- Run `make test` to validate. All tests must pass with zero failures before pushing.
+- No widget tests unless explicitly needed -- focus on logic, serialization, and service layers.

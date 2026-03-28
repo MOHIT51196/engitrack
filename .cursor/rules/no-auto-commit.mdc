@@ -1,0 +1,8 @@
+---
+description: Never git commit or push without explicit user instruction
+alwaysApply: true
+---
+
+# No Automatic Git Commits or Pushes
+
+Never run `git commit`, `git push`, or any command that modifies git history unless the user explicitly asks for it in the current message. Making code changes is fine -- committing or pushing them is not until instructed.

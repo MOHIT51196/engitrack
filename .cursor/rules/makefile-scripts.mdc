@@ -1,0 +1,12 @@
+---
+description: Conventions for Makefile and shell scripts
+globs: "{Makefile,scripts/**/*.sh}"
+alwaysApply: false
+---
+
+# Makefile & Scripts
+
+- Makefile targets must have a `## Description` comment for the `make help` output.
+- Use POSIX `sh` for scripts in `scripts/`, not bash. Shebang: `#!/bin/sh`.
+- Keep complex shell logic out of the Makefile -- extract into `scripts/` and call with `sh scripts/foo.sh`.
+- Use `@` prefix on Makefile recipes to suppress echo when the output itself is sufficient.

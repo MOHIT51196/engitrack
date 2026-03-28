@@ -1,0 +1,16 @@
+---
+description: Dart/Flutter coding conventions for EngiTrack
+globs: "**/*.dart"
+alwaysApply: false
+---
+
+# Dart Conventions
+
+- Use `const` constructors and `const` literals wherever possible (enforced by analysis_options.yaml).
+- Use `super` parameters instead of forwarding manually.
+- Explicitly type all public APIs. Use `<Type>[]` and `<K, V>{}` literals with type args rather than untyped `[]` or `{}`.
+- Keep imports relative within `lib/src/` (e.g. `import 'models.dart'`), use `package:engitrack/` only in tests.
+- All services accept dependencies via constructor (e.g. `http.Client? client`) for testability -- never hard-wire external deps.
+- Prefix private fields with `_`. No leading underscores on local variables or parameters (lint enforced).
+- Format with `dart format .` before committing. The pre-commit hook enforces this.
+- Run `flutter analyze --no-pub` cleanly before pushing. Zero warnings policy.
