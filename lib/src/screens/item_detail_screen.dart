@@ -240,23 +240,29 @@ class ItemDetailScreen extends StatelessWidget {
   }
 
   Widget _buildCategoryContent(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     final List<Widget> content = <Widget>[];
 
-    final String message = item.meta<String>('message') ?? '';
-    final String summary = item.meta<String>('summary') ?? '';
-    final String displayText = message.isNotEmpty ? message : summary;
-    if (displayText.isNotEmpty) {
-      content.add(AppSurface(
-        padding: const EdgeInsets.all(14),
-        child: Text(displayText, style: theme.textTheme.bodyLarge),
-      ));
+    switch (item.category) {
+      case IntegrationCategory.codeReview:
+        content.add(_PrDetailsSection(item: item));
+        content.add(const SizedBox(height: 12));
+        content.add(_AiReviewSection(item: item));
+      case IntegrationCategory.issueTracker:
+        final String description = item.meta<String>('description') ?? '';
+        if (description.isNotEmpty) {
+          content.add(_DescriptionCard(
+            label: 'Description',
+            text: description,
+          ));
+        }
+      case IntegrationCategory.messaging:
+        final String message = item.meta<String>('message') ?? '';
+        if (message.isNotEmpty) {
+          content.add(_DescriptionCard(label: 'Message', text: message));
+        }
     }
 
-    if (item.category == IntegrationCategory.codeReview) {
-      content.add(const SizedBox(height: 12));
-      content.add(_AiReviewSection(item: item));
-    }
+    if (content.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -266,39 +272,64 @@ class ItemDetailScreen extends StatelessWidget {
 
   Widget _buildActions(BuildContext context) {
     final EngiTrackController controller = EngiTrackScope.of(context);
-    return Wrap(
-      spacing: 6,
-      runSpacing: 6,
+    final bool isCodeReview = item.category == IntegrationCategory.codeReview;
+    final bool hasSlackLink =
+        (item.meta<String>('slackDeepLink') ?? '').isNotEmpty ||
+            (item.meta<String>('slackWebLink') ?? '').isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        OutlinedButton.icon(
-          onPressed: () => openExternalUrl(context, item.url),
-          icon: const Icon(Icons.open_in_new_rounded, size: 14),
-          label: const Text('Open'),
+        // Row 1: Open  |  (Slack)  |  ToDo
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => openExternalUrl(context, item.url),
+                icon: const Icon(Icons.open_in_new_rounded, size: 14),
+                label: const Text('Open'),
+              ),
+            ),
+            if (hasSlackLink) ...<Widget>[
+              const SizedBox(width: 8),
+              Expanded(child: _SlackDeepLinkButton(item: item)),
+            ],
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  final bool added = await controller.addItemToTodo(item);
+                  if (!context.mounted) return;
+                  showInfoSnackBar(
+                      context, added ? 'Added to ToDo.' : 'Already in ToDo.');
+                },
+                icon: const Icon(Icons.add_rounded, size: 14),
+                label: const Text('ToDo'),
+              ),
+            ),
+          ],
         ),
-        if (item.category == IntegrationCategory.messaging) ...<Widget>[
-          _SlackDeepLinkButton(item: item),
-        ],
-        OutlinedButton.icon(
-          onPressed: () async {
-            final bool added = await controller.addItemToTodo(item);
-            if (!context.mounted) return;
-            showInfoSnackBar(
-                context, added ? 'Added to ToDo.' : 'Already in ToDo.');
-          },
-          icon: const Icon(Icons.add_rounded, size: 14),
-          label: const Text('ToDo'),
-        ),
-        if (item.category == IntegrationCategory.codeReview)
-          _AiReviewButton(item: item),
-        OutlinedButton.icon(
-          onPressed: () async {
-            await controller.resolveItem(item.id);
-            if (!context.mounted) return;
-            Navigator.of(context).pop();
-            showInfoSnackBar(context, 'Item resolved.');
-          },
-          icon: const Icon(Icons.check_circle_outline_rounded, size: 14),
-          label: const Text('Resolve'),
+        const SizedBox(height: 8),
+        // Row 2: AI Review (PR only)  |  Resolve
+        Row(
+          children: <Widget>[
+            if (isCodeReview) ...<Widget>[
+              Expanded(child: _AiReviewButton(item: item)),
+              const SizedBox(width: 8),
+            ],
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  await controller.resolveItem(item.id);
+                  if (!context.mounted) return;
+                  Navigator.of(context).pop();
+                  showInfoSnackBar(context, 'Item resolved.');
+                },
+                icon: const Icon(Icons.check_circle_outline_rounded, size: 14),
+                label: const Text('Resolve'),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -425,6 +456,152 @@ class ItemDetailScreen extends StatelessWidget {
       case AlertSeverity.info:
         return AppColors.softSurface;
     }
+  }
+}
+
+class _DescriptionCard extends StatelessWidget {
+  const _DescriptionCard({required this.label, required this.text});
+  final String label;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return AppSurface(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(label,
+              style: theme.textTheme.labelLarge
+                  ?.copyWith(fontSize: 11, color: AppColors.secondaryInk)),
+          const SizedBox(height: 6),
+          Text(text, style: theme.textTheme.bodyMedium),
+        ],
+      ),
+    );
+  }
+}
+
+class _PrDetailsSection extends StatefulWidget {
+  const _PrDetailsSection({required this.item});
+  final IntegrationItem item;
+
+  @override
+  State<_PrDetailsSection> createState() => _PrDetailsSectionState();
+}
+
+class _PrDetailsSectionState extends State<_PrDetailsSection> {
+  ({int commits, int changedFiles, String body})? _details;
+  bool _loading = false;
+  bool _loaded = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_loaded) {
+      _loaded = true;
+      _load();
+    }
+  }
+
+  Future<void> _load() async {
+    final String initialBody = widget.item.meta<String>('body') ?? '';
+    final int initialFiles = widget.item.meta<int>('changedFiles') ?? 0;
+    final int initialCommits = widget.item.meta<int>('commits') ?? 0;
+
+    // Show immediately from metadata if we already have commits info
+    if (initialCommits > 0 || initialFiles > 0) {
+      setState(() {
+        _details = (
+          commits: initialCommits,
+          changedFiles: initialFiles,
+          body: initialBody,
+        );
+      });
+    }
+
+    setState(() => _loading = true);
+    try {
+      final EngiTrackController controller = EngiTrackScope.of(context);
+      final result = await controller.fetchPrDetails(widget.item);
+      if (mounted) {
+        setState(() {
+          _details = result;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final String body = _details?.body ?? widget.item.meta<String>('body') ?? '';
+    final int commits = _details?.commits ?? 0;
+    final int changedFiles = _details?.changedFiles ?? 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        // Stats row: commits + files changed
+        if (commits > 0 || changedFiles > 0 || _loading)
+          AppSurface(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: _loading && commits == 0 && changedFiles == 0
+                ? Row(
+                    children: <Widget>[
+                      const SizedBox(
+                          width: 12,
+                          height: 12,
+                          child: CircularProgressIndicator(strokeWidth: 1.5)),
+                      const SizedBox(width: 8),
+                      Text('Loading PR stats...',
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: AppColors.tertiaryInk)),
+                    ],
+                  )
+                : Row(
+                    children: <Widget>[
+                      if (commits > 0) ...<Widget>[
+                        const Icon(Icons.commit_rounded,
+                            size: 14, color: AppColors.secondaryInk),
+                        const SizedBox(width: 4),
+                        Text('$commits commit${commits == 1 ? '' : 's'}',
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(fontWeight: FontWeight.w600)),
+                        if (changedFiles > 0) ...<Widget>[
+                          const SizedBox(width: 16),
+                        ],
+                      ],
+                      if (changedFiles > 0) ...<Widget>[
+                        const Icon(Icons.description_outlined,
+                            size: 14, color: AppColors.secondaryInk),
+                        const SizedBox(width: 4),
+                        Text(
+                            '$changedFiles file${changedFiles == 1 ? '' : 's'} changed',
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(fontWeight: FontWeight.w600)),
+                      ],
+                      if (_loading) ...<Widget>[
+                        const Spacer(),
+                        const SizedBox(
+                            width: 10,
+                            height: 10,
+                            child: CircularProgressIndicator(strokeWidth: 1.5)),
+                      ],
+                    ],
+                  ),
+          ),
+        // PR description
+        if (body.isNotEmpty) ...<Widget>[
+          const SizedBox(height: 8),
+          _DescriptionCard(label: 'PR Description', text: body),
+        ],
+      ],
+    );
   }
 }
 

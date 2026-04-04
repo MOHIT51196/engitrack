@@ -236,6 +236,7 @@ class GitHubService {
             DateTime.now(),
         draft: map['draft'] as bool? ?? labels.contains('draft'),
         labels: labels,
+        body: map['body'] as String? ?? '',
       );
     }).toList();
   }
@@ -285,6 +286,7 @@ class GitHubService {
           'feature/unknown',
       changedFiles:
           details['changed_files'] as int? ?? pullRequest.changedFiles,
+      commits: details['commits'] as int? ?? 0,
       files: files,
     );
   }
@@ -437,7 +439,7 @@ class JiraService {
     final String urlStr = '$normalizedBase/rest/api/3/search/jql'
         '?jql=$jqlEncoded'
         '&maxResults=25'
-        '&fields=summary,status,priority,issuetype,project,assignee,updated,parent,duedate';
+        '&fields=summary,status,priority,issuetype,project,assignee,updated,parent,duedate,description';
 
     debugPrint('[Jira:search] JQL: $jql');
     debugPrint('[Jira:search] GET $urlStr');
@@ -490,6 +492,9 @@ class JiraService {
               const <String, dynamic>{};
       final String key = map['key'] as String? ?? 'UNKNOWN';
 
+      final String description =
+          _extractAdfText(fields['description']).trim();
+
       return JiraIssue(
         id: map['id'] as String? ?? key,
         key: key,
@@ -505,6 +510,7 @@ class JiraService {
         parentKey: parent['key'] as String? ?? '',
         parentTitle: parentFields['summary'] as String? ?? '',
         dueDate: DateTime.tryParse(fields['duedate'] as String? ?? ''),
+        description: description,
       );
     }).toList();
   }
@@ -1074,4 +1080,28 @@ class _ResolvedSlackChannel {
 
   final String id;
   final String displayName;
+}
+
+/// Extracts plain text from Atlassian Document Format (ADF) JSON.
+String _extractAdfText(dynamic node) {
+  if (node == null) return '';
+  if (node is String) return node;
+  if (node is Map<String, dynamic>) {
+    final String type = node['type'] as String? ?? '';
+    if (type == 'text') return node['text'] as String? ?? '';
+    final List<dynamic>? content = node['content'] as List<dynamic>?;
+    if (content == null) return '';
+    final StringBuffer buf = StringBuffer();
+    for (final dynamic child in content) {
+      final String childText = _extractAdfText(child);
+      if (childText.isNotEmpty) {
+        if (buf.isNotEmpty && (type == 'paragraph' || type == 'bulletList' || type == 'orderedList' || type == 'heading')) {
+          buf.write('\n');
+        }
+        buf.write(childText);
+      }
+    }
+    return buf.toString();
+  }
+  return '';
 }

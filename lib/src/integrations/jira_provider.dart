@@ -77,6 +77,7 @@ class JiraProvider implements IntegrationProvider {
         'parentKey': issue.parentKey,
         'parentTitle': issue.parentTitle,
         'dueDate': issue.dueDate?.toIso8601String(),
+        'description': issue.description,
       },
     );
   }
@@ -96,6 +97,7 @@ class JiraProvider implements IntegrationProvider {
       parentKey: item.meta<String>('parentKey') ?? '',
       parentTitle: item.meta<String>('parentTitle') ?? '',
       dueDate: DateTime.tryParse(item.meta<String>('dueDate') ?? ''),
+      description: item.meta<String>('description') ?? '',
     );
   }
 }

@@ -588,6 +588,30 @@ class EngiTrackController extends ChangeNotifier {
     );
   }
 
+  /// Fetches lightweight PR details (commits count, changed files, body) for
+  /// display in the expanded view without running a full AI review.
+  Future<({int commits, int changedFiles, String body})> fetchPrDetails(
+      IntegrationItem item) async {
+    final GithubPullRequest pr = GitHubProvider.pullRequestFromItem(item);
+    if (!config.isGitHubConfigured) {
+      return (commits: 0, changedFiles: pr.changedFiles, body: pr.body);
+    }
+    try {
+      final PullRequestContext context =
+          await _githubProvider.service.fetchPullRequestContext(
+        pullRequest: pr,
+        token: config.githubToken,
+      );
+      return (
+        commits: context.commits,
+        changedFiles: context.changedFiles,
+        body: context.body.isNotEmpty ? context.body : pr.body,
+      );
+    } catch (_) {
+      return (commits: pr.commits, changedFiles: pr.changedFiles, body: pr.body);
+    }
+  }
+
   Future<List<AiChatMessage>> loadAiChat(String prId) =>
       _storage.loadAiChat(prId);
 
