@@ -4,7 +4,7 @@ import 'integration_provider.dart';
 
 class GitHubProvider implements IntegrationProvider {
   GitHubProvider({GitHubService? service})
-      : _service = service ?? GitHubService();
+    : _service = service ?? GitHubService();
 
   final GitHubService _service;
 
@@ -78,7 +78,8 @@ class GitHubProvider implements IntegrationProvider {
       changedFiles: item.meta<int>('changedFiles') ?? 0,
       additions: item.meta<int>('additions') ?? 0,
       deletions: item.meta<int>('deletions') ?? 0,
-      labels: (item.metadata['labels'] as List<dynamic>?)
+      labels:
+          (item.metadata['labels'] as List<dynamic>?)
               ?.map((dynamic l) => l.toString())
               .toList() ??
           const <String>[],

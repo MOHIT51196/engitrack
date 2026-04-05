@@ -25,9 +25,9 @@ class EngiTrackController extends ChangeNotifier {
     JiraService? jiraService,
     SlackService? slackService,
     http.Client? httpClient,
-  })  : _storage = storage,
-        _notificationsService = notificationsService,
-        _httpClient = httpClient ?? http.Client() {
+  }) : _storage = storage,
+       _notificationsService = notificationsService,
+       _httpClient = httpClient ?? http.Client() {
     final GitHubService ghSvc = gitHubService ?? GitHubService();
     final JiraService jrSvc = jiraService ?? JiraService();
     final SlackService slSvc = slackService ?? SlackService();
@@ -39,7 +39,7 @@ class EngiTrackController extends ChangeNotifier {
     _providers = <IntegrationProvider>[
       _githubProvider,
       _jiraProvider,
-      _slackProvider
+      _slackProvider,
     ];
   }
 
@@ -82,11 +82,15 @@ class EngiTrackController extends ChangeNotifier {
   List<IntegrationItem> itemsForCategory(IntegrationCategory category) {
     return _itemsByProvider.values
         .expand((List<IntegrationItem> items) => items)
-        .where((IntegrationItem item) =>
-            item.category == category && !_resolvedItemIds.contains(item.id))
+        .where(
+          (IntegrationItem item) =>
+              item.category == category && !_resolvedItemIds.contains(item.id),
+        )
         .toList()
-      ..sort((IntegrationItem a, IntegrationItem b) =>
-          b.timestamp.compareTo(a.timestamp));
+      ..sort(
+        (IntegrationItem a, IntegrationItem b) =>
+            b.timestamp.compareTo(a.timestamp),
+      );
   }
 
   List<IntegrationItem> get allActiveItems {
@@ -94,8 +98,10 @@ class EngiTrackController extends ChangeNotifier {
         .expand((List<IntegrationItem> items) => items)
         .where((IntegrationItem item) => !_resolvedItemIds.contains(item.id))
         .toList()
-      ..sort((IntegrationItem a, IntegrationItem b) =>
-          b.timestamp.compareTo(a.timestamp));
+      ..sort(
+        (IntegrationItem a, IntegrationItem b) =>
+            b.timestamp.compareTo(a.timestamp),
+      );
   }
 
   List<AiProvider> get configuredAiProviders =>
@@ -127,8 +133,10 @@ class EngiTrackController extends ChangeNotifier {
         .expand((List<IntegrationItem> items) => items)
         .where((IntegrationItem item) => _resolvedItemIds.contains(item.id))
         .toList()
-      ..sort((IntegrationItem a, IntegrationItem b) =>
-          b.timestamp.compareTo(a.timestamp));
+      ..sort(
+        (IntegrationItem a, IntegrationItem b) =>
+            b.timestamp.compareTo(a.timestamp),
+      );
   }
 
   int get resolvedItemCount => _resolvedItemIds.length;
@@ -215,8 +223,10 @@ class EngiTrackController extends ChangeNotifier {
   Future<void> refreshProvider(String providerId, {bool silent = false}) async {
     final IntegrationProvider? provider = _providers
         .cast<IntegrationProvider?>()
-        .firstWhere((IntegrationProvider? p) => p?.id == providerId,
-            orElse: () => null);
+        .firstWhere(
+          (IntegrationProvider? p) => p?.id == providerId,
+          orElse: () => null,
+        );
     if (provider == null || !provider.isConfigured(config)) return;
 
     try {
@@ -253,12 +263,12 @@ class EngiTrackController extends ChangeNotifier {
     }
 
     try {
-      final Map<String, String> result =
-          await _slackProvider.service.refreshAccessToken(
-        refreshToken: config.slackRefreshToken,
-        clientId: config.slackClientId,
-        clientSecret: config.slackClientSecret,
-      );
+      final Map<String, String> result = await _slackProvider.service
+          .refreshAccessToken(
+            refreshToken: config.slackRefreshToken,
+            clientId: config.slackClientId,
+            clientSecret: config.slackClientSecret,
+          );
 
       final String newAccess = result['access_token'] ?? '';
       final String newRefresh = result['refresh_token'] ?? '';
@@ -306,8 +316,8 @@ class EngiTrackController extends ChangeNotifier {
             final bool refreshed = await _attemptSlackTokenRefresh();
             if (refreshed) {
               try {
-                final List<IntegrationItem> retryItems =
-                    await provider.fetchItems(config);
+                final List<IntegrationItem> retryItems = await provider
+                    .fetchItems(config);
                 _itemsByProvider[provider.id] = retryItems;
                 await _processSlackAlertNotifications(retryItems);
                 continue;
@@ -338,7 +348,8 @@ class EngiTrackController extends ChangeNotifier {
   }
 
   Future<void> _processSlackAlertNotifications(
-      List<IntegrationItem> items) async {
+    List<IntegrationItem> items,
+  ) async {
     final bool allowNotifications =
         config.notificationsEnabled && lastSyncedAt != null;
     final List<IntegrationItem> alertItems = items
@@ -359,18 +370,20 @@ class EngiTrackController extends ChangeNotifier {
     if (allowNotifications) {
       for (final IntegrationItem alert in newAlerts.take(5)) {
         try {
-          await _notificationsService.showAlertNotification(SlackAlert(
-            id: alert.id,
-            channel: alert.meta<String>('channel') ?? '',
-            title: alert.title,
-            message: alert.meta<String>('message') ?? '',
-            createdAt: alert.timestamp,
-            severity: AlertSeverity.values.firstWhere(
-              (AlertSeverity s) => s.name == alert.meta<String>('severity'),
-              orElse: () => AlertSeverity.info,
+          await _notificationsService.showAlertNotification(
+            SlackAlert(
+              id: alert.id,
+              channel: alert.meta<String>('channel') ?? '',
+              title: alert.title,
+              message: alert.meta<String>('message') ?? '',
+              createdAt: alert.timestamp,
+              severity: AlertSeverity.values.firstWhere(
+                (AlertSeverity s) => s.name == alert.meta<String>('severity'),
+                orElse: () => AlertSeverity.info,
+              ),
+              url: alert.url,
             ),
-            url: alert.url,
-          ));
+          );
         } catch (error) {
           if (kDebugMode) {
             debugPrint('Failed to show alert notification: $error');
@@ -439,9 +452,12 @@ class EngiTrackController extends ChangeNotifier {
     required String sourceLabel,
     String sourceUrl = '',
   }) async {
-    final bool alreadyExists = sourceUrl.isNotEmpty &&
-        todos.any((TodoItem item) =>
-            item.sourceUrl.isNotEmpty && item.sourceUrl == sourceUrl);
+    final bool alreadyExists =
+        sourceUrl.isNotEmpty &&
+        todos.any(
+          (TodoItem item) =>
+              item.sourceUrl.isNotEmpty && item.sourceUrl == sourceUrl,
+        );
     if (alreadyExists) return false;
 
     final DateTime now = DateTime.now();
@@ -472,8 +488,9 @@ class EngiTrackController extends ChangeNotifier {
   Future<void> toggleTodo(TodoItem item, bool completed) async {
     final TodoItem toggled = item.copyWith(completed: completed);
     todos = todos
-        .map((TodoItem candidate) =>
-            candidate.id == item.id ? toggled : candidate)
+        .map(
+          (TodoItem candidate) => candidate.id == item.id ? toggled : candidate,
+        )
         .toList();
     await _storage.saveTodos(todos);
     await _scheduleOrCancelReminder(toggled);
@@ -537,8 +554,10 @@ class EngiTrackController extends ChangeNotifier {
 
   String? reviewProviderFor(String itemId) => _reviewProviderCache[itemId];
 
-  Future<AiReviewResult> reviewPullRequest(IntegrationItem item,
-      {required String providerId}) async {
+  Future<AiReviewResult> reviewPullRequest(
+    IntegrationItem item, {
+    required String providerId,
+  }) async {
     final GithubPullRequest pr = GitHubProvider.pullRequestFromItem(item);
 
     if (!config.isGitHubConfigured) {
@@ -553,11 +572,8 @@ class EngiTrackController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final PullRequestContext context =
-          await _githubProvider.service.fetchPullRequestContext(
-        pullRequest: pr,
-        token: config.githubToken,
-      );
+      final PullRequestContext context = await _githubProvider.service
+          .fetchPullRequestContext(pullRequest: pr, token: config.githubToken);
       final AiReviewResult review = await aiProvider.reviewPullRequest(
         context: context,
         config: config,
@@ -565,11 +581,11 @@ class EngiTrackController extends ChangeNotifier {
       );
       aiReviewCache = <String, AiReviewResult>{
         ...aiReviewCache,
-        item.id: review
+        item.id: review,
       };
       _reviewProviderCache = <String, String>{
         ..._reviewProviderCache,
-        item.id: providerId
+        item.id: providerId,
       };
       return review;
     } finally {
@@ -591,24 +607,26 @@ class EngiTrackController extends ChangeNotifier {
   /// Fetches lightweight PR details (commits count, changed files, body) for
   /// display in the expanded view without running a full AI review.
   Future<({int commits, int changedFiles, String body})> fetchPrDetails(
-      IntegrationItem item) async {
+    IntegrationItem item,
+  ) async {
     final GithubPullRequest pr = GitHubProvider.pullRequestFromItem(item);
     if (!config.isGitHubConfigured) {
       return (commits: 0, changedFiles: pr.changedFiles, body: pr.body);
     }
     try {
-      final PullRequestContext context =
-          await _githubProvider.service.fetchPullRequestContext(
-        pullRequest: pr,
-        token: config.githubToken,
-      );
+      final PullRequestContext context = await _githubProvider.service
+          .fetchPullRequestContext(pullRequest: pr, token: config.githubToken);
       return (
         commits: context.commits,
         changedFiles: context.changedFiles,
         body: context.body.isNotEmpty ? context.body : pr.body,
       );
     } catch (_) {
-      return (commits: pr.commits, changedFiles: pr.changedFiles, body: pr.body);
+      return (
+        commits: pr.commits,
+        changedFiles: pr.changedFiles,
+        body: pr.body,
+      );
     }
   }
 
@@ -619,8 +637,9 @@ class EngiTrackController extends ChangeNotifier {
       _storage.saveAiChat(prId, messages);
 
   Future<String?> exportConfig() async {
-    final String json =
-        const JsonEncoder.withIndent('  ').convert(config.toExportJson());
+    final String json = const JsonEncoder.withIndent(
+      '  ',
+    ).convert(config.toExportJson());
     final Uint8List bytes = Uint8List.fromList(utf8.encode(json));
 
     final String? initialDir = await _resolveExportDir();
@@ -653,7 +672,8 @@ class EngiTrackController extends ChangeNotifier {
         if (Directory(_lastExportDir!).existsSync()) return _lastExportDir;
       } catch (_) {}
     }
-    final String home = Platform.environment['HOME'] ??
+    final String home =
+        Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '';
     if (home.isEmpty) return null;
@@ -736,11 +756,8 @@ class EngiTrackController extends ChangeNotifier {
     required String userMessage,
   }) async {
     final GithubPullRequest pr = GitHubProvider.pullRequestFromItem(item);
-    final PullRequestContext context =
-        await _githubProvider.service.fetchPullRequestContext(
-      pullRequest: pr,
-      token: config.githubToken,
-    );
+    final PullRequestContext context = await _githubProvider.service
+        .fetchPullRequestContext(pullRequest: pr, token: config.githubToken);
 
     final String providerId =
         _reviewProviderCache[item.id] ?? configuredAiProviders.first.id;
@@ -766,8 +783,8 @@ class EngiTrackScope extends InheritedNotifier<EngiTrackController> {
   }) : super(notifier: controller);
 
   static EngiTrackController of(BuildContext context) {
-    final EngiTrackScope? scope =
-        context.dependOnInheritedWidgetOfExactType<EngiTrackScope>();
+    final EngiTrackScope? scope = context
+        .dependOnInheritedWidgetOfExactType<EngiTrackScope>();
     assert(scope != null, 'EngiTrackScope not found in the widget tree.');
     return scope!.notifier!;
   }

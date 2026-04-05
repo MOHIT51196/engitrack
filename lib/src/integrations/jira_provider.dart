@@ -50,9 +50,10 @@ class JiraProvider implements IntegrationProvider {
       merged.putIfAbsent(issue.key, () => _mapIssue(issue, ItemReason.tagged));
     }
 
-    return merged.values.toList()
-      ..sort((IntegrationItem a, IntegrationItem b) =>
-          b.timestamp.compareTo(a.timestamp));
+    return merged.values.toList()..sort(
+      (IntegrationItem a, IntegrationItem b) =>
+          b.timestamp.compareTo(a.timestamp),
+    );
   }
 
   JiraService get service => _service;

@@ -20,28 +20,28 @@ class ServiceException implements Exception {
 
 class NotificationsService {
   NotificationsService({FlutterLocalNotificationsPlugin? plugin})
-      : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+    : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
   final FlutterLocalNotificationsPlugin _plugin;
 
   static const AndroidNotificationDetails _reminderAndroidDetails =
       AndroidNotificationDetails(
-    'engitrack_reminders',
-    'ToDo reminders',
-    channelDescription: 'Notifications for ToDo reminder times.',
-    importance: Importance.high,
-    priority: Priority.high,
-    playSound: true,
-    enableVibration: true,
-    category: AndroidNotificationCategory.reminder,
-  );
+        'engitrack_reminders',
+        'ToDo reminders',
+        channelDescription: 'Notifications for ToDo reminder times.',
+        importance: Importance.high,
+        priority: Priority.high,
+        playSound: true,
+        enableVibration: true,
+        category: AndroidNotificationCategory.reminder,
+      );
 
   static const DarwinNotificationDetails _reminderDarwinDetails =
       DarwinNotificationDetails(
-    presentAlert: true,
-    presentBadge: true,
-    presentSound: true,
-  );
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
 
   static const NotificationDetails _reminderDetails = NotificationDetails(
     android: _reminderAndroidDetails,
@@ -58,10 +58,10 @@ class NotificationsService {
         AndroidInitializationSettings('@mipmap/ic_launcher');
     const DarwinInitializationSettings darwinSettings =
         DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        );
 
     const InitializationSettings settings = InitializationSettings(
       android: androidSettings,
@@ -71,9 +71,10 @@ class NotificationsService {
 
     await _plugin.initialize(settings: settings);
 
-    final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
-        _plugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+    final AndroidFlutterLocalNotificationsPlugin? androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
 
     const AndroidNotificationChannel alertsChannel = AndroidNotificationChannel(
       'engitrack_alerts',
@@ -85,30 +86,36 @@ class NotificationsService {
 
     const AndroidNotificationChannel remindersChannel =
         AndroidNotificationChannel(
-      'engitrack_reminders',
-      'ToDo reminders',
-      description: 'Notifications for ToDo reminder times.',
-      importance: Importance.high,
-      playSound: true,
-      enableVibration: true,
-    );
+          'engitrack_reminders',
+          'ToDo reminders',
+          description: 'Notifications for ToDo reminder times.',
+          importance: Importance.high,
+          playSound: true,
+          enableVibration: true,
+        );
     await androidPlugin?.createNotificationChannel(remindersChannel);
   }
 
   Future<bool> requestPermissions() async {
-    final bool androidGranted = await _plugin
+    final bool androidGranted =
+        await _plugin
             .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin>()
+              AndroidFlutterLocalNotificationsPlugin
+            >()
             ?.requestNotificationsPermission() ??
         true;
-    final bool iosGranted = await _plugin
+    final bool iosGranted =
+        await _plugin
             .resolvePlatformSpecificImplementation<
-                IOSFlutterLocalNotificationsPlugin>()
+              IOSFlutterLocalNotificationsPlugin
+            >()
             ?.requestPermissions(alert: true, badge: true, sound: true) ??
         true;
-    final bool macGranted = await _plugin
+    final bool macGranted =
+        await _plugin
             .resolvePlatformSpecificImplementation<
-                MacOSFlutterLocalNotificationsPlugin>()
+              MacOSFlutterLocalNotificationsPlugin
+            >()
             ?.requestPermissions(alert: true, badge: true, sound: true) ??
         true;
     return androidGranted && iosGranted && macGranted;
@@ -117,12 +124,13 @@ class NotificationsService {
   Future<void> showAlertNotification(SlackAlert alert) async {
     const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
-      'engitrack_alerts',
-      'EngiTrack alerts',
-      channelDescription: 'Slack alert notifications surfaced by EngiTrack.',
-      importance: Importance.max,
-      priority: Priority.high,
-    );
+          'engitrack_alerts',
+          'EngiTrack alerts',
+          channelDescription:
+              'Slack alert notifications surfaced by EngiTrack.',
+          importance: Importance.max,
+          priority: Priority.high,
+        );
     const DarwinNotificationDetails darwinDetails = DarwinNotificationDetails();
     const NotificationDetails details = NotificationDetails(
       android: androidDetails,
@@ -217,8 +225,10 @@ class GitHubService {
       final int number = map['number'] as int? ?? 0;
       final List<String> labels =
           (map['labels'] as List<dynamic>? ?? const <dynamic>[])
-              .map((dynamic label) =>
-                  (label as Map<String, dynamic>)['name'] as String? ?? '')
+              .map(
+                (dynamic label) =>
+                    (label as Map<String, dynamic>)['name'] as String? ?? '',
+              )
               .where((String name) => name.isNotEmpty)
               .toList();
 
@@ -228,11 +238,14 @@ class GitHubService {
         repo: repo,
         number: number,
         title: map['title'] as String? ?? 'Untitled pull request',
-        author: (map['user'] as Map<String, dynamic>? ??
-                const <String, dynamic>{})['login'] as String? ??
+        author:
+            (map['user'] as Map<String, dynamic>? ??
+                    const <String, dynamic>{})['login']
+                as String? ??
             'Unknown',
         url: map['html_url'] as String? ?? '',
-        updatedAt: DateTime.tryParse(map['updated_at'] as String? ?? '') ??
+        updatedAt:
+            DateTime.tryParse(map['updated_at'] as String? ?? '') ??
             DateTime.now(),
         draft: map['draft'] as bool? ?? labels.contains('draft'),
         labels: labels,
@@ -255,10 +268,14 @@ class GitHubService {
       <String, String>{'per_page': '100'},
     );
 
-    final http.Response detailsResponse =
-        await _client.get(detailsUri, headers: _headers(token));
-    final http.Response filesResponse =
-        await _client.get(filesUri, headers: _headers(token));
+    final http.Response detailsResponse = await _client.get(
+      detailsUri,
+      headers: _headers(token),
+    );
+    final http.Response filesResponse = await _client.get(
+      filesUri,
+      headers: _headers(token),
+    );
 
     final Map<String, dynamic> details = _decodeJsonBody(detailsResponse);
     final List<dynamic> filesJson = _decodeJsonListBody(filesResponse);
@@ -277,11 +294,15 @@ class GitHubService {
     return PullRequestContext(
       pullRequest: pullRequest,
       body: details['body'] as String? ?? '',
-      baseBranch: ((details['base'] as Map<String, dynamic>? ??
-              const <String, dynamic>{})['ref'] as String?) ??
+      baseBranch:
+          ((details['base'] as Map<String, dynamic>? ??
+                  const <String, dynamic>{})['ref']
+              as String?) ??
           'main',
-      headBranch: ((details['head'] as Map<String, dynamic>? ??
-              const <String, dynamic>{})['ref'] as String?) ??
+      headBranch:
+          ((details['head'] as Map<String, dynamic>? ??
+                  const <String, dynamic>{})['ref']
+              as String?) ??
           pullRequest.headBranch ??
           'feature/unknown',
       changedFiles:
@@ -353,7 +374,8 @@ class JiraService {
     };
     debugPrint('[Jira:myself] GET $url');
     debugPrint(
-        '[Jira:myself] Headers: Accept=${headers['Accept']}, Authorization=Basic <${_basicAuth(email, apiToken).length} chars>');
+      '[Jira:myself] Headers: Accept=${headers['Accept']}, Authorization=Basic <${_basicAuth(email, apiToken).length} chars>',
+    );
 
     try {
       final http.Response response = await _client.get(
@@ -363,7 +385,8 @@ class JiraService {
 
       debugPrint('[Jira:myself] Response status=${response.statusCode}');
       debugPrint(
-          '[Jira:myself] Response body: ${response.body.length > 500 ? response.body.substring(0, 500) : response.body}');
+        '[Jira:myself] Response body: ${response.body.length > 500 ? response.body.substring(0, 500) : response.body}',
+      );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json =
@@ -436,7 +459,8 @@ class JiraService {
         : baseUrl.trim();
 
     final String jqlEncoded = Uri.encodeComponent(jql).replaceAll('%20', '+');
-    final String urlStr = '$normalizedBase/rest/api/3/search/jql'
+    final String urlStr =
+        '$normalizedBase/rest/api/3/search/jql'
         '?jql=$jqlEncoded'
         '&maxResults=25'
         '&fields=summary,status,priority,issuetype,project,assignee,updated,parent,duedate,description';
@@ -444,7 +468,8 @@ class JiraService {
     debugPrint('[Jira:search] JQL: $jql');
     debugPrint('[Jira:search] GET $urlStr');
     debugPrint(
-        '[Jira:search] email="$email" tokenLen=${apiToken.length} base64Len=${_basicAuth(email, apiToken).length}');
+      '[Jira:search] email="$email" tokenLen=${apiToken.length} base64Len=${_basicAuth(email, apiToken).length}',
+    );
 
     final http.Request request = http.Request('GET', Uri.parse(urlStr));
     request.headers['Accept'] = 'application/json';
@@ -458,7 +483,8 @@ class JiraService {
     debugPrint('[Jira:search] Response status=${response.statusCode}');
     debugPrint('[Jira:search] Response headers: ${response.headers}');
     debugPrint(
-        '[Jira:search] Response body (first 800): ${response.body.length > 800 ? response.body.substring(0, 800) : response.body}');
+      '[Jira:search] Response body (first 800): ${response.body.length > 800 ? response.body.substring(0, 800) : response.body}',
+    );
 
     final Map<String, dynamic> json = _decodeJsonBody(response);
     final List<dynamic> issues =
@@ -471,29 +497,28 @@ class JiraService {
           map['fields'] as Map<String, dynamic>? ?? const <String, dynamic>{};
       final Map<String, dynamic> status =
           fields['status'] as Map<String, dynamic>? ??
-              const <String, dynamic>{};
+          const <String, dynamic>{};
       final Map<String, dynamic> priority =
           fields['priority'] as Map<String, dynamic>? ??
-              const <String, dynamic>{};
+          const <String, dynamic>{};
       final Map<String, dynamic> issueType =
           fields['issuetype'] as Map<String, dynamic>? ??
-              const <String, dynamic>{};
+          const <String, dynamic>{};
       final Map<String, dynamic> project =
           fields['project'] as Map<String, dynamic>? ??
-              const <String, dynamic>{};
+          const <String, dynamic>{};
       final Map<String, dynamic> assignee =
           fields['assignee'] as Map<String, dynamic>? ??
-              const <String, dynamic>{};
+          const <String, dynamic>{};
       final Map<String, dynamic> parent =
           fields['parent'] as Map<String, dynamic>? ??
-              const <String, dynamic>{};
+          const <String, dynamic>{};
       final Map<String, dynamic> parentFields =
           parent['fields'] as Map<String, dynamic>? ??
-              const <String, dynamic>{};
+          const <String, dynamic>{};
       final String key = map['key'] as String? ?? 'UNKNOWN';
 
-      final String description =
-          _extractAdfText(fields['description']).trim();
+      final String description = _extractAdfText(fields['description']).trim();
 
       return JiraIssue(
         id: map['id'] as String? ?? key,
@@ -502,7 +527,8 @@ class JiraService {
         status: status['name'] as String? ?? 'Unknown',
         priority: priority['name'] as String? ?? 'Unknown',
         url: '$normalizedBase/browse/$key',
-        updatedAt: DateTime.tryParse(fields['updated'] as String? ?? '') ??
+        updatedAt:
+            DateTime.tryParse(fields['updated'] as String? ?? '') ??
             DateTime.now(),
         issueType: issueType['name'] as String? ?? 'Issue',
         projectName: project['name'] as String? ?? 'Project',
@@ -534,14 +560,20 @@ class SlackService {
 
     final List<SlackReviewRequest> results = <SlackReviewRequest>[];
     for (final String channel in channels) {
-      final _ResolvedSlackChannel resolved =
-          await _resolveChannel(token, channel);
+      final _ResolvedSlackChannel resolved = await _resolveChannel(
+        token,
+        channel,
+      );
       final List<Map<String, dynamic>> messages =
           await _fetchConversationMessages(
-              token: token, channelId: resolved.id);
+            token: token,
+            channelId: resolved.id,
+          );
       for (final Map<String, dynamic> message in messages) {
         final SlackReviewRequest? review = _extractReviewRequest(
-            message: message, channel: resolved.displayName);
+          message: message,
+          channel: resolved.displayName,
+        );
         if (review != null) {
           results.add(review);
         }
@@ -563,27 +595,38 @@ class SlackService {
       return <SlackAlert>[];
     }
 
-    final _ResolvedSlackChannel resolved =
-        await _resolveChannel(token, channel);
+    final _ResolvedSlackChannel resolved = await _resolveChannel(
+      token,
+      channel,
+    );
     final List<Map<String, dynamic>> messages =
         await _fetchConversationMessages(
-            token: token, channelId: resolved.id, limit: 25);
+          token: token,
+          channelId: resolved.id,
+          limit: 25,
+        );
 
-    final List<SlackAlert> alerts = messages
-        .map(
-          (Map<String, dynamic> message) =>
-              _extractAlert(message: message, channel: resolved.displayName),
-        )
-        .whereType<SlackAlert>()
-        .toList()
-      ..sort(
-          (SlackAlert a, SlackAlert b) => b.createdAt.compareTo(a.createdAt));
+    final List<SlackAlert> alerts =
+        messages
+            .map(
+              (Map<String, dynamic> message) => _extractAlert(
+                message: message,
+                channel: resolved.displayName,
+              ),
+            )
+            .whereType<SlackAlert>()
+            .toList()
+          ..sort(
+            (SlackAlert a, SlackAlert b) => b.createdAt.compareTo(a.createdAt),
+          );
 
     return alerts;
   }
 
   Future<_ResolvedSlackChannel> _resolveChannel(
-      String token, String rawChannel) async {
+    String token,
+    String rawChannel,
+  ) async {
     final String cleaned = rawChannel.trim().replaceFirst('#', '');
     if (cleaned.isEmpty) {
       throw ServiceException('Slack channel cannot be empty.');
@@ -595,16 +638,13 @@ class SlackService {
 
     String? cursor;
     do {
-      final Uri uri = Uri.https(
-        'slack.com',
-        '/api/conversations.list',
-        <String, String>{
-          'exclude_archived': 'true',
-          'limit': '500',
-          'types': 'public_channel,private_channel',
-          if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
-        },
-      );
+      final Uri uri =
+          Uri.https('slack.com', '/api/conversations.list', <String, String>{
+            'exclude_archived': 'true',
+            'limit': '500',
+            'types': 'public_channel,private_channel',
+            if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
+          });
       final http.Response response = await _client.get(
         uri,
         headers: _slackHeaders(token),
@@ -623,8 +663,10 @@ class SlackService {
           );
         }
       }
-      cursor = (json['response_metadata'] as Map<String, dynamic>? ??
-          const <String, dynamic>{})['next_cursor'] as String?;
+      cursor =
+          (json['response_metadata'] as Map<String, dynamic>? ??
+                  const <String, dynamic>{})['next_cursor']
+              as String?;
     } while (cursor != null && cursor.isNotEmpty);
 
     throw ServiceException('Could not resolve Slack channel "$rawChannel".');
@@ -638,13 +680,12 @@ class SlackService {
     final Uri uri = Uri.https(
       'slack.com',
       '/api/conversations.history',
-      <String, String>{
-        'channel': channelId,
-        'limit': '$limit',
-      },
+      <String, String>{'channel': channelId, 'limit': '$limit'},
     );
-    final http.Response response =
-        await _client.get(uri, headers: _slackHeaders(token));
+    final http.Response response = await _client.get(
+      uri,
+      headers: _slackHeaders(token),
+    );
     final Map<String, dynamic> json = _decodeJsonBody(response);
     _throwIfSlackError(json);
     return (json['messages'] as List<dynamic>? ?? const <dynamic>[])
@@ -661,11 +702,13 @@ class SlackService {
     }
 
     final bool hasPrUrl = RegExp(r'https?://[^\s>]+/pull/\d+').hasMatch(text);
-    final bool hasDocUrl = RegExp(r'https?://[^\s>]+').hasMatch(text) &&
+    final bool hasDocUrl =
+        RegExp(r'https?://[^\s>]+').hasMatch(text) &&
         (text.contains('docs.google.com') ||
             text.contains('notion.so') ||
             text.contains('/doc'));
-    final bool looksLikeReview = hasPrUrl ||
+    final bool looksLikeReview =
+        hasPrUrl ||
         hasDocUrl ||
         RegExp(
           r'(need (?:eyes|review)|please review|review request|can someone review|feedback requested|doc review)',
@@ -676,12 +719,13 @@ class SlackService {
       return null;
     }
 
-    final SlackReviewKind kind =
-        hasPrUrl ? SlackReviewKind.pr : SlackReviewKind.doc;
+    final SlackReviewKind kind = hasPrUrl
+        ? SlackReviewKind.pr
+        : SlackReviewKind.doc;
     final String url = _extractFirstUrl(text);
     final DateTime createdAt = _timestampFromSlackTs(message['ts'] as String?);
-    final String requester =
-        (message['user'] as String? ?? 'Slack teammate').trim();
+    final String requester = (message['user'] as String? ?? 'Slack teammate')
+        .trim();
     final String title = _compactTitle(text);
 
     return SlackReviewRequest(
@@ -706,10 +750,12 @@ class SlackService {
     }
 
     final AlertSeverity severity = _detectSeverity(text);
-    final bool looksActionable = severity != AlertSeverity.info ||
-        RegExp(r'(incident|outage|latency|degraded|failing|rollback|backlog)',
-                caseSensitive: false)
-            .hasMatch(text);
+    final bool looksActionable =
+        severity != AlertSeverity.info ||
+        RegExp(
+          r'(incident|outage|latency|degraded|failing|rollback|backlog)',
+          caseSensitive: false,
+        ).hasMatch(text);
 
     if (!looksActionable) {
       return null;
@@ -787,7 +833,8 @@ class SlackService {
   void _throwIfSlackError(Map<String, dynamic> json) {
     if (json['ok'] == false) {
       throw ServiceException(
-          'Slack error: ${json['error'] ?? 'unknown_error'}');
+        'Slack error: ${json['error'] ?? 'unknown_error'}',
+      );
     }
   }
 
@@ -795,8 +842,10 @@ class SlackService {
     if (_cachedTeamId != null) return _cachedTeamId!;
 
     final Uri uri = Uri.https('slack.com', '/api/auth.test');
-    final http.Response response =
-        await _client.get(uri, headers: _slackHeaders(token));
+    final http.Response response = await _client.get(
+      uri,
+      headers: _slackHeaders(token),
+    );
     final Map<String, dynamic> json = _decodeJsonBody(response);
     _throwIfSlackError(json);
     _cachedTeamId = json['team_id'] as String? ?? '';
@@ -804,7 +853,8 @@ class SlackService {
   }
 
   Future<Map<String, String>> fetchChannelList({required String token}) async {
-    final bool cacheValid = _channelCache != null &&
+    final bool cacheValid =
+        _channelCache != null &&
         _channelCacheTime != null &&
         DateTime.now().difference(_channelCacheTime!).inMinutes < 10;
     if (cacheValid) return _channelCache!;
@@ -814,13 +864,15 @@ class SlackService {
     do {
       final Uri uri =
           Uri.https('slack.com', '/api/conversations.list', <String, String>{
-        'exclude_archived': 'true',
-        'limit': '500',
-        'types': 'public_channel,private_channel',
-        if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
-      });
-      final http.Response response =
-          await _client.get(uri, headers: _slackHeaders(token));
+            'exclude_archived': 'true',
+            'limit': '500',
+            'types': 'public_channel,private_channel',
+            if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
+          });
+      final http.Response response = await _client.get(
+        uri,
+        headers: _slackHeaders(token),
+      );
       final Map<String, dynamic> json = _decodeJsonBody(response);
       _throwIfSlackError(json);
       for (final dynamic ch
@@ -828,8 +880,10 @@ class SlackService {
         final Map<String, dynamic> map = ch as Map<String, dynamic>;
         channels[map['name'] as String? ?? ''] = map['id'] as String? ?? '';
       }
-      cursor = (json['response_metadata'] as Map<String, dynamic>? ??
-          const <String, dynamic>{})['next_cursor'] as String?;
+      cursor =
+          (json['response_metadata'] as Map<String, dynamic>? ??
+                  const <String, dynamic>{})['next_cursor']
+              as String?;
     } while (cursor != null && cursor.isNotEmpty);
 
     _channelCache = channels;
@@ -837,13 +891,17 @@ class SlackService {
     return channels;
   }
 
-  String buildSlackDeepLink(
-      {required String teamId, required String channelId}) {
+  String buildSlackDeepLink({
+    required String teamId,
+    required String channelId,
+  }) {
     return 'slack://channel?team=$teamId&id=$channelId';
   }
 
-  String buildSlackWebLink(
-      {required String teamId, required String channelId}) {
+  String buildSlackWebLink({
+    required String teamId,
+    required String channelId,
+  }) {
     return 'https://app.slack.com/client/$teamId/$channelId';
   }
 
@@ -860,7 +918,7 @@ class SlackService {
     final http.Response response = await _client.post(
       uri,
       headers: <String, String>{
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: <String, String>{
         'grant_type': 'refresh_token',
@@ -880,22 +938,27 @@ class SlackService {
   /// Validates a token by calling auth.test. Returns the user ID on success.
   Future<String> validateToken({required String token}) async {
     final Uri uri = Uri.https('slack.com', '/api/auth.test');
-    final http.Response response =
-        await _client.get(uri, headers: _slackHeaders(token));
+    final http.Response response = await _client.get(
+      uri,
+      headers: _slackHeaders(token),
+    );
     final Map<String, dynamic> json = _decodeJsonBody(response);
     _throwIfSlackError(json);
     return json['user_id'] as String? ?? '';
   }
 
-  Future<List<SlackReviewRequest>> fetchDmMentions(
-      {required String token}) async {
-    final Uri uri =
-        Uri.https('slack.com', '/api/conversations.list', <String, String>{
-      'types': 'im',
-      'limit': '50',
-    });
-    final http.Response response =
-        await _client.get(uri, headers: _slackHeaders(token));
+  Future<List<SlackReviewRequest>> fetchDmMentions({
+    required String token,
+  }) async {
+    final Uri uri = Uri.https(
+      'slack.com',
+      '/api/conversations.list',
+      <String, String>{'types': 'im', 'limit': '50'},
+    );
+    final http.Response response = await _client.get(
+      uri,
+      headers: _slackHeaders(token),
+    );
     final Map<String, dynamic> json = _decodeJsonBody(response);
     _throwIfSlackError(json);
 
@@ -911,16 +974,23 @@ class SlackService {
 
       final List<Map<String, dynamic>> messages =
           await _fetchConversationMessages(
-              token: token, channelId: channelId, limit: 10);
+            token: token,
+            channelId: channelId,
+            limit: 10,
+          );
       for (final Map<String, dynamic> msg in messages) {
-        final SlackReviewRequest? review =
-            _extractReviewRequest(message: msg, channel: 'DM with $userId');
+        final SlackReviewRequest? review = _extractReviewRequest(
+          message: msg,
+          channel: 'DM with $userId',
+        );
         if (review != null) results.add(review);
       }
     }
 
-    results.sort((SlackReviewRequest a, SlackReviewRequest b) =>
-        b.createdAt.compareTo(a.createdAt));
+    results.sort(
+      (SlackReviewRequest a, SlackReviewRequest b) =>
+          b.createdAt.compareTo(a.createdAt),
+    );
     return results;
   }
 }
@@ -934,10 +1004,10 @@ class AiModelService {
     required String apiKey,
   }) async {
     final Uri uri = Uri.https('api.openai.com', '/v1/models');
-    final http.Response response =
-        await _client.get(uri, headers: <String, String>{
-      'Authorization': 'Bearer ${apiKey.trim()}',
-    });
+    final http.Response response = await _client.get(
+      uri,
+      headers: <String, String>{'Authorization': 'Bearer ${apiKey.trim()}'},
+    );
     final Map<String, dynamic> json = _decodeJsonBody(response);
     final List<dynamic> data =
         json['data'] as List<dynamic>? ?? const <dynamic>[];
@@ -985,14 +1055,15 @@ class AiModelService {
       final String displayName = map['displayName'] as String? ?? '';
       final List<dynamic> methods =
           map['supportedGenerationMethods'] as List<dynamic>? ??
-              const <dynamic>[];
+          const <dynamic>[];
       if (!methods.contains('generateContent')) continue;
-      final String modelId =
-          name.startsWith('models/') ? name.substring(7) : name;
+      final String modelId = name.startsWith('models/')
+          ? name.substring(7)
+          : name;
       if (modelId.isEmpty) continue;
       models.add((
         value: modelId,
-        label: displayName.isNotEmpty ? displayName : modelId
+        label: displayName.isNotEmpty ? displayName : modelId,
       ));
     }
     models.sort((a, b) => a.label.compareTo(b.label));
@@ -1003,11 +1074,13 @@ class AiModelService {
     required String apiKey,
   }) async {
     final Uri uri = Uri.https('api.anthropic.com', '/v1/models');
-    final http.Response response =
-        await _client.get(uri, headers: <String, String>{
-      'x-api-key': apiKey.trim(),
-      'anthropic-version': '2023-06-01',
-    });
+    final http.Response response = await _client.get(
+      uri,
+      headers: <String, String>{
+        'x-api-key': apiKey.trim(),
+        'anthropic-version': '2023-06-01',
+      },
+    );
     final Map<String, dynamic> json = _decodeJsonBody(response);
     final List<dynamic> data =
         json['data'] as List<dynamic>? ?? const <dynamic>[];
@@ -1028,10 +1101,10 @@ class AiModelService {
     required String apiKey,
   }) async {
     final Uri uri = Uri.https('api.x.ai', '/v1/models');
-    final http.Response response =
-        await _client.get(uri, headers: <String, String>{
-      'Authorization': 'Bearer ${apiKey.trim()}',
-    });
+    final http.Response response = await _client.get(
+      uri,
+      headers: <String, String>{'Authorization': 'Bearer ${apiKey.trim()}'},
+    );
     final Map<String, dynamic> json = _decodeJsonBody(response);
     final List<dynamic> data =
         json['data'] as List<dynamic>? ?? const <dynamic>[];
@@ -1050,11 +1123,13 @@ class AiModelService {
 }
 
 Map<String, dynamic> _decodeJsonBody(http.Response response) {
-  final dynamic decoded =
-      jsonDecode(response.body.isEmpty ? '{}' : response.body);
+  final dynamic decoded = jsonDecode(
+    response.body.isEmpty ? '{}' : response.body,
+  );
   if (response.statusCode < 200 || response.statusCode >= 300) {
     throw ServiceException(
-        'Request failed (${response.statusCode}): ${response.body}');
+      'Request failed (${response.statusCode}): ${response.body}',
+    );
   }
   if (decoded is Map<String, dynamic>) {
     return decoded;
@@ -1063,11 +1138,13 @@ Map<String, dynamic> _decodeJsonBody(http.Response response) {
 }
 
 List<dynamic> _decodeJsonListBody(http.Response response) {
-  final dynamic decoded =
-      jsonDecode(response.body.isEmpty ? '[]' : response.body);
+  final dynamic decoded = jsonDecode(
+    response.body.isEmpty ? '[]' : response.body,
+  );
   if (response.statusCode < 200 || response.statusCode >= 300) {
     throw ServiceException(
-        'Request failed (${response.statusCode}): ${response.body}');
+      'Request failed (${response.statusCode}): ${response.body}',
+    );
   }
   if (decoded is List<dynamic>) {
     return decoded;
@@ -1095,7 +1172,11 @@ String _extractAdfText(dynamic node) {
     for (final dynamic child in content) {
       final String childText = _extractAdfText(child);
       if (childText.isNotEmpty) {
-        if (buf.isNotEmpty && (type == 'paragraph' || type == 'bulletList' || type == 'orderedList' || type == 'heading')) {
+        if (buf.isNotEmpty &&
+            (type == 'paragraph' ||
+                type == 'bulletList' ||
+                type == 'orderedList' ||
+                type == 'heading')) {
           buf.write('\n');
         }
         buf.write(childText);

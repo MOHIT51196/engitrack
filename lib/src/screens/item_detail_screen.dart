@@ -55,25 +55,31 @@ class ItemDetailScreen extends StatelessWidget {
   Widget _buildMetaTags(BuildContext context) {
     final List<Widget> tags = <Widget>[];
 
-    tags.add(SoftTag(
-      label: item.reason.label,
-      icon: _iconForReason(item.reason),
-      backgroundColor: _bgForReason(item.reason),
-      foregroundColor: _fgForReason(item.reason),
-      dense: true,
-    ));
+    tags.add(
+      SoftTag(
+        label: item.reason.label,
+        icon: _iconForReason(item.reason),
+        backgroundColor: _bgForReason(item.reason),
+        foregroundColor: _fgForReason(item.reason),
+        dense: true,
+      ),
+    );
 
-    tags.add(SoftTag(
-      label: formatRelativeTime(item.timestamp),
-      icon: Icons.schedule_rounded,
-      dense: true,
-    ));
+    tags.add(
+      SoftTag(
+        label: formatRelativeTime(item.timestamp),
+        icon: Icons.schedule_rounded,
+        dense: true,
+      ),
+    );
 
-    tags.add(SoftTag(
-      label: formatCompactTimestamp(item.timestamp),
-      icon: Icons.calendar_today_rounded,
-      dense: true,
-    ));
+    tags.add(
+      SoftTag(
+        label: formatCompactTimestamp(item.timestamp),
+        icon: Icons.calendar_today_rounded,
+        dense: true,
+      ),
+    );
 
     switch (item.category) {
       case IntegrationCategory.codeReview:
@@ -90,15 +96,19 @@ class ItemDetailScreen extends StatelessWidget {
   void _addCodeReviewTags(List<Widget> tags) {
     final String author = item.meta<String>('author') ?? '';
     if (author.isNotEmpty) {
-      tags.add(SoftTag(
-          label: author, icon: Icons.person_outline_rounded, dense: true));
+      tags.add(
+        SoftTag(label: author, icon: Icons.person_outline_rounded, dense: true),
+      );
     }
     final int files = item.meta<int>('changedFiles') ?? 0;
     if (files > 0) {
-      tags.add(SoftTag(
+      tags.add(
+        SoftTag(
           label: '$files files',
           icon: Icons.description_outlined,
-          dense: true));
+          dense: true,
+        ),
+      );
     }
     final int adds = item.meta<int>('additions') ?? 0;
     final int dels = item.meta<int>('deletions') ?? 0;
@@ -106,89 +116,106 @@ class ItemDetailScreen extends StatelessWidget {
       tags.add(SoftTag(label: '+$adds -$dels', dense: true));
     }
     if (item.meta<bool>('draft') == true) {
-      tags.add(const SoftTag(
-        label: 'Draft',
-        icon: Icons.edit_note_rounded,
-        backgroundColor: AppColors.warningLight,
-        foregroundColor: AppColors.warning,
-        dense: true,
-      ));
+      tags.add(
+        const SoftTag(
+          label: 'Draft',
+          icon: Icons.edit_note_rounded,
+          backgroundColor: AppColors.warningLight,
+          foregroundColor: AppColors.warning,
+          dense: true,
+        ),
+      );
     }
     final String branch = item.meta<String>('headBranch') ?? '';
     if (branch.isNotEmpty) {
       tags.add(
-          SoftTag(label: branch, icon: Icons.fork_right_rounded, dense: true));
+        SoftTag(label: branch, icon: Icons.fork_right_rounded, dense: true),
+      );
     }
     final List<dynamic> labels =
         item.metadata['labels'] as List<dynamic>? ?? const <dynamic>[];
     for (final dynamic l in labels.take(3)) {
-      tags.add(SoftTag(
-        label: l.toString(),
-        backgroundColor: AppColors.accentLight,
-        foregroundColor: AppColors.accent,
-        dense: true,
-      ));
+      tags.add(
+        SoftTag(
+          label: l.toString(),
+          backgroundColor: AppColors.accentLight,
+          foregroundColor: AppColors.accent,
+          dense: true,
+        ),
+      );
     }
   }
 
   void _addIssueTrackerTags(List<Widget> tags) {
     final String status = item.meta<String>('status') ?? '';
     if (status.isNotEmpty) {
-      tags.add(SoftTag(
-        label: status,
-        icon: Icons.circle,
-        foregroundColor: _statusColor(status),
-        backgroundColor: _statusColor(status).withValues(alpha: 0.08),
-        dense: true,
-      ));
+      tags.add(
+        SoftTag(
+          label: status,
+          icon: Icons.circle,
+          foregroundColor: _statusColor(status),
+          backgroundColor: _statusColor(status).withValues(alpha: 0.08),
+          dense: true,
+        ),
+      );
     }
     final String priority = item.meta<String>('priority') ?? '';
     if (priority.isNotEmpty) {
-      tags.add(SoftTag(
-        label: priority,
-        icon: Icons.arrow_upward_rounded,
-        foregroundColor: _priorityColor(priority),
-        backgroundColor: _priorityColor(priority).withValues(alpha: 0.08),
-        dense: true,
-      ));
+      tags.add(
+        SoftTag(
+          label: priority,
+          icon: Icons.arrow_upward_rounded,
+          foregroundColor: _priorityColor(priority),
+          backgroundColor: _priorityColor(priority).withValues(alpha: 0.08),
+          dense: true,
+        ),
+      );
     }
     final String issueType = item.meta<String>('issueType') ?? '';
     if (issueType.isNotEmpty) {
       tags.add(
-          SoftTag(label: issueType, icon: Icons.category_rounded, dense: true));
+        SoftTag(label: issueType, icon: Icons.category_rounded, dense: true),
+      );
     }
     final String assignee = item.meta<String>('assignee') ?? '';
-    tags.add(SoftTag(
-      label: assignee.isEmpty ? 'Unassigned' : assignee,
-      icon: Icons.person_outline_rounded,
-      foregroundColor: assignee.isEmpty ? AppColors.warning : null,
-      backgroundColor: assignee.isEmpty ? AppColors.warningLight : null,
-      dense: true,
-    ));
+    tags.add(
+      SoftTag(
+        label: assignee.isEmpty ? 'Unassigned' : assignee,
+        icon: Icons.person_outline_rounded,
+        foregroundColor: assignee.isEmpty ? AppColors.warning : null,
+        backgroundColor: assignee.isEmpty ? AppColors.warningLight : null,
+        dense: true,
+      ),
+    );
     final String parentKey = item.meta<String>('parentKey') ?? '';
     if (parentKey.isNotEmpty) {
       final String parentTitle = item.meta<String>('parentTitle') ?? '';
-      tags.add(SoftTag(
-        label: parentTitle.isEmpty ? parentKey : '$parentKey: $parentTitle',
-        icon: Icons.account_tree_rounded,
-        backgroundColor: AppColors.accentLight,
-        foregroundColor: AppColors.accent,
-        dense: true,
-      ));
+      tags.add(
+        SoftTag(
+          label: parentTitle.isEmpty ? parentKey : '$parentKey: $parentTitle',
+          icon: Icons.account_tree_rounded,
+          backgroundColor: AppColors.accentLight,
+          foregroundColor: AppColors.accent,
+          dense: true,
+        ),
+      );
     }
     final String dueDateStr = item.meta<String>('dueDate') ?? '';
     if (dueDateStr.isNotEmpty) {
       final DateTime? dueDate = DateTime.tryParse(dueDateStr);
       if (dueDate != null) {
         final bool overdue = dueDate.isBefore(DateTime.now());
-        tags.add(SoftTag(
-          label: 'Due ${formatCompactTimestamp(dueDate)}',
-          icon: Icons.event_rounded,
-          foregroundColor: overdue ? AppColors.danger : AppColors.info,
-          backgroundColor:
-              overdue ? AppColors.dangerLight : AppColors.infoLight,
-          dense: true,
-        ));
+        tags.add(
+          SoftTag(
+            label: 'Due ${formatCompactTimestamp(dueDate)}',
+            icon: Icons.event_rounded,
+            foregroundColor: overdue ? AppColors.danger : AppColors.info,
+            backgroundColor: overdue
+                ? AppColors.dangerLight
+                : AppColors.infoLight,
+            dense: true,
+          ),
+        );
       }
     }
   }
@@ -196,27 +223,32 @@ class ItemDetailScreen extends StatelessWidget {
   void _addMessagingTags(List<Widget> tags) {
     final String channel = item.meta<String>('channel') ?? '';
     if (channel.isNotEmpty) {
-      tags.add(SoftTag(
-        label: channel,
-        icon: Icons.tag_rounded,
-        backgroundColor: AppColors.slackLight,
-        foregroundColor: AppColors.slack,
-        dense: true,
-      ));
+      tags.add(
+        SoftTag(
+          label: channel,
+          icon: Icons.tag_rounded,
+          backgroundColor: AppColors.slackLight,
+          foregroundColor: AppColors.slack,
+          dense: true,
+        ),
+      );
     }
     final String kind = item.meta<String>('kind') ?? '';
     if (kind.isNotEmpty) {
-      tags.add(SoftTag(
-        label: kind == 'pr'
-            ? 'PR'
-            : kind == 'doc'
-                ? 'Doc'
-                : kind,
-        backgroundColor:
-            kind == 'pr' ? AppColors.githubLight : AppColors.infoLight,
-        foregroundColor: kind == 'pr' ? AppColors.github : AppColors.info,
-        dense: true,
-      ));
+      tags.add(
+        SoftTag(
+          label: kind == 'pr'
+              ? 'PR'
+              : kind == 'doc'
+              ? 'Doc'
+              : kind,
+          backgroundColor: kind == 'pr'
+              ? AppColors.githubLight
+              : AppColors.infoLight,
+          foregroundColor: kind == 'pr' ? AppColors.github : AppColors.info,
+          dense: true,
+        ),
+      );
     }
     final String severity = item.meta<String>('severity') ?? '';
     if (severity.isNotEmpty) {
@@ -224,18 +256,25 @@ class ItemDetailScreen extends StatelessWidget {
         (AlertSeverity s) => s.name == severity,
         orElse: () => AlertSeverity.info,
       );
-      tags.add(SoftTag(
-        label: sev.label,
-        icon: _severityIcon(sev),
-        foregroundColor: _severityFg(sev),
-        backgroundColor: _severityBg(sev),
-        dense: true,
-      ));
+      tags.add(
+        SoftTag(
+          label: sev.label,
+          icon: _severityIcon(sev),
+          foregroundColor: _severityFg(sev),
+          backgroundColor: _severityBg(sev),
+          dense: true,
+        ),
+      );
     }
     final String requester = item.meta<String>('requester') ?? '';
     if (requester.isNotEmpty) {
-      tags.add(SoftTag(
-          label: requester, icon: Icons.person_outline_rounded, dense: true));
+      tags.add(
+        SoftTag(
+          label: requester,
+          icon: Icons.person_outline_rounded,
+          dense: true,
+        ),
+      );
     }
   }
 
@@ -250,10 +289,9 @@ class ItemDetailScreen extends StatelessWidget {
       case IntegrationCategory.issueTracker:
         final String description = item.meta<String>('description') ?? '';
         if (description.isNotEmpty) {
-          content.add(_DescriptionCard(
-            label: 'Description',
-            text: description,
-          ));
+          content.add(
+            _DescriptionCard(label: 'Description', text: description),
+          );
         }
       case IntegrationCategory.messaging:
         final String message = item.meta<String>('message') ?? '';
@@ -275,7 +313,7 @@ class ItemDetailScreen extends StatelessWidget {
     final bool isCodeReview = item.category == IntegrationCategory.codeReview;
     final bool hasSlackLink =
         (item.meta<String>('slackDeepLink') ?? '').isNotEmpty ||
-            (item.meta<String>('slackWebLink') ?? '').isNotEmpty;
+        (item.meta<String>('slackWebLink') ?? '').isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -301,7 +339,9 @@ class ItemDetailScreen extends StatelessWidget {
                   final bool added = await controller.addItemToTodo(item);
                   if (!context.mounted) return;
                   showInfoSnackBar(
-                      context, added ? 'Added to ToDo.' : 'Already in ToDo.');
+                    context,
+                    added ? 'Added to ToDo.' : 'Already in ToDo.',
+                  );
                 },
                 icon: const Icon(Icons.add_rounded, size: 14),
                 label: const Text('ToDo'),
@@ -472,9 +512,13 @@ class _DescriptionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(label,
-              style: theme.textTheme.labelLarge
-                  ?.copyWith(fontSize: 11, color: AppColors.secondaryInk)),
+          Text(
+            label,
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontSize: 11,
+              color: AppColors.secondaryInk,
+            ),
+          ),
           const SizedBox(height: 6),
           Text(text, style: theme.textTheme.bodyMedium),
         ],
@@ -539,9 +583,13 @@ class _PrDetailsSectionState extends State<_PrDetailsSection> {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final String body = _details?.body ?? widget.item.meta<String>('body') ?? '';
+    final String body =
+        _details?.body ?? widget.item.meta<String>('body') ?? '';
     final int commits = _details?.commits ?? 0;
     final int changedFiles = _details?.changedFiles ?? 0;
+    final String filesLabel = changedFiles == 1
+        ? '$changedFiles file changed'
+        : '$changedFiles files changed';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -554,43 +602,59 @@ class _PrDetailsSectionState extends State<_PrDetailsSection> {
                 ? Row(
                     children: <Widget>[
                       const SizedBox(
-                          width: 12,
-                          height: 12,
-                          child: CircularProgressIndicator(strokeWidth: 1.5)),
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(strokeWidth: 1.5),
+                      ),
                       const SizedBox(width: 8),
-                      Text('Loading PR stats...',
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: AppColors.tertiaryInk)),
+                      Text(
+                        'Loading PR stats...',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.tertiaryInk,
+                        ),
+                      ),
                     ],
                   )
                 : Row(
                     children: <Widget>[
                       if (commits > 0) ...<Widget>[
-                        const Icon(Icons.commit_rounded,
-                            size: 14, color: AppColors.secondaryInk),
+                        const Icon(
+                          Icons.commit_rounded,
+                          size: 14,
+                          color: AppColors.secondaryInk,
+                        ),
                         const SizedBox(width: 4),
-                        Text('$commits commit${commits == 1 ? '' : 's'}',
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(fontWeight: FontWeight.w600)),
+                        Text(
+                          '$commits commit${commits == 1 ? '' : 's'}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         if (changedFiles > 0) ...<Widget>[
                           const SizedBox(width: 16),
                         ],
                       ],
                       if (changedFiles > 0) ...<Widget>[
-                        const Icon(Icons.description_outlined,
-                            size: 14, color: AppColors.secondaryInk),
+                        const Icon(
+                          Icons.description_outlined,
+                          size: 14,
+                          color: AppColors.secondaryInk,
+                        ),
                         const SizedBox(width: 4),
                         Text(
-                            '$changedFiles file${changedFiles == 1 ? '' : 's'} changed',
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(fontWeight: FontWeight.w600)),
+                          filesLabel,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ],
                       if (_loading) ...<Widget>[
                         const Spacer(),
                         const SizedBox(
-                            width: 10,
-                            height: 10,
-                            child: CircularProgressIndicator(strokeWidth: 1.5)),
+                          width: 10,
+                          height: 10,
+                          child: CircularProgressIndicator(strokeWidth: 1.5),
+                        ),
                       ],
                     ],
                   ),
@@ -687,7 +751,9 @@ class _AiReviewButton extends StatelessWidget {
               width: 13,
               height: 13,
               child: CircularProgressIndicator(
-                  strokeWidth: 1.5, color: Colors.white),
+                strokeWidth: 1.5,
+                color: Colors.white,
+              ),
             )
           : const Icon(Icons.auto_awesome_rounded, size: 14),
       label: Text(isReviewing ? 'Reviewing...' : 'AI Review'),
@@ -733,20 +799,30 @@ class _AiProviderPicker extends StatelessWidget {
                       color: AppColors.accentSuperLight,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.auto_awesome_rounded,
-                        size: 18, color: AppColors.accent),
+                    child: const Icon(
+                      Icons.auto_awesome_rounded,
+                      size: 18,
+                      color: AppColors.accent,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text('AI Review',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700, fontSize: 15)),
-                        Text('Choose a provider to review this PR',
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(color: AppColors.secondaryInk)),
+                        Text(
+                          'AI Review',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                        Text(
+                          'Choose a provider to review this PR',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.secondaryInk,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -765,11 +841,15 @@ class _AiProviderPicker extends StatelessWidget {
                       onTap: () => Navigator.pop(context, p.id),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 14),
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(14),
-                          border:
-                              Border.all(color: AppColors.divider, width: 0.8),
+                          border: Border.all(
+                            color: AppColors.divider,
+                            width: 0.8,
+                          ),
                         ),
                         child: Row(
                           children: <Widget>[
@@ -780,8 +860,11 @@ class _AiProviderPicker extends StatelessWidget {
                                 color: p.brandColorLight,
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child:
-                                  Icon(p.icon, color: p.brandColor, size: 20),
+                              child: Icon(
+                                p.icon,
+                                color: p.brandColor,
+                                size: 20,
+                              ),
                             ),
                             const SizedBox(width: 14),
                             Expanded(
@@ -791,21 +874,26 @@ class _AiProviderPicker extends StatelessWidget {
                                   Text(
                                     p.displayName,
                                     style: theme.textTheme.titleSmall?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14),
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     modelName,
                                     style: theme.textTheme.bodySmall?.copyWith(
-                                        color: AppColors.tertiaryInk,
-                                        fontSize: 11.5),
+                                      color: AppColors.tertiaryInk,
+                                      fontSize: 11.5,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                            const Icon(Icons.arrow_forward_ios_rounded,
-                                size: 14, color: AppColors.tertiaryInk),
+                            const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 14,
+                              color: AppColors.tertiaryInk,
+                            ),
                           ],
                         ),
                       ),
@@ -880,44 +968,60 @@ class _AiReviewSectionState extends State<_AiReviewSection> {
             children: <Widget>[
               Row(
                 children: <Widget>[
-                  const Icon(Icons.auto_awesome_rounded,
-                      size: 15, color: AppColors.accent),
+                  const Icon(
+                    Icons.auto_awesome_rounded,
+                    size: 15,
+                    color: AppColors.accent,
+                  ),
                   const SizedBox(width: 6),
-                  Text('AI Review',
-                      style: theme.textTheme.labelLarge
-                          ?.copyWith(color: AppColors.accent)),
+                  Text(
+                    'AI Review',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: AppColors.accent,
+                    ),
+                  ),
                   const Spacer(),
-                  Text(formatCompactTimestamp(review.generatedAt),
-                      style:
-                          theme.textTheme.labelMedium?.copyWith(fontSize: 10)),
+                  Text(
+                    formatCompactTimestamp(review.generatedAt),
+                    style: theme.textTheme.labelMedium?.copyWith(fontSize: 10),
+                  ),
                 ],
               ),
               if (review.verdict.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 10),
-                Text('Verdict',
-                    style: theme.textTheme.labelLarge?.copyWith(fontSize: 12)),
+                Text(
+                  'Verdict',
+                  style: theme.textTheme.labelLarge?.copyWith(fontSize: 12),
+                ),
                 const SizedBox(height: 4),
                 Text(review.verdict, style: theme.textTheme.bodyMedium),
               ],
               if (review.concerns.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 12),
-                Text('Concerns',
-                    style: theme.textTheme.labelLarge?.copyWith(fontSize: 12)),
+                Text(
+                  'Concerns',
+                  style: theme.textTheme.labelLarge?.copyWith(fontSize: 12),
+                ),
                 const SizedBox(height: 6),
-                ...review.concerns.map((AiReviewConcern c) =>
-                    _ConcernCard(item: widget.item, concern: c)),
+                ...review.concerns.map(
+                  (AiReviewConcern c) =>
+                      _ConcernCard(item: widget.item, concern: c),
+                ),
               ],
               if (review.mergeConfidence.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 10),
                 SoftTag(
-                    label: 'Merge: ${review.mergeConfidence}',
-                    icon: Icons.merge_rounded,
-                    dense: true),
+                  label: 'Merge: ${review.mergeConfidence}',
+                  icon: Icons.merge_rounded,
+                  dense: true,
+                ),
               ],
               if (review.executiveSummary.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 10),
-                Text(review.executiveSummary,
-                    style: theme.textTheme.bodyMedium),
+                Text(
+                  review.executiveSummary,
+                  style: theme.textTheme.bodyMedium,
+                ),
               ],
               if (review.concerns.isEmpty &&
                   review.rawReview.isNotEmpty) ...<Widget>[
@@ -939,7 +1043,10 @@ class _AiReviewSectionState extends State<_AiReviewSection> {
   }
 
   Widget _buildChatSection(
-      BuildContext context, AiReviewResult review, ThemeData theme) {
+    BuildContext context,
+    AiReviewResult review,
+    ThemeData theme,
+  ) {
     return AppSurface(
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -949,15 +1056,25 @@ class _AiReviewSectionState extends State<_AiReviewSection> {
             onTap: () => setState(() => _chatExpanded = !_chatExpanded),
             child: Row(
               children: <Widget>[
-                const Icon(Icons.chat_rounded,
-                    size: 15, color: AppColors.accent),
+                const Icon(
+                  Icons.chat_rounded,
+                  size: 15,
+                  color: AppColors.accent,
+                ),
                 const SizedBox(width: 6),
-                Text('Chat about this review',
-                    style: theme.textTheme.labelLarge
-                        ?.copyWith(color: AppColors.accent, fontSize: 12)),
+                Text(
+                  'Chat about this review',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: AppColors.accent,
+                    fontSize: 12,
+                  ),
+                ),
                 const Spacer(),
-                Icon(_chatExpanded ? Icons.expand_less : Icons.expand_more,
-                    size: 18, color: AppColors.tertiaryInk),
+                Icon(
+                  _chatExpanded ? Icons.expand_less : Icons.expand_more,
+                  size: 18,
+                  color: AppColors.tertiaryInk,
+                ),
               ],
             ),
           ),
@@ -973,22 +1090,27 @@ class _AiReviewSectionState extends State<_AiReviewSection> {
                     final AiChatMessage msg = _chatHistory[index];
                     final bool isUser = msg.role == 'user';
                     return Align(
-                      alignment:
-                          isUser ? Alignment.centerRight : Alignment.centerLeft,
+                      alignment: isUser
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 6),
                         padding: const EdgeInsets.all(10),
                         constraints: BoxConstraints(
-                            maxWidth: MediaQuery.of(context).size.width * 0.7),
+                          maxWidth: MediaQuery.of(context).size.width * 0.7,
+                        ),
                         decoration: BoxDecoration(
                           color: isUser
                               ? AppColors.accentLight
                               : AppColors.softSurface,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Text(msg.content,
-                            style: theme.textTheme.bodyMedium
-                                ?.copyWith(fontSize: 12)),
+                        child: Text(
+                          msg.content,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                     );
                   },
@@ -1001,7 +1123,9 @@ class _AiReviewSectionState extends State<_AiReviewSection> {
                     controller: _chatController,
                     style: const TextStyle(fontSize: 13),
                     decoration: const InputDecoration(
-                        hintText: 'Ask about this review...', isDense: true),
+                      hintText: 'Ask about this review...',
+                      isDense: true,
+                    ),
                     onSubmitted: (_) => _sendMessage(review),
                   ),
                 ),
@@ -1012,7 +1136,8 @@ class _AiReviewSectionState extends State<_AiReviewSection> {
                       ? const SizedBox(
                           width: 14,
                           height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2))
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                       : const Icon(Icons.send_rounded, size: 18),
                 ),
               ],
@@ -1023,8 +1148,10 @@ class _AiReviewSectionState extends State<_AiReviewSection> {
                 child: TextButton.icon(
                   onPressed: _clearChat,
                   icon: const Icon(Icons.delete_outline_rounded, size: 14),
-                  label: const Text('Clear conversation',
-                      style: TextStyle(fontSize: 11)),
+                  label: const Text(
+                    'Clear conversation',
+                    style: TextStyle(fontSize: 11),
+                  ),
                 ),
               ),
           ],
@@ -1093,7 +1220,9 @@ class _ConcernCard extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-            color: AppColors.outline.withValues(alpha: 0.5), width: 0.5),
+          color: AppColors.outline.withValues(alpha: 0.5),
+          width: 0.5,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1103,26 +1232,33 @@ class _ConcernCard extends StatelessWidget {
               SoftTag(
                 label: concern.severity,
                 foregroundColor: _severityColor(concern.severity),
-                backgroundColor:
-                    _severityColor(concern.severity).withValues(alpha: 0.1),
+                backgroundColor: _severityColor(
+                  concern.severity,
+                ).withValues(alpha: 0.1),
                 dense: true,
               ),
               const SizedBox(width: 6),
               Expanded(
-                  child: Text(concern.title,
-                      style:
-                          theme.textTheme.titleMedium?.copyWith(fontSize: 12))),
+                child: Text(
+                  concern.title,
+                  style: theme.textTheme.titleMedium?.copyWith(fontSize: 12),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 4),
-          Text(concern.description,
-              style: theme.textTheme.bodyMedium?.copyWith(fontSize: 11)),
+          Text(
+            concern.description,
+            style: theme.textTheme.bodyMedium?.copyWith(fontSize: 11),
+          ),
           if (concern.filePath != null) ...<Widget>[
             const SizedBox(height: 4),
             Text(
               '${concern.filePath}${concern.lineNumber != null ? ':${concern.lineNumber}' : ''}',
-              style: theme.textTheme.labelMedium
-                  ?.copyWith(fontSize: 10, fontFamily: 'monospace'),
+              style: theme.textTheme.labelMedium?.copyWith(
+                fontSize: 10,
+                fontFamily: 'monospace',
+              ),
             ),
           ],
           const SizedBox(height: 6),
@@ -1133,7 +1269,8 @@ class _ConcernCard extends StatelessWidget {
               icon: const Icon(Icons.comment_outlined, size: 12),
               label: const Text('Add comment', style: TextStyle(fontSize: 10)),
               style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8)),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
             ),
           ),
         ],
@@ -1142,7 +1279,9 @@ class _ConcernCard extends StatelessWidget {
   }
 
   Future<void> _addComment(
-      BuildContext context, EngiTrackController controller) async {
+    BuildContext context,
+    EngiTrackController controller,
+  ) async {
     final TextEditingController textController = TextEditingController(
       text:
           '**[${concern.severity}] ${concern.title}**\n\n${concern.description}'
@@ -1160,14 +1299,16 @@ class _ConcernCard extends StatelessWidget {
               controller: textController,
               maxLines: 8,
               style: const TextStyle(fontSize: 13),
-              decoration:
-                  const InputDecoration(hintText: 'Edit your comment...'),
+              decoration: const InputDecoration(
+                hintText: 'Edit your comment...',
+              ),
             ),
           ),
           actions: <Widget>[
             TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancel')),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, textController.text),
               child: const Text('Post comment'),
@@ -1184,7 +1325,9 @@ class _ConcernCard extends StatelessWidget {
         final String url = await controller.postPrComment(item, result);
         if (!context.mounted) return;
         showInfoSnackBar(
-            context, url.isNotEmpty ? 'Comment posted!' : 'Comment posted.');
+          context,
+          url.isNotEmpty ? 'Comment posted!' : 'Comment posted.',
+        );
       } catch (error) {
         if (!context.mounted) return;
         showInfoSnackBar(context, 'Failed to post: $error');

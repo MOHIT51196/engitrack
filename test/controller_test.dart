@@ -42,14 +42,17 @@ void main() {
   });
 
   EngiTrackController createController({ConnectorConfig? initialConfig}) {
-    when(() => mockStorage.loadConfig())
-        .thenAnswer((_) async => initialConfig ?? defaultConfig());
+    when(
+      () => mockStorage.loadConfig(),
+    ).thenAnswer((_) async => initialConfig ?? defaultConfig());
     when(() => mockStorage.loadTodos()).thenAnswer((_) async => <TodoItem>[]);
     when(() => mockStorage.loadNotes()).thenAnswer((_) async => <NoteItem>[]);
-    when(() => mockStorage.loadSeenAlertIds())
-        .thenAnswer((_) async => <String>{});
-    when(() => mockStorage.loadResolvedItemIds())
-        .thenAnswer((_) async => <String>{});
+    when(
+      () => mockStorage.loadSeenAlertIds(),
+    ).thenAnswer((_) async => <String>{});
+    when(
+      () => mockStorage.loadResolvedItemIds(),
+    ).thenAnswer((_) async => <String>{});
     when(() => mockStorage.saveTodos(any())).thenAnswer((_) async {});
     when(() => mockStorage.saveNotes(any())).thenAnswer((_) async {});
     when(() => mockStorage.saveConfig(any())).thenAnswer((_) async {});
@@ -57,47 +60,61 @@ void main() {
     when(() => mockStorage.saveResolvedItemIds(any())).thenAnswer((_) async {});
 
     when(() => mockNotifications.initialize()).thenAnswer((_) async {});
-    when(() => mockNotifications.cancelTodoReminder(any()))
-        .thenAnswer((_) async {});
-    when(() => mockNotifications.cancelAllTodoReminders())
-        .thenAnswer((_) async {});
-    when(() => mockNotifications.scheduleTodoReminder(
-          todoId: any(named: 'todoId'),
-          title: any(named: 'title'),
-          scheduledDate: any(named: 'scheduledDate'),
-          subtitle: any(named: 'subtitle'),
-        )).thenAnswer((_) async {});
+    when(
+      () => mockNotifications.cancelTodoReminder(any()),
+    ).thenAnswer((_) async {});
+    when(
+      () => mockNotifications.cancelAllTodoReminders(),
+    ).thenAnswer((_) async {});
+    when(
+      () => mockNotifications.scheduleTodoReminder(
+        todoId: any(named: 'todoId'),
+        title: any(named: 'title'),
+        scheduledDate: any(named: 'scheduledDate'),
+        subtitle: any(named: 'subtitle'),
+      ),
+    ).thenAnswer((_) async {});
 
-    when(() => mockGitHub.fetchPendingReviews(
-          username: any(named: 'username'),
-          token: any(named: 'token'),
-        )).thenAnswer((_) async => <GithubPullRequest>[]);
+    when(
+      () => mockGitHub.fetchPendingReviews(
+        username: any(named: 'username'),
+        token: any(named: 'token'),
+      ),
+    ).thenAnswer((_) async => <GithubPullRequest>[]);
 
-    when(() => mockJira.fetchAssignedIssues(
-          baseUrl: any(named: 'baseUrl'),
-          email: any(named: 'email'),
-          apiToken: any(named: 'apiToken'),
-        )).thenAnswer((_) async => <JiraIssue>[]);
+    when(
+      () => mockJira.fetchAssignedIssues(
+        baseUrl: any(named: 'baseUrl'),
+        email: any(named: 'email'),
+        apiToken: any(named: 'apiToken'),
+      ),
+    ).thenAnswer((_) async => <JiraIssue>[]);
 
-    when(() => mockJira.fetchMentionedIssues(
-          baseUrl: any(named: 'baseUrl'),
-          email: any(named: 'email'),
-          apiToken: any(named: 'apiToken'),
-        )).thenAnswer((_) async => <JiraIssue>[]);
+    when(
+      () => mockJira.fetchMentionedIssues(
+        baseUrl: any(named: 'baseUrl'),
+        email: any(named: 'email'),
+        apiToken: any(named: 'apiToken'),
+      ),
+    ).thenAnswer((_) async => <JiraIssue>[]);
 
-    when(() => mockSlack.fetchReviewRequests(
-          token: any(named: 'token'),
-          channels: any(named: 'channels'),
-        )).thenAnswer((_) async => <SlackReviewRequest>[]);
+    when(
+      () => mockSlack.fetchReviewRequests(
+        token: any(named: 'token'),
+        channels: any(named: 'channels'),
+      ),
+    ).thenAnswer((_) async => <SlackReviewRequest>[]);
 
-    when(() => mockSlack.fetchAlerts(
-          token: any(named: 'token'),
-          channel: any(named: 'channel'),
-        )).thenAnswer((_) async => <SlackAlert>[]);
+    when(
+      () => mockSlack.fetchAlerts(
+        token: any(named: 'token'),
+        channel: any(named: 'channel'),
+      ),
+    ).thenAnswer((_) async => <SlackAlert>[]);
 
-    when(() => mockSlack.fetchDmMentions(
-          token: any(named: 'token'),
-        )).thenAnswer((_) async => <SlackReviewRequest>[]);
+    when(
+      () => mockSlack.fetchDmMentions(token: any(named: 'token')),
+    ).thenAnswer((_) async => <SlackReviewRequest>[]);
 
     return EngiTrackController(
       storage: mockStorage,
@@ -166,11 +183,7 @@ void main() {
 
     test('toggleTodo updates completion state', () async {
       final controller = createController();
-      await controller.addToTodo(
-        title: 'T',
-        subtitle: 'S',
-        sourceLabel: 'x',
-      );
+      await controller.addToTodo(title: 'T', subtitle: 'S', sourceLabel: 'x');
 
       final todo = controller.todos.first;
       expect(todo.completed, isFalse);
@@ -184,11 +197,7 @@ void main() {
 
     test('deleteTodo removes and cancels reminder', () async {
       final controller = createController();
-      await controller.addToTodo(
-        title: 'T',
-        subtitle: 'S',
-        sourceLabel: 'x',
-      );
+      await controller.addToTodo(title: 'T', subtitle: 'S', sourceLabel: 'x');
       final id = controller.todos.first.id;
 
       await controller.deleteTodo(id);
@@ -198,11 +207,7 @@ void main() {
 
     test('updateTodo modifies in place', () async {
       final controller = createController();
-      await controller.addToTodo(
-        title: 'Old',
-        subtitle: 'S',
-        sourceLabel: 'x',
-      );
+      await controller.addToTodo(title: 'Old', subtitle: 'S', sourceLabel: 'x');
 
       final original = controller.todos.first;
       final updated = original.copyWith(title: 'New');
@@ -216,20 +221,14 @@ void main() {
     test('incomplete before complete, newest first', () async {
       final controller = createController();
 
-      await controller.addToTodo(
-        title: 'A',
-        subtitle: '',
-        sourceLabel: 'x',
-      );
+      await controller.addToTodo(title: 'A', subtitle: '', sourceLabel: 'x');
       await Future<void>.delayed(const Duration(milliseconds: 10));
-      await controller.addToTodo(
-        title: 'B',
-        subtitle: '',
-        sourceLabel: 'x',
-      );
+      await controller.addToTodo(title: 'B', subtitle: '', sourceLabel: 'x');
 
       await controller.toggleTodo(
-          controller.todos.firstWhere((t) => t.title == 'A'), true);
+        controller.todos.firstWhere((t) => t.title == 'A'),
+        true,
+      );
 
       final sorted = controller.sortedTodos;
       expect(sorted.first.title, 'B');

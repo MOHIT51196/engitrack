@@ -40,15 +40,13 @@ class _SplashScreenState extends State<SplashScreen>
       parent: _controller,
       curve: const Interval(0.35, 0.7, curve: Curves.easeOut),
     );
-    _taglineSlide = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.35, 0.7, curve: Curves.easeOutCubic),
-      ),
-    );
+    _taglineSlide = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: const Interval(0.35, 0.7, curve: Curves.easeOutCubic),
+          ),
+        );
 
     _controller.forward();
 
@@ -74,7 +72,7 @@ class _SplashScreenState extends State<SplashScreen>
             colors: <Color>[
               Color(0xFF080E1A),
               Color(0xFF0B1220),
-              Color(0xFF131D2E)
+              Color(0xFF131D2E),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -99,8 +97,9 @@ class _SplashScreenState extends State<SplashScreen>
                           borderRadius: BorderRadius.circular(22),
                           boxShadow: <BoxShadow>[
                             BoxShadow(
-                              color: const Color(0xFFFF6B5E)
-                                  .withValues(alpha: 0.15),
+                              color: const Color(
+                                0xFFFF6B5E,
+                              ).withValues(alpha: 0.15),
                               blurRadius: 40,
                               spreadRadius: 4,
                             ),

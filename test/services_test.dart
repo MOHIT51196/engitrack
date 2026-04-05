@@ -15,7 +15,8 @@ void main() {
   setUpAll(() {
     registerFallbackValue(Uri.parse('https://example.com'));
     registerFallbackValue(
-        http.Request('GET', Uri.parse('https://example.com')));
+      http.Request('GET', Uri.parse('https://example.com')),
+    );
   });
 
   setUp(() {
@@ -44,6 +45,7 @@ void main() {
             'repository_url': 'https://api.github.com/repos/alice/project',
             'number': 42,
             'title': 'Add feature',
+            'body': 'This PR adds a new feature',
             'user': <String, dynamic>{'login': 'bob'},
             'html_url': 'https://github.com/alice/project/pull/42',
             'updated_at': '2025-06-15T10:00:00Z',
@@ -55,8 +57,9 @@ void main() {
         ],
       });
 
-      when(() => mockClient.get(any(), headers: any(named: 'headers')))
-          .thenAnswer((_) async => http.Response(responseBody, 200));
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer((_) async => http.Response(responseBody, 200));
 
       final prs = await service.fetchPendingReviews(
         username: 'alice',
@@ -71,22 +74,22 @@ void main() {
       expect(prs.first.author, 'bob');
       expect(prs.first.labels, ['enhancement']);
       expect(prs.first.draft, isFalse);
+      expect(prs.first.body, 'This PR adds a new feature');
     });
 
     test('fetchPendingReviews handles empty items', () async {
-      when(() => mockClient.get(any(), headers: any(named: 'headers')))
-          .thenAnswer((_) async => http.Response('{"items":[]}', 200));
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer((_) async => http.Response('{"items":[]}', 200));
 
-      final prs = await service.fetchPendingReviews(
-        username: 'u',
-        token: 't',
-      );
+      final prs = await service.fetchPendingReviews(username: 'u', token: 't');
       expect(prs, isEmpty);
     });
 
     test('fetchPendingReviews throws on non-200', () async {
-      when(() => mockClient.get(any(), headers: any(named: 'headers')))
-          .thenAnswer((_) async => http.Response('{"message":"bad"}', 401));
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer((_) async => http.Response('{"message":"bad"}', 401));
 
       expect(
         () => service.fetchPendingReviews(username: 'u', token: 't'),
@@ -100,6 +103,7 @@ void main() {
         'base': <String, dynamic>{'ref': 'main'},
         'head': <String, dynamic>{'ref': 'feature/x'},
         'changed_files': 3,
+        'commits': 4,
       });
       final filesBody = jsonEncode(<Map<String, dynamic>>[
         <String, dynamic>{
@@ -112,8 +116,9 @@ void main() {
       ]);
 
       int callCount = 0;
-      when(() => mockClient.get(any(), headers: any(named: 'headers')))
-          .thenAnswer((_) async {
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer((_) async {
         callCount++;
         if (callCount == 1) return http.Response(detailsBody, 200);
         return http.Response(filesBody, 200);
@@ -139,21 +144,26 @@ void main() {
       expect(ctx.baseBranch, 'main');
       expect(ctx.headBranch, 'feature/x');
       expect(ctx.changedFiles, 3);
+      expect(ctx.commits, 4);
       expect(ctx.files, hasLength(1));
       expect(ctx.files.first.filename, 'lib/a.dart');
     });
 
     test('postPrComment returns html_url', () async {
-      when(() => mockClient.post(
-            any(),
-            headers: any(named: 'headers'),
-            body: any(named: 'body'),
-          )).thenAnswer((_) async => http.Response(
-            jsonEncode(<String, dynamic>{
-              'html_url': 'https://github.com/o/r/issues/1#comment-123',
-            }),
-            201,
-          ));
+      when(
+        () => mockClient.post(
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        ),
+      ).thenAnswer(
+        (_) async => http.Response(
+          jsonEncode(<String, dynamic>{
+            'html_url': 'https://github.com/o/r/issues/1#comment-123',
+          }),
+          201,
+        ),
+      );
 
       final url = await service.postPrComment(
         owner: 'o',
@@ -195,13 +205,29 @@ void main() {
                 'fields': <String, dynamic>{'summary': 'Epic'},
               },
               'duedate': '2025-07-01',
+              'description': <String, dynamic>{
+                'type': 'doc',
+                'version': 1,
+                'content': <Map<String, dynamic>>[
+                  <String, dynamic>{
+                    'type': 'paragraph',
+                    'content': <Map<String, dynamic>>[
+                      <String, dynamic>{
+                        'type': 'text',
+                        'text': 'Login page crashes on submit',
+                      },
+                    ],
+                  },
+                ],
+              },
             },
           },
         ],
       });
 
-      when(() => mockClient.get(any(), headers: any(named: 'headers')))
-          .thenAnswer((_) async => http.Response(myselfBody, 200));
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer((_) async => http.Response(myselfBody, 200));
 
       when(() => mockClient.send(any())).thenAnswer((_) async {
         return http.StreamedResponse(
@@ -223,6 +249,7 @@ void main() {
       expect(issues.first.priority, 'High');
       expect(issues.first.parentKey, 'PROJ-1');
       expect(issues.first.dueDate, isNotNull);
+      expect(issues.first.description, 'Login page crashes on submit');
     });
   });
 
@@ -242,10 +269,7 @@ void main() {
     });
 
     test('fetchAlerts returns empty for blank channel', () async {
-      final result = await service.fetchAlerts(
-        token: 'xoxb-tok',
-        channel: '',
-      );
+      final result = await service.fetchAlerts(token: 'xoxb-tok', channel: '');
       expect(result, isEmpty);
     });
 
@@ -266,10 +290,7 @@ void main() {
     });
 
     test('buildSlackWebLink formats correctly', () {
-      final link = service.buildSlackWebLink(
-        teamId: 'T123',
-        channelId: 'C456',
-      );
+      final link = service.buildSlackWebLink(teamId: 'T123', channelId: 'C456');
       expect(link, 'https://app.slack.com/client/T123/C456');
     });
 
@@ -280,50 +301,55 @@ void main() {
     });
 
     test('fetchTeamId caches result', () async {
-      when(() => mockClient.get(any(), headers: any(named: 'headers')))
-          .thenAnswer((_) async => http.Response(
-                jsonEncode(<String, dynamic>{
-                  'ok': true,
-                  'team_id': 'T-CACHED',
-                }),
-                200,
-              ));
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer(
+        (_) async => http.Response(
+          jsonEncode(<String, dynamic>{'ok': true, 'team_id': 'T-CACHED'}),
+          200,
+        ),
+      );
 
       final first = await service.fetchTeamId(token: 'tok');
       final second = await service.fetchTeamId(token: 'tok');
       expect(first, 'T-CACHED');
       expect(second, 'T-CACHED');
-      verify(() => mockClient.get(any(), headers: any(named: 'headers')))
-          .called(1);
+      verify(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).called(1);
     });
 
     test('validateToken returns user_id', () async {
-      when(() => mockClient.get(any(), headers: any(named: 'headers')))
-          .thenAnswer((_) async => http.Response(
-                jsonEncode(<String, dynamic>{
-                  'ok': true,
-                  'user_id': 'U123',
-                }),
-                200,
-              ));
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer(
+        (_) async => http.Response(
+          jsonEncode(<String, dynamic>{'ok': true, 'user_id': 'U123'}),
+          200,
+        ),
+      );
 
       final userId = await service.validateToken(token: 'tok');
       expect(userId, 'U123');
     });
 
     test('refreshAccessToken returns tokens', () async {
-      when(() => mockClient.post(
-            any(),
-            headers: any(named: 'headers'),
-            body: any(named: 'body'),
-          )).thenAnswer((_) async => http.Response(
-            jsonEncode(<String, dynamic>{
-              'ok': true,
-              'access_token': 'xoxe.new-access',
-              'refresh_token': 'xoxe.new-refresh',
-            }),
-            200,
-          ));
+      when(
+        () => mockClient.post(
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        ),
+      ).thenAnswer(
+        (_) async => http.Response(
+          jsonEncode(<String, dynamic>{
+            'ok': true,
+            'access_token': 'xoxe.new-access',
+            'refresh_token': 'xoxe.new-refresh',
+          }),
+          200,
+        ),
+      );
 
       final result = await service.refreshAccessToken(
         refreshToken: 'xoxe.old',
@@ -336,14 +362,14 @@ void main() {
     });
 
     test('throws ServiceException on Slack error response', () async {
-      when(() => mockClient.get(any(), headers: any(named: 'headers')))
-          .thenAnswer((_) async => http.Response(
-                jsonEncode(<String, dynamic>{
-                  'ok': false,
-                  'error': 'invalid_auth',
-                }),
-                200,
-              ));
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer(
+        (_) async => http.Response(
+          jsonEncode(<String, dynamic>{'ok': false, 'error': 'invalid_auth'}),
+          200,
+        ),
+      );
 
       expect(
         () => service.validateToken(token: 'bad-tok'),
@@ -363,8 +389,9 @@ void main() {
         ],
       });
 
-      when(() => mockClient.get(any(), headers: any(named: 'headers')))
-          .thenAnswer((_) async => http.Response(historyResponse, 200));
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer((_) async => http.Response(historyResponse, 200));
 
       final results = await service.fetchReviewRequests(
         token: 'xoxb-tok',
@@ -403,8 +430,9 @@ void main() {
         ],
       });
 
-      when(() => mockClient.get(any(), headers: any(named: 'headers')))
-          .thenAnswer((_) async => http.Response(historyResponse, 200));
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer((_) async => http.Response(historyResponse, 200));
 
       final alerts = await service.fetchAlerts(
         token: 'xoxb-tok',
@@ -426,19 +454,22 @@ void main() {
     });
 
     test('fetchOpenAiModels filters and sorts', () async {
-      when(() => mockClient.get(any(), headers: any(named: 'headers')))
-          .thenAnswer((_) async => http.Response(
-                jsonEncode(<String, dynamic>{
-                  'data': <Map<String, dynamic>>[
-                    <String, dynamic>{'id': 'gpt-4o'},
-                    <String, dynamic>{'id': 'gpt-4.1-mini'},
-                    <String, dynamic>{'id': 'dall-e-3'},
-                    <String, dynamic>{'id': 'gpt-4o-realtime'},
-                    <String, dynamic>{'id': 'o1-preview'},
-                  ],
-                }),
-                200,
-              ));
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer(
+        (_) async => http.Response(
+          jsonEncode(<String, dynamic>{
+            'data': <Map<String, dynamic>>[
+              <String, dynamic>{'id': 'gpt-4o'},
+              <String, dynamic>{'id': 'gpt-4.1-mini'},
+              <String, dynamic>{'id': 'dall-e-3'},
+              <String, dynamic>{'id': 'gpt-4o-realtime'},
+              <String, dynamic>{'id': 'o1-preview'},
+            ],
+          }),
+          200,
+        ),
+      );
 
       final models = await service.fetchOpenAiModels(apiKey: 'sk-test');
       final ids = models.map((m) => m.value).toList();
@@ -452,23 +483,25 @@ void main() {
     });
 
     test('fetchGeminiModels filters by generateContent', () async {
-      when(() => mockClient.get(any())).thenAnswer((_) async => http.Response(
-            jsonEncode(<String, dynamic>{
-              'models': <Map<String, dynamic>>[
-                <String, dynamic>{
-                  'name': 'models/gemini-2.0-flash',
-                  'displayName': 'Gemini 2.0 Flash',
-                  'supportedGenerationMethods': ['generateContent'],
-                },
-                <String, dynamic>{
-                  'name': 'models/embedding-001',
-                  'displayName': 'Embedding',
-                  'supportedGenerationMethods': ['embedContent'],
-                },
-              ],
-            }),
-            200,
-          ));
+      when(() => mockClient.get(any())).thenAnswer(
+        (_) async => http.Response(
+          jsonEncode(<String, dynamic>{
+            'models': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'name': 'models/gemini-2.0-flash',
+                'displayName': 'Gemini 2.0 Flash',
+                'supportedGenerationMethods': ['generateContent'],
+              },
+              <String, dynamic>{
+                'name': 'models/embedding-001',
+                'displayName': 'Embedding',
+                'supportedGenerationMethods': ['embedContent'],
+              },
+            ],
+          }),
+          200,
+        ),
+      );
 
       final models = await service.fetchGeminiModels(apiKey: 'gem-key');
       expect(models, hasLength(1));
@@ -477,18 +510,21 @@ void main() {
     });
 
     test('fetchClaudeModels returns models', () async {
-      when(() => mockClient.get(any(), headers: any(named: 'headers')))
-          .thenAnswer((_) async => http.Response(
-                jsonEncode(<String, dynamic>{
-                  'data': <Map<String, dynamic>>[
-                    <String, dynamic>{
-                      'id': 'claude-sonnet-4-20250514',
-                      'display_name': 'Claude Sonnet 4',
-                    },
-                  ],
-                }),
-                200,
-              ));
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer(
+        (_) async => http.Response(
+          jsonEncode(<String, dynamic>{
+            'data': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'id': 'claude-sonnet-4-20250514',
+                'display_name': 'Claude Sonnet 4',
+              },
+            ],
+          }),
+          200,
+        ),
+      );
 
       final models = await service.fetchClaudeModels(apiKey: 'cl-key');
       expect(models, hasLength(1));
@@ -497,17 +533,20 @@ void main() {
     });
 
     test('fetchGrokModels filters grok prefix', () async {
-      when(() => mockClient.get(any(), headers: any(named: 'headers')))
-          .thenAnswer((_) async => http.Response(
-                jsonEncode(<String, dynamic>{
-                  'data': <Map<String, dynamic>>[
-                    <String, dynamic>{'id': 'grok-3-mini-fast'},
-                    <String, dynamic>{'id': 'grok-3'},
-                    <String, dynamic>{'id': 'other-model'},
-                  ],
-                }),
-                200,
-              ));
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer(
+        (_) async => http.Response(
+          jsonEncode(<String, dynamic>{
+            'data': <Map<String, dynamic>>[
+              <String, dynamic>{'id': 'grok-3-mini-fast'},
+              <String, dynamic>{'id': 'grok-3'},
+              <String, dynamic>{'id': 'other-model'},
+            ],
+          }),
+          200,
+        ),
+      );
 
       final models = await service.fetchGrokModels(apiKey: 'grok-key');
       final ids = models.map((m) => m.value).toList();

@@ -274,7 +274,8 @@ class ConnectorConfig {
       jiraBaseUrl: json['jiraBaseUrl'] as String? ?? '',
       jiraEmail: json['jiraEmail'] as String? ?? '',
       jiraApiToken: json['jiraApiToken'] as String? ?? '',
-      slackReviewChannels: (json['slackReviewChannels'] as List<dynamic>?)
+      slackReviewChannels:
+          (json['slackReviewChannels'] as List<dynamic>?)
               ?.map((dynamic e) => e.toString())
               .toList() ??
           const <String>[],
@@ -419,7 +420,8 @@ class TodoItem {
       subtitle: json['subtitle'] as String? ?? '',
       sourceLabel: json['sourceLabel'] as String? ?? '',
       sourceUrl: json['sourceUrl'] as String? ?? '',
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.now(),
       completed: json['completed'] as bool? ?? false,
       reminderDate: json['reminderDate'] != null
@@ -488,9 +490,11 @@ class NoteItem {
       id: json['id'] as String,
       title: json['title'] as String? ?? '',
       body: json['body'] as String? ?? '',
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.now(),
-      updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
+      updatedAt:
+          DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
           DateTime.now(),
     );
   }
@@ -784,7 +788,8 @@ class AiChatMessage {
       id: json['id'] as String? ?? '',
       role: json['role'] as String? ?? 'user',
       content: json['content'] as String? ?? '',
-      timestamp: DateTime.tryParse(json['timestamp'] as String? ?? '') ??
+      timestamp:
+          DateTime.tryParse(json['timestamp'] as String? ?? '') ??
           DateTime.now(),
     );
   }

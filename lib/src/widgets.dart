@@ -42,8 +42,10 @@ Future<void> openExternalUrl(BuildContext context, String rawUrl) async {
     return;
   }
 
-  final bool launched =
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+  final bool launched = await launchUrl(
+    uri,
+    mode: LaunchMode.externalApplication,
+  );
   if (!launched && context.mounted) {
     showInfoSnackBar(context, 'Could not open the link.');
   }
@@ -110,10 +112,7 @@ class AppSurface extends StatelessWidget {
             ),
         ],
       ),
-      child: Padding(
-        padding: padding,
-        child: child,
-      ),
+      child: Padding(padding: padding, child: child),
     );
   }
 }
@@ -308,8 +307,9 @@ class EmptyStateCard extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             title,
-            style: theme.textTheme.titleMedium
-                ?.copyWith(color: AppColors.secondaryInk),
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: AppColors.secondaryInk,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 4),
@@ -317,8 +317,9 @@ class EmptyStateCard extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 280),
             child: Text(
               message,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.tertiaryInk),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.tertiaryInk,
+              ),
               textAlign: TextAlign.center,
             ),
           ),
@@ -386,10 +387,7 @@ class BrandLogo extends StatelessWidget {
 }
 
 class StatusBadge extends StatelessWidget {
-  const StatusBadge({
-    super.key,
-    required this.isConfigured,
-  });
+  const StatusBadge({super.key, required this.isConfigured});
 
   final bool isConfigured;
 
@@ -435,11 +433,7 @@ class StatusBadge extends StatelessWidget {
 }
 
 class CountBadge extends StatelessWidget {
-  const CountBadge({
-    super.key,
-    required this.count,
-    required this.color,
-  });
+  const CountBadge({super.key, required this.count, required this.color});
 
   final int count;
   final Color color;
