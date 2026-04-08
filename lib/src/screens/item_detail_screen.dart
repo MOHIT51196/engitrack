@@ -39,7 +39,8 @@ class ItemDetailScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              if (item.category != IntegrationCategory.issueTracker) ...<Widget>[
+              if (item.category !=
+                  IntegrationCategory.issueTracker) ...<Widget>[
                 Text(item.title, style: theme.textTheme.headlineMedium),
                 const SizedBox(height: 12),
               ],
@@ -131,11 +132,7 @@ class ItemDetailScreen extends StatelessWidget {
               dense: true,
             ),
             const SizedBox(width: 4),
-            SoftTag(
-              label: time,
-              icon: Icons.schedule_rounded,
-              dense: true,
-            ),
+            SoftTag(label: time, icon: Icons.schedule_rounded, dense: true),
           ],
         ),
         const SizedBox(height: 6),
@@ -172,8 +169,7 @@ class ItemDetailScreen extends StatelessWidget {
                 label: status,
                 icon: Icons.circle,
                 foregroundColor: _statusColor(status),
-                backgroundColor:
-                    _statusColor(status).withValues(alpha: 0.08),
+                backgroundColor: _statusColor(status).withValues(alpha: 0.08),
                 dense: true,
               ),
             if (status.isNotEmpty && priority.isNotEmpty)
@@ -183,8 +179,9 @@ class ItemDetailScreen extends StatelessWidget {
                 label: priority,
                 icon: Icons.arrow_upward_rounded,
                 foregroundColor: _priorityColor(priority),
-                backgroundColor:
-                    _priorityColor(priority).withValues(alpha: 0.08),
+                backgroundColor: _priorityColor(
+                  priority,
+                ).withValues(alpha: 0.08),
                 dense: true,
               ),
           ],
