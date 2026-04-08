@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../ai/ai_provider.dart';
@@ -38,8 +39,10 @@ class ItemDetailScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(item.title, style: theme.textTheme.headlineMedium),
-              const SizedBox(height: 12),
+              if (item.category != IntegrationCategory.issueTracker) ...<Widget>[
+                Text(item.title, style: theme.textTheme.headlineMedium),
+                const SizedBox(height: 12),
+              ],
               _buildMetaTags(context),
               const SizedBox(height: 16),
               _buildCategoryContent(context),
@@ -53,6 +56,10 @@ class ItemDetailScreen extends StatelessWidget {
   }
 
   Widget _buildMetaTags(BuildContext context) {
+    if (item.category == IntegrationCategory.issueTracker) {
+      return _buildIssueTrackerRows(context);
+    }
+
     final List<Widget> tags = <Widget>[];
 
     tags.add(
@@ -85,12 +92,125 @@ class ItemDetailScreen extends StatelessWidget {
       case IntegrationCategory.codeReview:
         _addCodeReviewTags(tags);
       case IntegrationCategory.issueTracker:
-        _addIssueTrackerTags(tags);
+        break;
       case IntegrationCategory.messaging:
         _addMessagingTags(tags);
     }
 
     return Wrap(spacing: 4, runSpacing: 4, children: tags);
+  }
+
+  Widget _buildIssueTrackerRows(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final String status = item.meta<String>('status') ?? '';
+    final String priority = item.meta<String>('priority') ?? '';
+    final String issueType = item.meta<String>('issueType') ?? '';
+    final String assignee = item.meta<String>('assignee') ?? '';
+    final String parentKey = item.meta<String>('parentKey') ?? '';
+    final String parentTitle = item.meta<String>('parentTitle') ?? '';
+    final String date = DateFormat('MMM d, y').format(item.timestamp);
+    final String time = DateFormat('h:mm a').format(item.timestamp);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        // Row 1: reason, date, time
+        Row(
+          children: <Widget>[
+            SoftTag(
+              label: item.reason.label,
+              icon: _iconForReason(item.reason),
+              backgroundColor: _bgForReason(item.reason),
+              foregroundColor: _fgForReason(item.reason),
+              dense: true,
+            ),
+            const SizedBox(width: 4),
+            SoftTag(
+              label: date,
+              icon: Icons.calendar_today_rounded,
+              dense: true,
+            ),
+            const SizedBox(width: 4),
+            SoftTag(
+              label: time,
+              icon: Icons.schedule_rounded,
+              dense: true,
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        // Row 2: jira tracker type + parent tracker
+        Row(
+          children: <Widget>[
+            if (issueType.isNotEmpty)
+              SoftTag(
+                label: issueType,
+                icon: Icons.category_rounded,
+                dense: true,
+              ),
+            if (parentKey.isNotEmpty) ...<Widget>[
+              if (issueType.isNotEmpty) const SizedBox(width: 4),
+              SoftTag(
+                label: parentTitle.isEmpty
+                    ? parentKey
+                    : '$parentKey: $parentTitle',
+                icon: Icons.account_tree_rounded,
+                backgroundColor: AppColors.accentLight,
+                foregroundColor: AppColors.accent,
+                dense: true,
+                shrinkable: true,
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 6),
+        // Row 3: status, priority
+        Row(
+          children: <Widget>[
+            if (status.isNotEmpty)
+              SoftTag(
+                label: status,
+                icon: Icons.circle,
+                foregroundColor: _statusColor(status),
+                backgroundColor:
+                    _statusColor(status).withValues(alpha: 0.08),
+                dense: true,
+              ),
+            if (status.isNotEmpty && priority.isNotEmpty)
+              const SizedBox(width: 4),
+            if (priority.isNotEmpty)
+              SoftTag(
+                label: priority,
+                icon: Icons.arrow_upward_rounded,
+                foregroundColor: _priorityColor(priority),
+                backgroundColor:
+                    _priorityColor(priority).withValues(alpha: 0.08),
+                dense: true,
+              ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        // Row 4: assignee
+        SoftTag(
+          label: assignee.isEmpty ? 'Unassigned' : assignee,
+          icon: Icons.person_outline_rounded,
+          foregroundColor: assignee.isEmpty ? AppColors.warning : null,
+          backgroundColor: assignee.isEmpty ? AppColors.warningLight : null,
+          dense: true,
+        ),
+        const SizedBox(height: 6),
+        // Row 5: jira title (horizontal scrollable)
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Text(
+            item.title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   void _addCodeReviewTags(List<Widget> tags) {
@@ -143,80 +263,6 @@ class ItemDetailScreen extends StatelessWidget {
           dense: true,
         ),
       );
-    }
-  }
-
-  void _addIssueTrackerTags(List<Widget> tags) {
-    final String status = item.meta<String>('status') ?? '';
-    if (status.isNotEmpty) {
-      tags.add(
-        SoftTag(
-          label: status,
-          icon: Icons.circle,
-          foregroundColor: _statusColor(status),
-          backgroundColor: _statusColor(status).withValues(alpha: 0.08),
-          dense: true,
-        ),
-      );
-    }
-    final String priority = item.meta<String>('priority') ?? '';
-    if (priority.isNotEmpty) {
-      tags.add(
-        SoftTag(
-          label: priority,
-          icon: Icons.arrow_upward_rounded,
-          foregroundColor: _priorityColor(priority),
-          backgroundColor: _priorityColor(priority).withValues(alpha: 0.08),
-          dense: true,
-        ),
-      );
-    }
-    final String issueType = item.meta<String>('issueType') ?? '';
-    if (issueType.isNotEmpty) {
-      tags.add(
-        SoftTag(label: issueType, icon: Icons.category_rounded, dense: true),
-      );
-    }
-    final String assignee = item.meta<String>('assignee') ?? '';
-    tags.add(
-      SoftTag(
-        label: assignee.isEmpty ? 'Unassigned' : assignee,
-        icon: Icons.person_outline_rounded,
-        foregroundColor: assignee.isEmpty ? AppColors.warning : null,
-        backgroundColor: assignee.isEmpty ? AppColors.warningLight : null,
-        dense: true,
-      ),
-    );
-    final String parentKey = item.meta<String>('parentKey') ?? '';
-    if (parentKey.isNotEmpty) {
-      final String parentTitle = item.meta<String>('parentTitle') ?? '';
-      tags.add(
-        SoftTag(
-          label: parentTitle.isEmpty ? parentKey : '$parentKey: $parentTitle',
-          icon: Icons.account_tree_rounded,
-          backgroundColor: AppColors.accentLight,
-          foregroundColor: AppColors.accent,
-          dense: true,
-        ),
-      );
-    }
-    final String dueDateStr = item.meta<String>('dueDate') ?? '';
-    if (dueDateStr.isNotEmpty) {
-      final DateTime? dueDate = DateTime.tryParse(dueDateStr);
-      if (dueDate != null) {
-        final bool overdue = dueDate.isBefore(DateTime.now());
-        tags.add(
-          SoftTag(
-            label: 'Due ${formatCompactTimestamp(dueDate)}',
-            icon: Icons.event_rounded,
-            foregroundColor: overdue ? AppColors.danger : AppColors.info,
-            backgroundColor: overdue
-                ? AppColors.dangerLight
-                : AppColors.infoLight,
-            dense: true,
-          ),
-        );
-      }
     }
   }
 

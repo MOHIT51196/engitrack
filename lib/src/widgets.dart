@@ -161,6 +161,7 @@ class SoftTag extends StatelessWidget {
     this.backgroundColor,
     this.foregroundColor,
     this.dense = false,
+    this.shrinkable = false,
   });
 
   final String label;
@@ -168,12 +169,13 @@ class SoftTag extends StatelessWidget {
   final Color? backgroundColor;
   final Color? foregroundColor;
   final bool dense;
+  final bool shrinkable;
 
   @override
   Widget build(BuildContext context) {
     final Color bg = backgroundColor ?? AppColors.softSurface;
     final Color fg = foregroundColor ?? AppColors.secondaryInk;
-    return Container(
+    final Widget content = Container(
       padding: EdgeInsets.symmetric(
         horizontal: dense ? 6 : 8,
         vertical: dense ? 3 : 4,
@@ -189,19 +191,26 @@ class SoftTag extends StatelessWidget {
             Icon(icon, size: dense ? 11 : 12, color: fg),
             SizedBox(width: dense ? 3 : 4),
           ],
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: dense ? 10 : 11,
-              fontWeight: FontWeight.w600,
-              color: fg,
-              letterSpacing: 0.1,
-              height: 1.2,
+          Flexible(
+            child: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: dense ? 10 : 11,
+                fontWeight: FontWeight.w600,
+                color: fg,
+                letterSpacing: 0.1,
+                height: 1.2,
+              ),
             ),
           ),
         ],
       ),
     );
+    if (shrinkable) {
+      return Flexible(child: content);
+    }
+    return content;
   }
 }
 
