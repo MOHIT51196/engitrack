@@ -62,17 +62,23 @@ class AppStorage {
 
   Future<void> saveConfig(ConnectorConfig config) async {
     await _preferences.setString(
-        _configKey, jsonEncode(config.toPreferencesJson()));
+      _configKey,
+      jsonEncode(config.toPreferencesJson()),
+    );
     await Future.wait(<Future<void>>[
       _secureStorage.write(key: _githubTokenKey, value: config.githubToken),
       _secureStorage.write(key: _jiraEmailKey, value: config.jiraEmail),
       _secureStorage.write(key: _jiraApiTokenKey, value: config.jiraApiToken),
       _secureStorage.write(key: _slackTokenKey, value: config.slackToken),
       _secureStorage.write(
-          key: _slackRefreshTokenKey, value: config.slackRefreshToken),
+        key: _slackRefreshTokenKey,
+        value: config.slackRefreshToken,
+      ),
       _secureStorage.write(key: _slackClientIdKey, value: config.slackClientId),
       _secureStorage.write(
-          key: _slackClientSecretKey, value: config.slackClientSecret),
+        key: _slackClientSecretKey,
+        value: config.slackClientSecret,
+      ),
       _secureStorage.write(key: _openAiApiKeyKey, value: config.openAiApiKey),
       _secureStorage.write(key: _geminiApiKeyKey, value: config.geminiApiKey),
       _secureStorage.write(key: _claudeApiKeyKey, value: config.claudeApiKey),
@@ -142,8 +148,10 @@ class AppStorage {
     if (raw == null || raw.isEmpty) return <AiChatMessage>[];
     final decoded = jsonDecode(raw) as List<dynamic>;
     return decoded
-        .map((dynamic item) =>
-            AiChatMessage.fromJson(item as Map<String, dynamic>))
+        .map(
+          (dynamic item) =>
+              AiChatMessage.fromJson(item as Map<String, dynamic>),
+        )
         .toList();
   }
 

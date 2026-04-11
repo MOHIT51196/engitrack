@@ -143,8 +143,10 @@ class OpenAiProvider extends AiProvider {
           if (apiKey(config).isNotEmpty)
             'Authorization': 'Bearer ${apiKey(config)}',
         },
-        body: jsonEncode(
-            <String, dynamic>{'model': model(config), 'messages': messages}),
+        body: jsonEncode(<String, dynamic>{
+          'model': model(config),
+          'messages': messages,
+        }),
       );
       final Map<String, dynamic> json = decodeJsonBody(response);
       responseText = json['review'] as String? ??

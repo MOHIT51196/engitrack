@@ -513,6 +513,8 @@ class GithubPullRequest {
     this.deletions = 0,
     this.labels = const <String>[],
     this.summary,
+    this.body = '',
+    this.commits = 0,
   });
 
   final String id;
@@ -530,6 +532,8 @@ class GithubPullRequest {
   final int deletions;
   final List<String> labels;
   final String? summary;
+  final String body;
+  final int commits;
 
   String get repository => '$owner/$repo';
 }
@@ -549,6 +553,7 @@ class JiraIssue {
     this.parentKey = '',
     this.parentTitle = '',
     this.dueDate,
+    this.description = '',
   });
 
   final String id;
@@ -564,6 +569,7 @@ class JiraIssue {
   final String parentKey;
   final String parentTitle;
   final DateTime? dueDate;
+  final String description;
 }
 
 class SlackReviewRequest {
@@ -650,12 +656,14 @@ class PullRequestContext {
     required this.headBranch,
     required this.changedFiles,
     required this.files,
+    this.commits = 0,
   });
 
   final GithubPullRequest pullRequest;
   final String body;
   final String baseBranch;
   final String headBranch;
+  final int commits;
   final int changedFiles;
   final List<PullRequestFile> files;
 

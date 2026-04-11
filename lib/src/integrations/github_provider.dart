@@ -57,6 +57,8 @@ class GitHubProvider implements IntegrationProvider {
         'labels': pr.labels,
         'summary': pr.summary,
         'repository': pr.repository,
+        'body': pr.body,
+        'commits': pr.commits,
       },
     );
   }
@@ -81,6 +83,8 @@ class GitHubProvider implements IntegrationProvider {
               .toList() ??
           const <String>[],
       summary: item.meta<String>('summary'),
+      body: item.meta<String>('body') ?? '',
+      commits: item.meta<int>('commits') ?? 0,
     );
   }
 }

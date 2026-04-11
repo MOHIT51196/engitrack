@@ -42,8 +42,10 @@ Future<void> openExternalUrl(BuildContext context, String rawUrl) async {
     return;
   }
 
-  final bool launched =
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+  final bool launched = await launchUrl(
+    uri,
+    mode: LaunchMode.externalApplication,
+  );
   if (!launched && context.mounted) {
     showInfoSnackBar(context, 'Could not open the link.');
   }
@@ -110,10 +112,7 @@ class AppSurface extends StatelessWidget {
             ),
         ],
       ),
-      child: Padding(
-        padding: padding,
-        child: child,
-      ),
+      child: Padding(padding: padding, child: child),
     );
   }
 }
@@ -162,6 +161,7 @@ class SoftTag extends StatelessWidget {
     this.backgroundColor,
     this.foregroundColor,
     this.dense = false,
+    this.shrinkable = false,
   });
 
   final String label;
@@ -169,12 +169,13 @@ class SoftTag extends StatelessWidget {
   final Color? backgroundColor;
   final Color? foregroundColor;
   final bool dense;
+  final bool shrinkable;
 
   @override
   Widget build(BuildContext context) {
     final Color bg = backgroundColor ?? AppColors.softSurface;
     final Color fg = foregroundColor ?? AppColors.secondaryInk;
-    return Container(
+    final Widget content = Container(
       padding: EdgeInsets.symmetric(
         horizontal: dense ? 6 : 8,
         vertical: dense ? 3 : 4,
@@ -190,19 +191,26 @@ class SoftTag extends StatelessWidget {
             Icon(icon, size: dense ? 11 : 12, color: fg),
             SizedBox(width: dense ? 3 : 4),
           ],
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: dense ? 10 : 11,
-              fontWeight: FontWeight.w600,
-              color: fg,
-              letterSpacing: 0.1,
-              height: 1.2,
+          Flexible(
+            child: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: dense ? 10 : 11,
+                fontWeight: FontWeight.w600,
+                color: fg,
+                letterSpacing: 0.1,
+                height: 1.2,
+              ),
             ),
           ),
         ],
       ),
     );
+    if (shrinkable) {
+      return Flexible(child: content);
+    }
+    return content;
   }
 }
 
@@ -308,8 +316,9 @@ class EmptyStateCard extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             title,
-            style: theme.textTheme.titleMedium
-                ?.copyWith(color: AppColors.secondaryInk),
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: AppColors.secondaryInk,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 4),
@@ -317,8 +326,9 @@ class EmptyStateCard extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 280),
             child: Text(
               message,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.tertiaryInk),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.tertiaryInk,
+              ),
               textAlign: TextAlign.center,
             ),
           ),
@@ -386,10 +396,7 @@ class BrandLogo extends StatelessWidget {
 }
 
 class StatusBadge extends StatelessWidget {
-  const StatusBadge({
-    super.key,
-    required this.isConfigured,
-  });
+  const StatusBadge({super.key, required this.isConfigured});
 
   final bool isConfigured;
 
@@ -435,11 +442,7 @@ class StatusBadge extends StatelessWidget {
 }
 
 class CountBadge extends StatelessWidget {
-  const CountBadge({
-    super.key,
-    required this.count,
-    required this.color,
-  });
+  const CountBadge({super.key, required this.count, required this.color});
 
   final int count;
   final Color color;

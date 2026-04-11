@@ -12,8 +12,9 @@ String buildReviewPrompt(PullRequestContext context) {
   for (final PullRequestFile file in cappedFiles) {
     diffBuffer.writeln('FILE: ${file.filename}');
     diffBuffer.writeln('STATUS: ${file.status}');
-    diffBuffer
-        .writeln('ADDITIONS: ${file.additions}, DELETIONS: ${file.deletions}');
+    diffBuffer.writeln(
+      'ADDITIONS: ${file.additions}, DELETIONS: ${file.deletions}',
+    );
     final String patch = (file.patch ?? '').trim();
     if (patch.isNotEmpty) {
       final String boundedPatch = patch.length > 1800
@@ -87,11 +88,13 @@ AiReviewResult parseStructuredReview(String output) {
     }
     final Map<String, dynamic> parsed =
         jsonDecode(jsonStr) as Map<String, dynamic>;
-    final List<AiReviewConcern> concerns = (parsed['concerns']
-                as List<dynamic>? ??
-            const <dynamic>[])
-        .map((dynamic c) => AiReviewConcern.fromJson(c as Map<String, dynamic>))
-        .toList();
+    final List<AiReviewConcern> concerns =
+        (parsed['concerns'] as List<dynamic>? ?? const <dynamic>[])
+            .map(
+              (dynamic c) =>
+                  AiReviewConcern.fromJson(c as Map<String, dynamic>),
+            )
+            .toList();
     return AiReviewResult(
       verdict: parsed['verdict'] as String? ?? '',
       concerns: concerns,
@@ -149,18 +152,21 @@ Future<http.Response> postChatCompletion({
   if (kDebugMode) {
     debugPrint('[$tag] Response status=${response.statusCode}');
     debugPrint(
-        '[$tag] Response body=${response.body.length > 500 ? '${response.body.substring(0, 500)}...' : response.body}');
+      '[$tag] Response body=${response.body.length > 500 ? '${response.body.substring(0, 500)}...' : response.body}',
+    );
   }
 
   return response;
 }
 
 Map<String, dynamic> decodeJsonBody(http.Response response) {
-  final dynamic decoded =
-      jsonDecode(response.body.isEmpty ? '{}' : response.body);
+  final dynamic decoded = jsonDecode(
+    response.body.isEmpty ? '{}' : response.body,
+  );
   if (response.statusCode < 200 || response.statusCode >= 300) {
     throw ServiceException(
-        'Request failed (${response.statusCode}): ${response.body}');
+      'Request failed (${response.statusCode}): ${response.body}',
+    );
   }
   if (decoded is Map<String, dynamic>) {
     return decoded;

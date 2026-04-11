@@ -131,7 +131,9 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                     width: 14,
                     height: 14,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: AppColors.accent),
+                      strokeWidth: 2,
+                      color: AppColors.accent,
+                    ),
                   ),
                 ),
               ),
@@ -140,7 +142,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
               onPressed: _deleteNote,
               icon: const Icon(Icons.delete_outline_rounded, size: 18),
               style: IconButton.styleFrom(
-                  foregroundColor: AppColors.danger.withValues(alpha: 0.7)),
+                foregroundColor: AppColors.danger.withValues(alpha: 0.7),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.only(right: 10),
@@ -167,19 +170,24 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
               children: <Widget>[
                 Row(
                   children: <Widget>[
-                    const Icon(Icons.schedule_rounded,
-                        size: 12, color: AppColors.tertiaryInk),
+                    const Icon(
+                      Icons.schedule_rounded,
+                      size: 12,
+                      color: AppColors.tertiaryInk,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       formatTimestamp(_workingNote.createdAt),
-                      style:
-                          theme.textTheme.labelMedium?.copyWith(fontSize: 10),
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontSize: 10,
+                      ),
                     ),
                     const Spacer(),
                     Text(
                       '$_wordCount words',
-                      style:
-                          theme.textTheme.labelMedium?.copyWith(fontSize: 10),
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontSize: 10,
+                      ),
                     ),
                   ],
                 ),

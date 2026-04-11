@@ -16,8 +16,10 @@ class ResolvedItemsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Resolved Items',
-            style: theme.textTheme.titleLarge?.copyWith(fontSize: 17)),
+        title: Text(
+          'Resolved Items',
+          style: theme.textTheme.titleLarge?.copyWith(fontSize: 17),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, size: 20),
           onPressed: () => Navigator.of(context).pop(),
@@ -75,8 +77,9 @@ class _ResolvedItemCard extends StatelessWidget {
               children: <Widget>[
                 Text(
                   item.subtitle,
-                  style: theme.textTheme.labelMedium
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(

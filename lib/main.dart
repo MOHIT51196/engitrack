@@ -87,10 +87,7 @@ class _EngiTrackAppState extends State<EngiTrackApp> {
       theme: buildEngiTrackTheme(),
       builder: (BuildContext context, Widget? navigator) {
         if (_controller != null) {
-          return EngiTrackScope(
-            controller: _controller!,
-            child: navigator!,
-          );
+          return EngiTrackScope(controller: _controller!, child: navigator!);
         }
         return navigator!;
       },

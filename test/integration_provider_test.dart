@@ -124,43 +124,48 @@ void main() {
 
     test('isConfigured delegates to config', () {
       expect(
-        provider.isConfigured(const ConnectorConfig(
-          githubEnabled: true,
-          githubUsername: 'u',
-          githubToken: 't',
-        )),
+        provider.isConfigured(
+          const ConnectorConfig(
+            githubEnabled: true,
+            githubUsername: 'u',
+            githubToken: 't',
+          ),
+        ),
         isTrue,
       );
-      expect(
-        provider.isConfigured(const ConnectorConfig()),
-        isFalse,
-      );
+      expect(provider.isConfigured(const ConnectorConfig()), isFalse);
     });
 
     test('fetchItems maps PRs to IntegrationItems', () async {
-      when(() => mockService.fetchPendingReviews(
-            username: any(named: 'username'),
-            token: any(named: 'token'),
-          )).thenAnswer((_) async => <GithubPullRequest>[
-            GithubPullRequest(
-              id: 'alice/proj#1',
-              owner: 'alice',
-              repo: 'proj',
-              number: 1,
-              title: 'Add feat',
-              author: 'bob',
-              url: 'https://github.com/alice/proj/pull/1',
-              updatedAt: DateTime.utc(2025, 6, 15),
-              draft: true,
-              labels: <String>['wip'],
-            ),
-          ]);
+      when(
+        () => mockService.fetchPendingReviews(
+          username: any(named: 'username'),
+          token: any(named: 'token'),
+        ),
+      ).thenAnswer(
+        (_) async => <GithubPullRequest>[
+          GithubPullRequest(
+            id: 'alice/proj#1',
+            owner: 'alice',
+            repo: 'proj',
+            number: 1,
+            title: 'Add feat',
+            author: 'bob',
+            url: 'https://github.com/alice/proj/pull/1',
+            updatedAt: DateTime.utc(2025, 6, 15),
+            draft: true,
+            labels: <String>['wip'],
+          ),
+        ],
+      );
 
-      final items = await provider.fetchItems(const ConnectorConfig(
-        githubEnabled: true,
-        githubUsername: 'alice',
-        githubToken: 'tok',
-      ));
+      final items = await provider.fetchItems(
+        const ConnectorConfig(
+          githubEnabled: true,
+          githubUsername: 'alice',
+          githubToken: 'tok',
+        ),
+      );
 
       expect(items, hasLength(1));
       expect(items.first.id, 'alice/proj#1');
@@ -191,6 +196,8 @@ void main() {
           'additions': 10,
           'deletions': 2,
           'labels': <String>['bug'],
+          'body': 'PR body text',
+          'commits': 4,
         },
       );
 
@@ -201,6 +208,8 @@ void main() {
       expect(pr.headBranch, 'feat');
       expect(pr.changedFiles, 3);
       expect(pr.labels, ['bug']);
+      expect(pr.body, 'PR body text');
+      expect(pr.commits, 4);
     });
   });
 
@@ -221,12 +230,14 @@ void main() {
 
     test('isConfigured delegates to config', () {
       expect(
-        provider.isConfigured(const ConnectorConfig(
-          jiraEnabled: true,
-          jiraBaseUrl: 'https://x.atlassian.net',
-          jiraEmail: 'a@b.com',
-          jiraApiToken: 'tok',
-        )),
+        provider.isConfigured(
+          const ConnectorConfig(
+            jiraEnabled: true,
+            jiraBaseUrl: 'https://x.atlassian.net',
+            jiraEmail: 'a@b.com',
+            jiraApiToken: 'tok',
+          ),
+        ),
         isTrue,
       );
       expect(provider.isConfigured(const ConnectorConfig()), isFalse);
@@ -257,24 +268,30 @@ void main() {
         projectName: 'Project',
       );
 
-      when(() => mockService.fetchAssignedIssues(
-            baseUrl: any(named: 'baseUrl'),
-            email: any(named: 'email'),
-            apiToken: any(named: 'apiToken'),
-          )).thenAnswer((_) async => <JiraIssue>[assignedIssue]);
+      when(
+        () => mockService.fetchAssignedIssues(
+          baseUrl: any(named: 'baseUrl'),
+          email: any(named: 'email'),
+          apiToken: any(named: 'apiToken'),
+        ),
+      ).thenAnswer((_) async => <JiraIssue>[assignedIssue]);
 
-      when(() => mockService.fetchMentionedIssues(
-            baseUrl: any(named: 'baseUrl'),
-            email: any(named: 'email'),
-            apiToken: any(named: 'apiToken'),
-          )).thenAnswer((_) async => <JiraIssue>[mentionedIssue]);
+      when(
+        () => mockService.fetchMentionedIssues(
+          baseUrl: any(named: 'baseUrl'),
+          email: any(named: 'email'),
+          apiToken: any(named: 'apiToken'),
+        ),
+      ).thenAnswer((_) async => <JiraIssue>[mentionedIssue]);
 
-      final items = await provider.fetchItems(const ConnectorConfig(
-        jiraEnabled: true,
-        jiraBaseUrl: 'https://x.atlassian.net',
-        jiraEmail: 'a@b.com',
-        jiraApiToken: 'tok',
-      ));
+      final items = await provider.fetchItems(
+        const ConnectorConfig(
+          jiraEnabled: true,
+          jiraBaseUrl: 'https://x.atlassian.net',
+          jiraEmail: 'a@b.com',
+          jiraApiToken: 'tok',
+        ),
+      );
 
       expect(items, hasLength(2));
       final reasons = items.map((i) => i.reason).toSet();
@@ -283,24 +300,30 @@ void main() {
     });
 
     test('fetchItems handles mentioned issues failure gracefully', () async {
-      when(() => mockService.fetchAssignedIssues(
-            baseUrl: any(named: 'baseUrl'),
-            email: any(named: 'email'),
-            apiToken: any(named: 'apiToken'),
-          )).thenAnswer((_) async => <JiraIssue>[]);
+      when(
+        () => mockService.fetchAssignedIssues(
+          baseUrl: any(named: 'baseUrl'),
+          email: any(named: 'email'),
+          apiToken: any(named: 'apiToken'),
+        ),
+      ).thenAnswer((_) async => <JiraIssue>[]);
 
-      when(() => mockService.fetchMentionedIssues(
-            baseUrl: any(named: 'baseUrl'),
-            email: any(named: 'email'),
-            apiToken: any(named: 'apiToken'),
-          )).thenThrow(Exception('Not supported'));
+      when(
+        () => mockService.fetchMentionedIssues(
+          baseUrl: any(named: 'baseUrl'),
+          email: any(named: 'email'),
+          apiToken: any(named: 'apiToken'),
+        ),
+      ).thenThrow(Exception('Not supported'));
 
-      final items = await provider.fetchItems(const ConnectorConfig(
-        jiraEnabled: true,
-        jiraBaseUrl: 'https://x.atlassian.net',
-        jiraEmail: 'a@b.com',
-        jiraApiToken: 'tok',
-      ));
+      final items = await provider.fetchItems(
+        const ConnectorConfig(
+          jiraEnabled: true,
+          jiraBaseUrl: 'https://x.atlassian.net',
+          jiraEmail: 'a@b.com',
+          jiraApiToken: 'tok',
+        ),
+      );
 
       expect(items, isEmpty);
     });
@@ -325,6 +348,7 @@ void main() {
           'parentKey': 'PROJ-1',
           'parentTitle': 'Epic',
           'dueDate': '2025-07-01T00:00:00.000Z',
+          'description': 'Issue description text',
         },
       );
 
@@ -333,6 +357,7 @@ void main() {
       expect(issue.status, 'In Progress');
       expect(issue.parentKey, 'PROJ-1');
       expect(issue.dueDate, isNotNull);
+      expect(issue.description, 'Issue description text');
     });
   });
 
@@ -353,57 +378,69 @@ void main() {
 
     test('isConfigured delegates to config', () {
       expect(
-        provider.isConfigured(const ConnectorConfig(
-          slackEnabled: true,
-          slackToken: 'xoxb-tok',
-          slackReviewChannels: <String>['ch'],
-        )),
+        provider.isConfigured(
+          const ConnectorConfig(
+            slackEnabled: true,
+            slackToken: 'xoxb-tok',
+            slackReviewChannels: <String>['ch'],
+          ),
+        ),
         isTrue,
       );
       expect(provider.isConfigured(const ConnectorConfig()), isFalse);
     });
 
     test('fetchItems combines reviews and alerts', () async {
-      when(() => mockService.fetchReviewRequests(
-            token: any(named: 'token'),
-            channels: any(named: 'channels'),
-          )).thenAnswer((_) async => <SlackReviewRequest>[
-            SlackReviewRequest(
-              id: 'rev-1',
-              channel: '#pr-reviews',
-              kind: SlackReviewKind.pr,
-              title: 'Review PR',
-              requester: 'U1',
-              message: 'Please review',
-              createdAt: DateTime.utc(2025, 6, 15),
-              url: 'https://github.com/o/r/pull/1',
-            ),
-          ]);
+      when(
+        () => mockService.fetchReviewRequests(
+          token: any(named: 'token'),
+          channels: any(named: 'channels'),
+        ),
+      ).thenAnswer(
+        (_) async => <SlackReviewRequest>[
+          SlackReviewRequest(
+            id: 'rev-1',
+            channel: '#pr-reviews',
+            kind: SlackReviewKind.pr,
+            title: 'Review PR',
+            requester: 'U1',
+            message: 'Please review',
+            createdAt: DateTime.utc(2025, 6, 15),
+            url: 'https://github.com/o/r/pull/1',
+          ),
+        ],
+      );
 
-      when(() => mockService.fetchAlerts(
-            token: any(named: 'token'),
-            channel: any(named: 'channel'),
-          )).thenAnswer((_) async => <SlackAlert>[
-            SlackAlert(
-              id: 'alert-1',
-              channel: '#alerts',
-              title: 'DB down',
-              message: 'Critical incident',
-              createdAt: DateTime.utc(2025, 6, 15),
-              severity: AlertSeverity.critical,
-            ),
-          ]);
+      when(
+        () => mockService.fetchAlerts(
+          token: any(named: 'token'),
+          channel: any(named: 'channel'),
+        ),
+      ).thenAnswer(
+        (_) async => <SlackAlert>[
+          SlackAlert(
+            id: 'alert-1',
+            channel: '#alerts',
+            title: 'DB down',
+            message: 'Critical incident',
+            createdAt: DateTime.utc(2025, 6, 15),
+            severity: AlertSeverity.critical,
+          ),
+        ],
+      );
 
-      when(() => mockService.fetchDmMentions(
-            token: any(named: 'token'),
-          )).thenAnswer((_) async => <SlackReviewRequest>[]);
+      when(
+        () => mockService.fetchDmMentions(token: any(named: 'token')),
+      ).thenAnswer((_) async => <SlackReviewRequest>[]);
 
-      final items = await provider.fetchItems(const ConnectorConfig(
-        slackEnabled: true,
-        slackToken: 'xoxb-tok',
-        slackReviewChannels: <String>['pr-reviews'],
-        slackAlertChannel: 'alerts',
-      ));
+      final items = await provider.fetchItems(
+        const ConnectorConfig(
+          slackEnabled: true,
+          slackToken: 'xoxb-tok',
+          slackReviewChannels: <String>['pr-reviews'],
+          slackAlertChannel: 'alerts',
+        ),
+      );
 
       expect(items, hasLength(2));
       final reasons = items.map((i) => i.reason).toSet();

@@ -86,30 +86,30 @@ void main() {
 
     test('isConfigured with API key', () {
       expect(
-        provider.isConfigured(const ConnectorConfig(
-          openAiEnabled: true,
-          openAiApiKey: 'sk-key',
-        )),
+        provider.isConfigured(
+          const ConnectorConfig(openAiEnabled: true, openAiApiKey: 'sk-key'),
+        ),
         isTrue,
       );
     });
 
     test('isConfigured with proxy URL', () {
       expect(
-        provider.isConfigured(const ConnectorConfig(
-          openAiEnabled: true,
-          openAiProxyUrl: 'https://proxy.example.com',
-        )),
+        provider.isConfigured(
+          const ConnectorConfig(
+            openAiEnabled: true,
+            openAiProxyUrl: 'https://proxy.example.com',
+          ),
+        ),
         isTrue,
       );
     });
 
     test('isConfigured false when disabled', () {
       expect(
-        provider.isConfigured(const ConnectorConfig(
-          openAiEnabled: false,
-          openAiApiKey: 'sk-key',
-        )),
+        provider.isConfigured(
+          const ConnectorConfig(openAiEnabled: false, openAiApiKey: 'sk-key'),
+        ),
         isFalse,
       );
     });
@@ -129,13 +129,16 @@ void main() {
     });
 
     test('reviewPullRequest via direct API', () async {
-      when(() => mockClient.post(
-                any(),
-                headers: any(named: 'headers'),
-                body: any(named: 'body'),
-              ))
-          .thenAnswer((_) async =>
-              http.Response(_chatCompletionResponse(_validReviewJson()), 200));
+      when(
+        () => mockClient.post(
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        ),
+      ).thenAnswer(
+        (_) async =>
+            http.Response(_chatCompletionResponse(_validReviewJson()), 200),
+      );
 
       final result = await provider.reviewPullRequest(
         context: _makeContext(),
@@ -163,14 +166,18 @@ void main() {
     });
 
     test('reviewPullRequest via proxy', () async {
-      when(() => mockClient.post(
-                any(),
-                headers: any(named: 'headers'),
-                body: any(named: 'body'),
-              ))
-          .thenAnswer((_) async => http.Response(
-              jsonEncode(<String, dynamic>{'review': _validReviewJson()}),
-              200));
+      when(
+        () => mockClient.post(
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        ),
+      ).thenAnswer(
+        (_) async => http.Response(
+          jsonEncode(<String, dynamic>{'review': _validReviewJson()}),
+          200,
+        ),
+      );
 
       final result = await provider.reviewPullRequest(
         context: _makeContext(),
@@ -200,10 +207,9 @@ void main() {
 
     test('isConfigured', () {
       expect(
-        provider.isConfigured(const ConnectorConfig(
-          geminiEnabled: true,
-          geminiApiKey: 'key',
-        )),
+        provider.isConfigured(
+          const ConnectorConfig(geminiEnabled: true, geminiApiKey: 'key'),
+        ),
         isTrue,
       );
       expect(
@@ -231,13 +237,16 @@ void main() {
     });
 
     test('reviewPullRequest succeeds with mock', () async {
-      when(() => mockClient.post(
-                any(),
-                headers: any(named: 'headers'),
-                body: any(named: 'body'),
-              ))
-          .thenAnswer((_) async =>
-              http.Response(_chatCompletionResponse(_validReviewJson()), 200));
+      when(
+        () => mockClient.post(
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        ),
+      ).thenAnswer(
+        (_) async =>
+            http.Response(_chatCompletionResponse(_validReviewJson()), 200),
+      );
 
       final result = await provider.reviewPullRequest(
         context: _makeContext(),
@@ -266,10 +275,9 @@ void main() {
 
     test('isConfigured', () {
       expect(
-        provider.isConfigured(const ConnectorConfig(
-          claudeEnabled: true,
-          claudeApiKey: 'key',
-        )),
+        provider.isConfigured(
+          const ConnectorConfig(claudeEnabled: true, claudeApiKey: 'key'),
+        ),
         isTrue,
       );
     });
@@ -295,18 +303,17 @@ void main() {
     test('reviewPullRequest succeeds with mock', () async {
       final claudeResponse = jsonEncode(<String, dynamic>{
         'content': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'type': 'text',
-            'text': _validReviewJson(),
-          },
+          <String, dynamic>{'type': 'text', 'text': _validReviewJson()},
         ],
       });
 
-      when(() => mockClient.post(
-            any(),
-            headers: any(named: 'headers'),
-            body: any(named: 'body'),
-          )).thenAnswer((_) async => http.Response(claudeResponse, 200));
+      when(
+        () => mockClient.post(
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        ),
+      ).thenAnswer((_) async => http.Response(claudeResponse, 200));
 
       final result = await provider.reviewPullRequest(
         context: _makeContext(),
@@ -332,10 +339,9 @@ void main() {
 
     test('isConfigured', () {
       expect(
-        provider.isConfigured(const ConnectorConfig(
-          grokEnabled: true,
-          grokApiKey: 'key',
-        )),
+        provider.isConfigured(
+          const ConnectorConfig(grokEnabled: true, grokApiKey: 'key'),
+        ),
         isTrue,
       );
     });
@@ -359,13 +365,16 @@ void main() {
     });
 
     test('reviewPullRequest succeeds with mock', () async {
-      when(() => mockClient.post(
-                any(),
-                headers: any(named: 'headers'),
-                body: any(named: 'body'),
-              ))
-          .thenAnswer((_) async =>
-              http.Response(_chatCompletionResponse(_validReviewJson()), 200));
+      when(
+        () => mockClient.post(
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        ),
+      ).thenAnswer(
+        (_) async =>
+            http.Response(_chatCompletionResponse(_validReviewJson()), 200),
+      );
 
       final result = await provider.reviewPullRequest(
         context: _makeContext(),

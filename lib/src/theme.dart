@@ -84,33 +84,35 @@ ThemeData buildEngiTrackTheme() {
       backgroundColor: AppColors.surface,
       surfaceTintColor: Colors.transparent,
       indicatorColor: AppColors.accentLight,
-      labelTextStyle: WidgetStateProperty.resolveWith<TextStyle?>(
-        (Set<WidgetState> states) {
-          final selected = states.contains(WidgetState.selected);
-          return TextStyle(
-            fontSize: 11,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            color: selected ? AppColors.accent : AppColors.tertiaryInk,
-            letterSpacing: 0.2,
-          );
-        },
-      ),
-      iconTheme: WidgetStateProperty.resolveWith<IconThemeData?>(
-        (Set<WidgetState> states) {
-          final selected = states.contains(WidgetState.selected);
-          return IconThemeData(
-            color: selected ? AppColors.accent : AppColors.tertiaryInk,
-            size: 21,
-          );
-        },
-      ),
+      labelTextStyle: WidgetStateProperty.resolveWith<TextStyle?>((
+        Set<WidgetState> states,
+      ) {
+        final selected = states.contains(WidgetState.selected);
+        return TextStyle(
+          fontSize: 11,
+          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          color: selected ? AppColors.accent : AppColors.tertiaryInk,
+          letterSpacing: 0.2,
+        );
+      }),
+      iconTheme: WidgetStateProperty.resolveWith<IconThemeData?>((
+        Set<WidgetState> states,
+      ) {
+        final selected = states.contains(WidgetState.selected);
+        return IconThemeData(
+          color: selected ? AppColors.accent : AppColors.tertiaryInk,
+          size: 21,
+        );
+      }),
     ),
     navigationRailTheme: const NavigationRailThemeData(
       backgroundColor: Colors.transparent,
       indicatorColor: Color(0xFFEDE9FE),
       selectedIconTheme: IconThemeData(color: AppColors.accent, size: 20),
-      unselectedIconTheme:
-          IconThemeData(color: AppColors.tertiaryInk, size: 20),
+      unselectedIconTheme: IconThemeData(
+        color: AppColors.tertiaryInk,
+        size: 20,
+      ),
       selectedLabelTextStyle: TextStyle(
         color: AppColors.accent,
         fontWeight: FontWeight.w700,
@@ -203,8 +205,10 @@ ThemeData buildEngiTrackTheme() {
       ),
       hintStyle: const TextStyle(color: AppColors.tertiaryInk, fontSize: 13),
       labelStyle: const TextStyle(color: AppColors.secondaryInk, fontSize: 13),
-      floatingLabelStyle:
-          const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600),
+      floatingLabelStyle: const TextStyle(
+        color: AppColors.accent,
+        fontWeight: FontWeight.w600,
+      ),
     ),
     chipTheme: base.chipTheme.copyWith(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -227,7 +231,10 @@ ThemeData buildEngiTrackTheme() {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
         textStyle: const TextStyle(
-            fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0),
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0,
+        ),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
@@ -237,7 +244,10 @@ ThemeData buildEngiTrackTheme() {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         textStyle: const TextStyle(
-            fontSize: 13, fontWeight: FontWeight.w500, letterSpacing: 0),
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          letterSpacing: 0,
+        ),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
@@ -255,7 +265,10 @@ ThemeData buildEngiTrackTheme() {
     snackBarTheme: SnackBarThemeData(
       backgroundColor: AppColors.ink,
       contentTextStyle: const TextStyle(
-          color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+        color: Colors.white,
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+      ),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       elevation: 8,
@@ -266,34 +279,34 @@ ThemeData buildEngiTrackTheme() {
       space: 0,
     ),
     checkboxTheme: CheckboxThemeData(
-      fillColor: WidgetStateProperty.resolveWith<Color>(
-        (Set<WidgetState> states) {
-          if (states.contains(WidgetState.selected)) {
-            return AppColors.accent;
-          }
-          return Colors.transparent;
-        },
-      ),
+      fillColor: WidgetStateProperty.resolveWith<Color>((
+        Set<WidgetState> states,
+      ) {
+        if (states.contains(WidgetState.selected)) {
+          return AppColors.accent;
+        }
+        return Colors.transparent;
+      }),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       side: const BorderSide(color: AppColors.outline, width: 1.5),
     ),
     switchTheme: SwitchThemeData(
-      thumbColor: WidgetStateProperty.resolveWith<Color>(
-        (Set<WidgetState> states) {
-          if (states.contains(WidgetState.selected)) {
-            return Colors.white;
-          }
-          return AppColors.tertiaryInk;
-        },
-      ),
-      trackColor: WidgetStateProperty.resolveWith<Color>(
-        (Set<WidgetState> states) {
-          if (states.contains(WidgetState.selected)) {
-            return AppColors.accent;
-          }
-          return AppColors.outline;
-        },
-      ),
+      thumbColor: WidgetStateProperty.resolveWith<Color>((
+        Set<WidgetState> states,
+      ) {
+        if (states.contains(WidgetState.selected)) {
+          return Colors.white;
+        }
+        return AppColors.tertiaryInk;
+      }),
+      trackColor: WidgetStateProperty.resolveWith<Color>((
+        Set<WidgetState> states,
+      ) {
+        if (states.contains(WidgetState.selected)) {
+          return AppColors.accent;
+        }
+        return AppColors.outline;
+      }),
       trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
     ),
     tooltipTheme: TooltipThemeData(
@@ -302,7 +315,10 @@ ThemeData buildEngiTrackTheme() {
         borderRadius: BorderRadius.circular(8),
       ),
       textStyle: const TextStyle(
-          color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+        color: Colors.white,
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+      ),
     ),
   );
 }

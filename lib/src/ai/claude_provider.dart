@@ -138,7 +138,8 @@ class ClaudeProvider extends AiProvider {
     if (kDebugMode) {
       debugPrint('[$tag] Response status=${response.statusCode}');
       debugPrint(
-          '[$tag] Response body=${response.body.length > 500 ? '${response.body.substring(0, 500)}...' : response.body}');
+        '[$tag] Response body=${response.body.length > 500 ? '${response.body.substring(0, 500)}...' : response.body}',
+      );
     }
 
     return response;

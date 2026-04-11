@@ -263,7 +263,9 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             msg.contains('license') ||
             msg.contains('permission')) {
           showInfoSnackBar(
-              context, 'Grok: Activate API credits at console.x.ai');
+            context,
+            'Grok: Activate API credits at console.x.ai',
+          );
         } else {
           showInfoSnackBar(context, 'Could not fetch Grok models.');
         }
@@ -400,8 +402,10 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
               if (!mounted) return;
               if (granted) setState(() => _notificationsEnabled = true);
               if (!context.mounted) return;
-              showInfoSnackBar(context,
-                  granted ? 'Permission granted.' : 'Permission not granted.');
+              showInfoSnackBar(
+                context,
+                granted ? 'Permission granted.' : 'Permission not granted.',
+              );
             },
           ),
 
@@ -445,10 +449,11 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
               ),
               const SizedBox(height: 10),
               _SecretField(
-                  controller: _githubTokenController,
-                  label: 'Personal access token',
-                  hint: 'ghp_...',
-                  onSubmitted: _onFieldSubmitted),
+                controller: _githubTokenController,
+                label: 'Personal access token',
+                hint: 'ghp_...',
+                onSubmitted: _onFieldSubmitted,
+              ),
             ],
           ),
 
@@ -457,7 +462,9 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
           // ----------------------------------------------------------------
           const SizedBox(height: 16),
           const _CategoryHeader(
-              icon: Icons.assignment_rounded, label: 'Management'),
+            icon: Icons.assignment_rounded,
+            label: 'Management',
+          ),
 
           const SizedBox(height: 8),
           _CollapsibleIntegration(
@@ -504,10 +511,11 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
               ),
               const SizedBox(height: 10),
               _SecretField(
-                  controller: _jiraApiTokenController,
-                  label: 'API token',
-                  hint: 'Atlassian API token',
-                  onSubmitted: _onFieldSubmitted),
+                controller: _jiraApiTokenController,
+                label: 'API token',
+                hint: 'Atlassian API token',
+                onSubmitted: _onFieldSubmitted,
+              ),
             ],
           ),
 
@@ -516,7 +524,9 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
           // ----------------------------------------------------------------
           const SizedBox(height: 16),
           const _CategoryHeader(
-              icon: Icons.chat_bubble_outline_rounded, label: 'Messaging'),
+            icon: Icons.chat_bubble_outline_rounded,
+            label: 'Messaging',
+          ),
 
           const SizedBox(height: 8),
           _CollapsibleIntegration(
@@ -550,10 +560,11 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             ]),
             children: <Widget>[
               _SecretField(
-                  controller: _slackTokenController,
-                  label: 'Bot token',
-                  hint: 'xoxb-... or xoxe.xoxp-...',
-                  onSubmitted: _onFieldSubmitted),
+                controller: _slackTokenController,
+                label: 'Bot token',
+                hint: 'xoxb-... or xoxe.xoxp-...',
+                onSubmitted: _onFieldSubmitted,
+              ),
               if (_slackTokenIsRotating) ...<Widget>[
                 const SizedBox(height: 8),
                 const _InfoBanner(
@@ -565,23 +576,26 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
                 ),
                 const SizedBox(height: 10),
                 _SecretField(
-                    controller: _slackRefreshTokenController,
-                    label: 'Refresh token',
-                    hint: 'xoxe-1-...',
-                    onSubmitted: _onFieldSubmitted),
+                  controller: _slackRefreshTokenController,
+                  label: 'Refresh token',
+                  hint: 'xoxe-1-...',
+                  onSubmitted: _onFieldSubmitted,
+                ),
                 const SizedBox(height: 10),
                 _LabeledField(
-                    controller: _slackClientIdController,
-                    label: 'Client ID',
-                    hint: '1234567890.1234567890',
-                    prefixIcon: Icons.badge_outlined,
-                    onSubmitted: _onFieldSubmitted),
+                  controller: _slackClientIdController,
+                  label: 'Client ID',
+                  hint: '1234567890.1234567890',
+                  prefixIcon: Icons.badge_outlined,
+                  onSubmitted: _onFieldSubmitted,
+                ),
                 const SizedBox(height: 10),
                 _SecretField(
-                    controller: _slackClientSecretController,
-                    label: 'Client secret',
-                    hint: 'f2f77b...',
-                    onSubmitted: _onFieldSubmitted),
+                  controller: _slackClientSecretController,
+                  label: 'Client secret',
+                  hint: 'f2f77b...',
+                  onSubmitted: _onFieldSubmitted,
+                ),
               ],
               const SizedBox(height: 12),
               _SectionLabel(
@@ -590,11 +604,13 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
                     ? const SizedBox(
                         width: 14,
                         height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2))
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : _SmallAction(
                         label: 'Load channels',
                         icon: Icons.refresh_rounded,
-                        onTap: _fetchSlackChannels),
+                        onTap: _fetchSlackChannels,
+                      ),
               ),
               const SizedBox(height: 6),
               _ChannelChipInput(
@@ -621,7 +637,9 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
           // ----------------------------------------------------------------
           const SizedBox(height: 16),
           const _CategoryHeader(
-              icon: Icons.auto_awesome_rounded, label: 'AI Services'),
+            icon: Icons.auto_awesome_rounded,
+            label: 'AI Services',
+          ),
 
           const SizedBox(height: 8),
           _CollapsibleIntegration(
@@ -639,9 +657,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
               _saveCurrentConfig();
             },
             fieldCount: 1,
-            filledCount: _countFilled(<String>[
-              _openAiApiKeyController.text,
-            ]),
+            filledCount: _countFilled(<String>[_openAiApiKeyController.text]),
             children: <Widget>[
               _SecretField(
                 controller: _openAiApiKeyController,
@@ -686,9 +702,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
               _saveCurrentConfig();
             },
             fieldCount: 1,
-            filledCount: _countFilled(<String>[
-              _geminiApiKeyController.text,
-            ]),
+            filledCount: _countFilled(<String>[_geminiApiKeyController.text]),
             children: <Widget>[
               _SecretField(
                 controller: _geminiApiKeyController,
@@ -733,9 +747,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
               _saveCurrentConfig();
             },
             fieldCount: 1,
-            filledCount: _countFilled(<String>[
-              _claudeApiKeyController.text,
-            ]),
+            filledCount: _countFilled(<String>[_claudeApiKeyController.text]),
             children: <Widget>[
               _SecretField(
                 controller: _claudeApiKeyController,
@@ -780,9 +792,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
               _saveCurrentConfig();
             },
             fieldCount: 1,
-            filledCount: _countFilled(<String>[
-              _grokApiKeyController.text,
-            ]),
+            filledCount: _countFilled(<String>[_grokApiKeyController.text]),
             children: <Widget>[
               _SecretField(
                 controller: _grokApiKeyController,
@@ -886,12 +896,17 @@ class _ExportImportButtons extends StatelessWidget {
               label: const Text('Export'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.secondaryInk,
-                textStyle:
-                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                side:
-                    BorderSide(color: AppColors.outline.withValues(alpha: 0.5)),
+                textStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                side: BorderSide(
+                  color: AppColors.outline.withValues(alpha: 0.5),
+                ),
               ),
             ),
           ),
@@ -903,12 +918,17 @@ class _ExportImportButtons extends StatelessWidget {
               label: const Text('Import'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.secondaryInk,
-                textStyle:
-                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                side:
-                    BorderSide(color: AppColors.outline.withValues(alpha: 0.5)),
+                textStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                side: BorderSide(
+                  color: AppColors.outline.withValues(alpha: 0.5),
+                ),
               ),
             ),
           ),
@@ -925,8 +945,10 @@ class _ExportImportButtons extends StatelessWidget {
           label: const Text('Export'),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.secondaryInk,
-            textStyle:
-                const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            textStyle: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             side: BorderSide(color: AppColors.outline.withValues(alpha: 0.5)),
           ),
@@ -938,8 +960,10 @@ class _ExportImportButtons extends StatelessWidget {
           label: const Text('Import'),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.secondaryInk,
-            textStyle:
-                const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            textStyle: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             side: BorderSide(color: AppColors.outline.withValues(alpha: 0.5)),
           ),
@@ -1066,21 +1090,27 @@ class _DynamicModelDropdown extends StatelessWidget {
         ),
         child: Row(
           children: <Widget>[
-            const Icon(Icons.psychology_outlined,
-                size: 18, color: AppColors.tertiaryInk),
+            const Icon(
+              Icons.psychology_outlined,
+              size: 18,
+              color: AppColors.tertiaryInk,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 loading ? 'Loading models...' : 'Enter API key to load models',
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(fontSize: 13, color: AppColors.tertiaryInk),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontSize: 13,
+                  color: AppColors.tertiaryInk,
+                ),
               ),
             ),
             if (loading)
               const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2)),
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
           ],
         ),
       );
@@ -1092,38 +1122,53 @@ class _DynamicModelDropdown extends StatelessWidget {
       decoration: InputDecoration(
         filled: true,
         fillColor: AppColors.softSurface,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
         prefixIcon: const Icon(Icons.psychology_outlined, size: 18),
         prefixIconConstraints: const BoxConstraints(minWidth: 40),
         border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide.none),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide.none,
+        ),
         enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide.none),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide.none,
+        ),
         focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: AppColors.accent, width: 1.5)),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+        ),
       ),
       dropdownColor: AppColors.surface,
       borderRadius: BorderRadius.circular(12),
-      style: theme.textTheme.bodyMedium
-          ?.copyWith(fontSize: 13, fontWeight: FontWeight.w500),
+      style: theme.textTheme.bodyMedium?.copyWith(
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+      ),
       isExpanded: true,
       selectedItemBuilder: (BuildContext ctx) => models
-          .map((m) => Align(
-                alignment: Alignment.centerLeft,
-                child: Text(m.label, overflow: TextOverflow.ellipsis),
-              ))
+          .map(
+            (m) => Align(
+              alignment: Alignment.centerLeft,
+              child: Text(m.label, overflow: TextOverflow.ellipsis),
+            ),
+          )
           .toList(),
       items: models
-          .map((m) => DropdownMenuItem<String>(
-                value: m.value,
-                child: Text(m.label,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
-              ))
+          .map(
+            (m) => DropdownMenuItem<String>(
+              value: m.value,
+              child: Text(
+                m.label,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          )
           .toList(),
       onChanged: (String? v) {
         if (v != null) onChanged(v);
@@ -1158,20 +1203,28 @@ class _GeneralSettingsCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-                color: AppColors.accentLight,
-                borderRadius: BorderRadius.circular(10)),
-            child: const Icon(Icons.tune_rounded,
-                color: AppColors.accent, size: 18),
+              color: AppColors.accentLight,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.tune_rounded,
+              color: AppColors.accent,
+              size: 18,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text('Alert notifications',
-                    style: theme.textTheme.titleMedium?.copyWith(fontSize: 13)),
-                Text('Slack alerts as local notifications',
-                    style: theme.textTheme.labelMedium),
+                Text(
+                  'Alert notifications',
+                  style: theme.textTheme.titleMedium?.copyWith(fontSize: 13),
+                ),
+                Text(
+                  'Slack alerts as local notifications',
+                  style: theme.textTheme.labelMedium,
+                ),
               ],
             ),
           ),
@@ -1179,9 +1232,11 @@ class _GeneralSettingsCard extends StatelessWidget {
           SizedBox(
             height: 28,
             child: FittedBox(
-                child: Switch.adaptive(
-                    value: notificationsEnabled,
-                    onChanged: onNotificationsChanged)),
+              child: Switch.adaptive(
+                value: notificationsEnabled,
+                onChanged: onNotificationsChanged,
+              ),
+            ),
           ),
           const SizedBox(width: 4),
           SizedBox(
@@ -1195,7 +1250,8 @@ class _GeneralSettingsCard extends StatelessWidget {
               style: IconButton.styleFrom(
                 backgroundColor: AppColors.softSurface,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
           ),
@@ -1315,8 +1371,9 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
                             ),
                             const SizedBox(width: 8),
                             _StatusChip(
-                                enabled: widget.enabled,
-                                isConfigured: widget.isConfigured),
+                              enabled: widget.enabled,
+                              isConfigured: widget.isConfigured,
+                            ),
                           ],
                         ),
                         const SizedBox(height: 2),
@@ -1380,8 +1437,9 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
                     children: <Widget>[
                       Text(
                         '${widget.filledCount}/${widget.fieldCount} fields',
-                        style:
-                            theme.textTheme.labelMedium?.copyWith(fontSize: 10),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          fontSize: 10,
+                        ),
                       ),
                       const Spacer(),
                       if (widget.syncMinutes != null &&
@@ -1389,15 +1447,22 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
-                            const Icon(Icons.sync_rounded,
-                                size: 11, color: AppColors.tertiaryInk),
+                            const Icon(
+                              Icons.sync_rounded,
+                              size: 11,
+                              color: AppColors.tertiaryInk,
+                            ),
                             const SizedBox(width: 3),
-                            Text('every ',
-                                style: theme.textTheme.labelMedium
-                                    ?.copyWith(fontSize: 10)),
+                            Text(
+                              'every ',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                fontSize: 10,
+                              ),
+                            ),
                             _SyncIntervalDropdown(
-                                value: widget.syncMinutes!,
-                                onChanged: widget.onSyncMinutesChanged!),
+                              value: widget.syncMinutes!,
+                              onChanged: widget.onSyncMinutesChanged!,
+                            ),
                           ],
                         ),
                     ],
@@ -1462,10 +1527,11 @@ class _BrandAvatar extends StatelessWidget {
       return Opacity(
         opacity: opacity,
         child: BrandLogo(
-            assetPath: logoAsset!,
-            size: 38,
-            backgroundColor: brandBg,
-            padding: 8),
+          assetPath: logoAsset!,
+          size: 38,
+          backgroundColor: brandBg,
+          padding: 8,
+        ),
       );
     }
     return Opacity(
@@ -1474,9 +1540,14 @@ class _BrandAvatar extends StatelessWidget {
         width: 38,
         height: 38,
         decoration: BoxDecoration(
-            color: brandBg, borderRadius: BorderRadius.circular(10)),
-        child: Icon(brandIcon ?? Icons.extension_rounded,
-            color: brandColor, size: 18),
+          color: brandBg,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          brandIcon ?? Icons.extension_rounded,
+          color: brandColor,
+          size: 18,
+        ),
       ),
     );
   }
@@ -1492,7 +1563,10 @@ class _StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!enabled) {
       return _buildChip(
-          'Disabled', AppColors.tertiaryInk, AppColors.softSurface);
+        'Disabled',
+        AppColors.tertiaryInk,
+        AppColors.softSurface,
+      );
     }
     if (isConfigured) {
       return _buildChip('Connected', AppColors.success, AppColors.successLight);
@@ -1510,10 +1584,11 @@ class _StatusChip extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.w600,
-            color: fg,
-            letterSpacing: 0.2),
+          fontSize: 9,
+          fontWeight: FontWeight.w600,
+          color: fg,
+          letterSpacing: 0.2,
+        ),
       ),
     );
   }
@@ -1548,10 +1623,11 @@ class _InfoBanner extends StatelessWidget {
             child: Text(
               text,
               style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: color,
-                  height: 1.3),
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: color,
+                height: 1.3,
+              ),
             ),
           ),
         ],
@@ -1572,10 +1648,10 @@ class _SectionLabel extends StatelessWidget {
       children: <Widget>[
         Text(
           label,
-          style: Theme.of(context)
-              .textTheme
-              .labelLarge
-              ?.copyWith(fontSize: 12, color: AppColors.secondaryInk),
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontSize: 12,
+                color: AppColors.secondaryInk,
+              ),
         ),
         const Spacer(),
         if (trailing != null) trailing!,
@@ -1585,8 +1661,11 @@ class _SectionLabel extends StatelessWidget {
 }
 
 class _SmallAction extends StatelessWidget {
-  const _SmallAction(
-      {required this.label, required this.icon, required this.onTap});
+  const _SmallAction({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
 
   final String label;
   final IconData icon;
@@ -1604,11 +1683,14 @@ class _SmallAction extends StatelessWidget {
           children: <Widget>[
             Icon(icon, size: 12, color: AppColors.accent),
             const SizedBox(width: 4),
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.accent)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: AppColors.accent,
+              ),
+            ),
           ],
         ),
       ),
@@ -1638,8 +1720,10 @@ class _SyncIntervalDropdown extends StatelessWidget {
           isDense: true,
           style: const TextStyle(fontSize: 11, color: AppColors.ink),
           items: _options
-              .map((int v) =>
-                  DropdownMenuItem<int>(value: v, child: Text('$v min')))
+              .map(
+                (int v) =>
+                    DropdownMenuItem<int>(value: v, child: Text('$v min')),
+              )
               .toList(),
           onChanged: (int? v) {
             if (v != null) onChanged(v);
@@ -1686,7 +1770,8 @@ class _ChannelChipInputState extends State<_ChannelChipInput> {
     if (widget.cachedChannels != null &&
         !widget.cachedChannels!.containsKey(cleaned)) {
       setState(
-          () => _validationError = '"$cleaned" not found in your workspace');
+        () => _validationError = '"$cleaned" not found in your workspace',
+      );
       return;
     }
 
@@ -1714,8 +1799,9 @@ class _ChannelChipInputState extends State<_ChannelChipInput> {
                   label: Text('#$ch', style: const TextStyle(fontSize: 11)),
                   deleteIcon: const Icon(Icons.close, size: 14),
                   onDeleted: () {
-                    final List<String> updated =
-                        List<String>.from(widget.selectedChannels)..remove(ch);
+                    final List<String> updated = List<String>.from(
+                      widget.selectedChannels,
+                    )..remove(ch);
                     widget.onChanged(updated);
                   },
                   backgroundColor: AppColors.slackLight,
@@ -1738,16 +1824,23 @@ class _ChannelChipInputState extends State<_ChannelChipInput> {
             },
             displayStringForOption: (String option) => '#$option',
             onSelected: _addChannel,
-            fieldViewBuilder: (BuildContext ctx, TextEditingController ctrl,
-                FocusNode node, VoidCallback onSubmit) {
+            fieldViewBuilder: (
+              BuildContext ctx,
+              TextEditingController ctrl,
+              FocusNode node,
+              VoidCallback onSubmit,
+            ) {
               return TextField(
                 controller: ctrl,
                 focusNode: node,
                 style: const TextStyle(fontSize: 13),
                 decoration: const InputDecoration(
                   hintText: 'Search channels...',
-                  prefixIcon: Icon(Icons.search_rounded,
-                      size: 16, color: AppColors.tertiaryInk),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    size: 16,
+                    color: AppColors.tertiaryInk,
+                  ),
                   fillColor: AppColors.surface,
                   isDense: true,
                 ),
@@ -1763,13 +1856,17 @@ class _ChannelChipInputState extends State<_ChannelChipInput> {
             style: const TextStyle(fontSize: 13),
             decoration: const InputDecoration(
               hintText: '#eng-reviews (load channels for autocomplete)',
-              prefixIcon: Icon(Icons.tag_rounded,
-                  size: 16, color: AppColors.tertiaryInk),
+              prefixIcon: Icon(
+                Icons.tag_rounded,
+                size: 16,
+                color: AppColors.tertiaryInk,
+              ),
               fillColor: AppColors.surface,
             ),
             onSubmitted: (String value) {
-              for (final String ch
-                  in ConnectorConfig.parseChannelsInput(value)) {
+              for (final String ch in ConnectorConfig.parseChannelsInput(
+                value,
+              )) {
                 _addChannel(ch);
               }
             },
@@ -1779,8 +1876,10 @@ class _ChannelChipInputState extends State<_ChannelChipInput> {
             padding: const EdgeInsets.only(top: 4),
             child: Text(
               _validationError!,
-              style: theme.textTheme.labelMedium
-                  ?.copyWith(color: AppColors.danger, fontSize: 10),
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: AppColors.danger,
+                fontSize: 10,
+              ),
             ),
           ),
       ],
@@ -1828,11 +1927,12 @@ class _LabeledField extends StatelessWidget {
 }
 
 class _SecretField extends StatefulWidget {
-  const _SecretField(
-      {required this.controller,
-      required this.label,
-      required this.hint,
-      this.onSubmitted});
+  const _SecretField({
+    required this.controller,
+    required this.label,
+    required this.hint,
+    this.onSubmitted,
+  });
   final TextEditingController controller;
   final String label;
   final String hint;
@@ -1854,17 +1954,19 @@ class _SecretFieldState extends State<_SecretField> {
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hint,
-        prefixIcon: const Icon(Icons.key_rounded,
-            size: 16, color: AppColors.tertiaryInk),
+        prefixIcon: const Icon(
+          Icons.key_rounded,
+          size: 16,
+          color: AppColors.tertiaryInk,
+        ),
         fillColor: AppColors.surface,
         suffixIcon: IconButton(
           onPressed: () => setState(() => _obscure = !_obscure),
           icon: Icon(
-              _obscure
-                  ? Icons.visibility_rounded
-                  : Icons.visibility_off_rounded,
-              size: 16,
-              color: AppColors.tertiaryInk),
+            _obscure ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+            size: 16,
+            color: AppColors.tertiaryInk,
+          ),
         ),
       ),
       onSubmitted: widget.onSubmitted,

@@ -3,7 +3,6 @@ name: EngiTrack CI/CD
 on:
   push:
     branches: [main]
-    tags: ['v*']
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -26,6 +25,52 @@ env:
   JAVA_VERSION: '17'
 
 jobs:
+  version:
+    name: Compute Version
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      new_tag: ${{ steps.bump.outputs.new_tag }}
+      version: ${{ steps.bump.outputs.version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Determine version bump
+        id: bump
+        run: |
+          LATEST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -1)
+          if [ -z "$LATEST_TAG" ]; then
+            LATEST_TAG="v0.0.0"
+          fi
+
+          VERSION="${LATEST_TAG#v}"
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | cut -d. -f2)
+          PATCH=$(echo "$VERSION" | cut -d. -f3)
+
+          COMMIT_MSG=$(git log -1 --pretty=%s)
+          echo "Commit message: $COMMIT_MSG"
+          echo "Current version: $MAJOR.$MINOR.$PATCH"
+
+          if echo "$COMMIT_MSG" | grep -qiE '^feat(\(.+\))?!?:'; then
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+          elif echo "$COMMIT_MSG" | grep -qiE '^(fix|bugfix)(\(.+\))?!?:'; then
+            MINOR=$((MINOR + 1))
+            PATCH=0
+          else
+            PATCH=$((PATCH + 1))
+          fi
+
+          NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+          echo "New version: $NEW_TAG"
+          echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${MAJOR}.${MINOR}.${PATCH}" >> "$GITHUB_OUTPUT"
+
   analyze:
     name: Analyze & Lint
     runs-on: ubuntu-latest
@@ -150,9 +195,16 @@ jobs:
 
   build-android:
     name: Build Android APK
+    if: |
+      always() &&
+      !cancelled() &&
+      needs.analyze.result == 'success' &&
+      needs.security.result == 'success' &&
+      needs.test.result == 'success' &&
+      ((github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')) || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [analyze, security]
+    needs: [analyze, security, test, version]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -217,16 +269,20 @@ jobs:
 
       - name: Build release APK
         run: |
+          BUILD_NAME="${{ needs.version.outputs.version || '0.0.0' }}"
           flutter build apk \
             --release \
             --split-per-abi \
+            --build-name="$BUILD_NAME" \
             --build-number=${{ github.run_number }} \
             --dart-define=FLUTTER_BUILD_MODE=release
 
       - name: Build fat APK (universal)
         run: |
+          BUILD_NAME="${{ needs.version.outputs.version || '0.0.0' }}"
           flutter build apk \
             --release \
+            --build-name="$BUILD_NAME" \
             --build-number=${{ github.run_number }} \
             --dart-define=FLUTTER_BUILD_MODE=release
 
@@ -358,3 +414,46 @@ jobs:
           name: web-build-${{ github.sha }}
           path: build/web/
           retention-days: 30
+
+  release:
+    name: Tag & Release
+    needs: [version, build-android]
+    if: |
+      always() &&
+      !cancelled() &&
+      needs.version.result == 'success' &&
+      needs.build-android.result == 'success' &&
+      needs.version.outputs.new_tag != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Create and push tag
+        run: |
+          git tag ${{ needs.version.outputs.new_tag }}
+          git push origin ${{ needs.version.outputs.new_tag }}
+
+      - name: Download split APKs
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk-split-${{ github.sha }}
+          path: apks/
+
+      - name: Download universal APK
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk-universal-${{ github.sha }}
+          path: apks/
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.version.outputs.new_tag }}
+          name: ${{ needs.version.outputs.new_tag }}
+          generate_release_notes: true
+          files: apks/*.apk

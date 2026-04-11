@@ -130,24 +130,22 @@ void main() {
 
     group('parseChannelsInput', () {
       test('splits on comma', () {
-        expect(
-          ConnectorConfig.parseChannelsInput('a, b, c'),
-          ['a', 'b', 'c'],
-        );
+        expect(ConnectorConfig.parseChannelsInput('a, b, c'), ['a', 'b', 'c']);
       });
 
       test('splits on newline', () {
-        expect(
-          ConnectorConfig.parseChannelsInput('alpha\nbeta\n'),
-          ['alpha', 'beta'],
-        );
+        expect(ConnectorConfig.parseChannelsInput('alpha\nbeta\n'), [
+          'alpha',
+          'beta',
+        ]);
       });
 
       test('handles mixed delimiters and empty tokens', () {
-        expect(
-          ConnectorConfig.parseChannelsInput('x,,y\n\nz,'),
-          ['x', 'y', 'z'],
-        );
+        expect(ConnectorConfig.parseChannelsInput('x,,y\n\nz,'), [
+          'x',
+          'y',
+          'z',
+        ]);
       });
 
       test('returns empty list for blank input', () {
@@ -168,8 +166,9 @@ void main() {
       });
 
       test('trims whitespace', () {
-        const config =
-            ConnectorConfig(jiraBaseUrl: '  https://x.atlassian.net/  ');
+        const config = ConnectorConfig(
+          jiraBaseUrl: '  https://x.atlassian.net/  ',
+        );
         expect(config.normalizedJiraBaseUrl, 'https://x.atlassian.net');
       });
     });
@@ -299,29 +298,37 @@ void main() {
 
       test('isGeminiConfigured', () {
         expect(
-          const ConnectorConfig(geminiEnabled: true, geminiApiKey: 'k')
-              .isGeminiConfigured,
+          const ConnectorConfig(
+            geminiEnabled: true,
+            geminiApiKey: 'k',
+          ).isGeminiConfigured,
           isTrue,
         );
         expect(
-          const ConnectorConfig(geminiEnabled: false, geminiApiKey: 'k')
-              .isGeminiConfigured,
+          const ConnectorConfig(
+            geminiEnabled: false,
+            geminiApiKey: 'k',
+          ).isGeminiConfigured,
           isFalse,
         );
       });
 
       test('isClaudeConfigured', () {
         expect(
-          const ConnectorConfig(claudeEnabled: true, claudeApiKey: 'k')
-              .isClaudeConfigured,
+          const ConnectorConfig(
+            claudeEnabled: true,
+            claudeApiKey: 'k',
+          ).isClaudeConfigured,
           isTrue,
         );
       });
 
       test('isGrokConfigured', () {
         expect(
-          const ConnectorConfig(grokEnabled: true, grokApiKey: 'k')
-              .isGrokConfigured,
+          const ConnectorConfig(
+            grokEnabled: true,
+            grokApiKey: 'k',
+          ).isGrokConfigured,
           isTrue,
         );
       });
@@ -381,9 +388,7 @@ void main() {
     });
 
     test('fromJson handles missing optional fields', () {
-      final todo = TodoItem.fromJson(<String, dynamic>{
-        'id': 'x',
-      });
+      final todo = TodoItem.fromJson(<String, dynamic>{'id': 'x'});
       expect(todo.title, '');
       expect(todo.completed, isFalse);
       expect(todo.reminderDate, isNull);
@@ -467,6 +472,71 @@ void main() {
       );
       expect(pr.repository, 'alice/proj');
     });
+
+    test('body and commits default to empty/zero', () {
+      final pr = GithubPullRequest(
+        id: 'x',
+        owner: 'o',
+        repo: 'r',
+        number: 1,
+        title: 'T',
+        author: 'a',
+        url: 'https://github.com/o/r/pull/1',
+        updatedAt: DateTime.utc(2025),
+      );
+      expect(pr.body, isEmpty);
+      expect(pr.commits, 0);
+    });
+
+    test('body and commits can be set', () {
+      final pr = GithubPullRequest(
+        id: 'x',
+        owner: 'o',
+        repo: 'r',
+        number: 1,
+        title: 'T',
+        author: 'a',
+        url: 'https://github.com/o/r/pull/1',
+        updatedAt: DateTime.utc(2025),
+        body: 'PR description text',
+        commits: 5,
+      );
+      expect(pr.body, 'PR description text');
+      expect(pr.commits, 5);
+    });
+  });
+
+  group('JiraIssue', () {
+    test('description defaults to empty', () {
+      final issue = JiraIssue(
+        id: '1',
+        key: 'PROJ-1',
+        title: 'Issue',
+        status: 'Open',
+        priority: 'High',
+        url: 'https://x.atlassian.net/browse/PROJ-1',
+        updatedAt: DateTime.utc(2025),
+        issueType: 'Bug',
+        projectName: 'Project',
+      );
+      expect(issue.description, isEmpty);
+    });
+
+    test('description can be set', () {
+      final issue = JiraIssue(
+        id: '1',
+        key: 'PROJ-1',
+        title: 'Issue',
+        status: 'Open',
+        priority: 'High',
+        url: 'https://x.atlassian.net/browse/PROJ-1',
+        updatedAt: DateTime.utc(2025),
+        issueType: 'Bug',
+        projectName: 'Project',
+        description: 'This is the issue description',
+      );
+      expect(issue.description, 'This is the issue description');
+    });
   });
 
   group('PullRequestFile', () {
@@ -517,6 +587,51 @@ void main() {
       expect(decoded['baseBranch'], 'main');
       expect(decoded['headBranch'], 'feat');
       expect((decoded['files'] as List).length, 1);
+    });
+
+    test('commits defaults to zero', () {
+      final pr = GithubPullRequest(
+        id: 'o/r#1',
+        owner: 'o',
+        repo: 'r',
+        number: 1,
+        title: 'T',
+        author: 'A',
+        url: 'https://github.com/o/r/pull/1',
+        updatedAt: DateTime.utc(2025),
+      );
+      final ctx = PullRequestContext(
+        pullRequest: pr,
+        body: 'desc',
+        baseBranch: 'main',
+        headBranch: 'feat',
+        changedFiles: 2,
+        files: const <PullRequestFile>[],
+      );
+      expect(ctx.commits, 0);
+    });
+
+    test('commits can be set', () {
+      final pr = GithubPullRequest(
+        id: 'o/r#1',
+        owner: 'o',
+        repo: 'r',
+        number: 1,
+        title: 'T',
+        author: 'A',
+        url: 'https://github.com/o/r/pull/1',
+        updatedAt: DateTime.utc(2025),
+      );
+      final ctx = PullRequestContext(
+        pullRequest: pr,
+        body: 'desc',
+        baseBranch: 'main',
+        headBranch: 'feat',
+        changedFiles: 2,
+        commits: 7,
+        files: const <PullRequestFile>[],
+      );
+      expect(ctx.commits, 7);
     });
   });
 

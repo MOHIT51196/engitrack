@@ -71,8 +71,9 @@ void main() {
 
     test('caps files at 12', () {
       final prompt = buildReviewPrompt(_makeContext(fileCount: 20));
-      final fileCount =
-          RegExp(r'FILE: file_\d+\.dart').allMatches(prompt).length;
+      final fileCount = RegExp(
+        r'FILE: file_\d+\.dart',
+      ).allMatches(prompt).length;
       expect(fileCount, 12);
     });
 
@@ -187,9 +188,7 @@ End of review.''';
 
     test('handles missing message in choice', () {
       final json = <String, dynamic>{
-        'choices': <Map<String, dynamic>>[
-          <String, dynamic>{},
-        ],
+        'choices': <Map<String, dynamic>>[<String, dynamic>{}],
       };
       expect(extractChatCompletionText(json), '');
     });
@@ -204,18 +203,12 @@ End of review.''';
 
     test('throws ServiceException on non-2xx', () {
       final response = http.Response('{"error":"bad"}', 500);
-      expect(
-        () => decodeJsonBody(response),
-        throwsA(isA<ServiceException>()),
-      );
+      expect(() => decodeJsonBody(response), throwsA(isA<ServiceException>()));
     });
 
     test('throws ServiceException for non-object response', () {
       final response = http.Response('"just a string"', 200);
-      expect(
-        () => decodeJsonBody(response),
-        throwsA(isA<ServiceException>()),
-      );
+      expect(() => decodeJsonBody(response), throwsA(isA<ServiceException>()));
     });
 
     test('handles empty body gracefully', () {
