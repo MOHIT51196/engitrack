@@ -661,9 +661,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             enabled: _openAiEnabled,
             canEnable: _canEnableOpenAi,
             isConfigured: controller.config.isOpenAiConfigured,
-            connectionState: controller.config.isOpenAiConfigured
-                ? const ConnectionState(status: ConnectionStatus.connected)
-                : const ConnectionState(),
+            connectionState: const ProviderConnectionState(),
             onEnabledChanged: (bool v) {
               setState(() => _openAiEnabled = v);
               _saveCurrentConfig();
@@ -709,9 +707,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             enabled: _geminiEnabled,
             canEnable: _canEnableGemini,
             isConfigured: controller.config.isGeminiConfigured,
-            connectionState: controller.config.isGeminiConfigured
-                ? const ConnectionState(status: ConnectionStatus.connected)
-                : const ConnectionState(),
+            connectionState: const ProviderConnectionState(),
             onEnabledChanged: (bool v) {
               setState(() => _geminiEnabled = v);
               _saveCurrentConfig();
@@ -757,9 +753,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             enabled: _claudeEnabled,
             canEnable: _canEnableClaude,
             isConfigured: controller.config.isClaudeConfigured,
-            connectionState: controller.config.isClaudeConfigured
-                ? const ConnectionState(status: ConnectionStatus.connected)
-                : const ConnectionState(),
+            connectionState: const ProviderConnectionState(),
             onEnabledChanged: (bool v) {
               setState(() => _claudeEnabled = v);
               _saveCurrentConfig();
@@ -805,9 +799,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             enabled: _grokEnabled,
             canEnable: _canEnableGrok,
             isConfigured: controller.config.isGrokConfigured,
-            connectionState: controller.config.isGrokConfigured
-                ? const ConnectionState(status: ConnectionStatus.connected)
-                : const ConnectionState(),
+            connectionState: const ProviderConnectionState(),
             onEnabledChanged: (bool v) {
               setState(() => _grokEnabled = v);
               _saveCurrentConfig();
@@ -1316,7 +1308,7 @@ class _CollapsibleIntegration extends StatefulWidget {
   final bool enabled;
   final bool canEnable;
   final bool isConfigured;
-  final ConnectionState connectionState;
+  final ProviderConnectionState connectionState;
   final ValueChanged<bool> onEnabledChanged;
   final List<Widget> children;
   final int? syncMinutes;
@@ -1646,7 +1638,7 @@ class _StatusChip extends StatelessWidget {
 
   final bool enabled;
   final bool isConfigured;
-  final ConnectionState connectionState;
+  final ProviderConnectionState connectionState;
 
   @override
   Widget build(BuildContext context) {
@@ -1715,7 +1707,7 @@ class _TestConnectionButton extends StatelessWidget {
     required this.brandColor,
   });
 
-  final ConnectionState connectionState;
+  final ProviderConnectionState connectionState;
   final VoidCallback onPressed;
   final Color brandColor;
 

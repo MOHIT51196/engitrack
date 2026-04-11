@@ -19,8 +19,8 @@ import 'storage.dart';
 
 enum ConnectionStatus { untested, testing, connected, error }
 
-class ConnectionState {
-  const ConnectionState({
+class ProviderConnectionState {
+  const ProviderConnectionState({
     this.status = ConnectionStatus.untested,
     this.errorMessage,
   });
@@ -81,11 +81,11 @@ class EngiTrackController extends ChangeNotifier {
   String? errorMessage;
   String? activeReviewPrId;
 
-  final Map<String, ConnectionState> _connectionStates =
-      <String, ConnectionState>{};
+  final Map<String, ProviderConnectionState> _connectionStates =
+      <String, ProviderConnectionState>{};
 
-  ConnectionState connectionStateFor(String providerId) =>
-      _connectionStates[providerId] ?? const ConnectionState();
+  ProviderConnectionState connectionStateFor(String providerId) =>
+      _connectionStates[providerId] ?? const ProviderConnectionState();
 
   List<IntegrationProvider> get providers => _providers;
   GitHubProvider get githubProvider => _githubProvider;
@@ -249,7 +249,7 @@ class EngiTrackController extends ChangeNotifier {
     try {
       final List<IntegrationItem> items = await provider.fetchItems(config);
       _itemsByProvider[providerId] = items;
-      _connectionStates[providerId] = const ConnectionState(
+      _connectionStates[providerId] = const ProviderConnectionState(
         status: ConnectionStatus.connected,
       );
 
@@ -263,13 +263,13 @@ class EngiTrackController extends ChangeNotifier {
           return refreshProvider(providerId, silent: silent);
         }
       }
-      _connectionStates[providerId] = ConnectionState(
+      _connectionStates[providerId] = ProviderConnectionState(
         status: ConnectionStatus.error,
         errorMessage: error.message,
       );
       if (kDebugMode) debugPrint('$providerId sync failed: $error');
     } catch (error) {
-      _connectionStates[providerId] = ConnectionState(
+      _connectionStates[providerId] = ProviderConnectionState(
         status: ConnectionStatus.error,
         errorMessage: error.toString(),
       );
@@ -335,7 +335,7 @@ class EngiTrackController extends ChangeNotifier {
         try {
           final List<IntegrationItem> items = await provider.fetchItems(config);
           _itemsByProvider[provider.id] = items;
-          _connectionStates[provider.id] = const ConnectionState(
+          _connectionStates[provider.id] = const ProviderConnectionState(
             status: ConnectionStatus.connected,
           );
 
@@ -350,7 +350,7 @@ class EngiTrackController extends ChangeNotifier {
                 final List<IntegrationItem> retryItems =
                     await provider.fetchItems(config);
                 _itemsByProvider[provider.id] = retryItems;
-                _connectionStates[provider.id] = const ConnectionState(
+                _connectionStates[provider.id] = const ProviderConnectionState(
                   status: ConnectionStatus.connected,
                 );
                 await _processSlackAlertNotifications(retryItems);
@@ -359,7 +359,7 @@ class EngiTrackController extends ChangeNotifier {
             }
           }
           _itemsByProvider[provider.id] = previous;
-          _connectionStates[provider.id] = ConnectionState(
+          _connectionStates[provider.id] = ProviderConnectionState(
             status: ConnectionStatus.error,
             errorMessage: error.message,
           );
@@ -369,7 +369,7 @@ class EngiTrackController extends ChangeNotifier {
           }
         } catch (error) {
           _itemsByProvider[provider.id] = previous;
-          _connectionStates[provider.id] = ConnectionState(
+          _connectionStates[provider.id] = ProviderConnectionState(
             status: ConnectionStatus.error,
             errorMessage: error.toString(),
           );
@@ -437,8 +437,8 @@ class EngiTrackController extends ChangeNotifier {
 
   /// Tests a single provider's connection by making a lightweight API call.
   /// Updates [_connectionStates] and notifies listeners.
-  Future<ConnectionState> testProviderConnection(String providerId) async {
-    _connectionStates[providerId] = const ConnectionState(
+  Future<ProviderConnectionState> testProviderConnection(String providerId) async {
+    _connectionStates[providerId] = const ProviderConnectionState(
       status: ConnectionStatus.testing,
     );
     notifyListeners();
@@ -450,7 +450,6 @@ class EngiTrackController extends ChangeNotifier {
             throw ServiceException('GitHub is not fully configured.');
           }
           await _githubProvider.service.testConnection(
-            username: config.githubUsername,
             token: config.githubToken,
           );
         case 'jira':
@@ -472,16 +471,16 @@ class EngiTrackController extends ChangeNotifier {
         default:
           throw ServiceException('Unknown provider: $providerId');
       }
-      _connectionStates[providerId] = const ConnectionState(
+      _connectionStates[providerId] = const ProviderConnectionState(
         status: ConnectionStatus.connected,
       );
     } on ServiceException catch (e) {
-      _connectionStates[providerId] = ConnectionState(
+      _connectionStates[providerId] = ProviderConnectionState(
         status: ConnectionStatus.error,
         errorMessage: e.message,
       );
     } catch (e) {
-      _connectionStates[providerId] = ConnectionState(
+      _connectionStates[providerId] = ProviderConnectionState(
         status: ConnectionStatus.error,
         errorMessage: e.toString(),
       );
@@ -489,23 +488,6 @@ class EngiTrackController extends ChangeNotifier {
 
     notifyListeners();
     return _connectionStates[providerId]!;
-  }
-
-  /// Tests all configured integrations and updates their connection states.
-  Future<void> testAllConnections() async {
-    final List<String> providerIds = <String>['github', 'jira', 'slack'];
-    for (final String id in providerIds) {
-      final IntegrationProvider? provider =
-          _providers.cast<IntegrationProvider?>().firstWhere(
-                (IntegrationProvider? p) => p?.id == id,
-                orElse: () => null,
-              );
-      if (provider != null && provider.isConfigured(config)) {
-        await testProviderConnection(id);
-      } else {
-        _connectionStates[id] = const ConnectionState();
-      }
-    }
   }
 
   Future<void> updateConfig(ConnectorConfig nextConfig) async {
@@ -518,17 +500,17 @@ class EngiTrackController extends ChangeNotifier {
     if (previousConfig.githubUsername != nextConfig.githubUsername ||
         previousConfig.githubToken != nextConfig.githubToken ||
         previousConfig.githubEnabled != nextConfig.githubEnabled) {
-      _connectionStates['github'] = const ConnectionState();
+      _connectionStates['github'] = const ProviderConnectionState();
     }
     if (previousConfig.jiraBaseUrl != nextConfig.jiraBaseUrl ||
         previousConfig.jiraEmail != nextConfig.jiraEmail ||
         previousConfig.jiraApiToken != nextConfig.jiraApiToken ||
         previousConfig.jiraEnabled != nextConfig.jiraEnabled) {
-      _connectionStates['jira'] = const ConnectionState();
+      _connectionStates['jira'] = const ProviderConnectionState();
     }
     if (previousConfig.slackToken != nextConfig.slackToken ||
         previousConfig.slackEnabled != nextConfig.slackEnabled) {
-      _connectionStates['slack'] = const ConnectionState();
+      _connectionStates['slack'] = const ProviderConnectionState();
     }
 
     notifyListeners();

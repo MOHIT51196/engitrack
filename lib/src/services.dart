@@ -322,10 +322,7 @@ class GitHubService {
 
   /// Tests the GitHub connection by calling the authenticated user endpoint.
   /// Returns the authenticated username on success.
-  Future<String> testConnection({
-    required String username,
-    required String token,
-  }) async {
+  Future<String> testConnection({required String token}) async {
     final Uri uri = Uri.https('api.github.com', '/user');
     final http.Response response = await _client.get(
       uri,

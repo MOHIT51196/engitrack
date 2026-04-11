@@ -429,10 +429,7 @@ void main() {
       );
 
       when(
-        () => mockGitHub.testConnection(
-          username: any(named: 'username'),
-          token: any(named: 'token'),
-        ),
+        () => mockGitHub.testConnection(token: any(named: 'token')),
       ).thenAnswer((_) async => 'alice');
 
       final result = await controller.testProviderConnection('github');
@@ -451,10 +448,7 @@ void main() {
       );
 
       when(
-        () => mockGitHub.testConnection(
-          username: any(named: 'username'),
-          token: any(named: 'token'),
-        ),
+        () => mockGitHub.testConnection(token: any(named: 'token')),
       ).thenThrow(ServiceException('Request failed (401): Bad credentials'));
 
       final result = await controller.testProviderConnection('github');

@@ -185,10 +185,7 @@ void main() {
         ),
       );
 
-      final login = await service.testConnection(
-        username: 'alice',
-        token: 'ghp_valid',
-      );
+      final login = await service.testConnection(token: 'ghp_valid');
       expect(login, 'alice');
     });
 
@@ -203,7 +200,7 @@ void main() {
       );
 
       expect(
-        () => service.testConnection(username: 'u', token: 'bad'),
+        () => service.testConnection(token: 'bad'),
         throwsA(isA<ServiceException>()),
       );
     });
