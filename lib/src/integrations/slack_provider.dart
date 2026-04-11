@@ -27,11 +27,11 @@ class SlackProvider implements IntegrationProvider {
     final List<IntegrationItem> results = <IntegrationItem>[];
 
     if (config.slackReviewChannels.isNotEmpty) {
-      final List<SlackReviewRequest> reviews = await _service
-          .fetchReviewRequests(
-            token: config.slackToken,
-            channels: config.slackReviewChannels,
-          );
+      final List<SlackReviewRequest> reviews =
+          await _service.fetchReviewRequests(
+        token: config.slackToken,
+        channels: config.slackReviewChannels,
+      );
       results.addAll(reviews.map(_mapReview));
     }
 
@@ -44,8 +44,8 @@ class SlackProvider implements IntegrationProvider {
     }
 
     try {
-      final List<SlackReviewRequest> dmMentions = await _service
-          .fetchDmMentions(token: config.slackToken);
+      final List<SlackReviewRequest> dmMentions =
+          await _service.fetchDmMentions(token: config.slackToken);
       results.addAll(
         dmMentions.map(
           (SlackReviewRequest r) => _mapReview(r, reason: ItemReason.mention),

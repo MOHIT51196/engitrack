@@ -42,19 +42,18 @@ abstract final class AppColors {
 }
 
 ThemeData buildEngiTrackTheme() {
-  final ColorScheme scheme =
-      ColorScheme.fromSeed(
-        seedColor: AppColors.accent,
-        brightness: Brightness.light,
-        surface: AppColors.surface,
-      ).copyWith(
-        primary: AppColors.accent,
-        onPrimary: Colors.white,
-        surface: AppColors.surface,
-        onSurface: AppColors.ink,
-        outline: AppColors.outline,
-        secondary: AppColors.secondaryInk,
-      );
+  final ColorScheme scheme = ColorScheme.fromSeed(
+    seedColor: AppColors.accent,
+    brightness: Brightness.light,
+    surface: AppColors.surface,
+  ).copyWith(
+    primary: AppColors.accent,
+    onPrimary: Colors.white,
+    surface: AppColors.surface,
+    onSurface: AppColors.ink,
+    outline: AppColors.outline,
+    secondary: AppColors.secondaryInk,
+  );
 
   final ThemeData base = ThemeData(
     useMaterial3: true,

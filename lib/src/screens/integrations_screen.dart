@@ -124,21 +124,18 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
     _slackClientSecretController.text = config.slackClientSecret;
     _slackTokenIsRotating = config.isSlackTokenRotating;
     _openAiApiKeyController.text = config.openAiApiKey;
-    _selectedModel = config.openAiModel.isNotEmpty
-        ? config.openAiModel
-        : 'gpt-4.1-mini';
+    _selectedModel =
+        config.openAiModel.isNotEmpty ? config.openAiModel : 'gpt-4.1-mini';
     _geminiApiKeyController.text = config.geminiApiKey;
-    _selectedGeminiModel = config.geminiModel.isNotEmpty
-        ? config.geminiModel
-        : 'gemini-2.0-flash';
+    _selectedGeminiModel =
+        config.geminiModel.isNotEmpty ? config.geminiModel : 'gemini-2.0-flash';
     _claudeApiKeyController.text = config.claudeApiKey;
     _selectedClaudeModel = config.claudeModel.isNotEmpty
         ? config.claudeModel
         : 'claude-sonnet-4-20250514';
     _grokApiKeyController.text = config.grokApiKey;
-    _selectedGrokModel = config.grokModel.isNotEmpty
-        ? config.grokModel
-        : 'grok-3-mini-fast';
+    _selectedGrokModel =
+        config.grokModel.isNotEmpty ? config.grokModel : 'grok-3-mini-fast';
     _githubSyncMinutes = config.githubSyncMinutes;
     _jiraSyncMinutes = config.jiraSyncMinutes;
     _slackSyncMinutes = config.slackSyncMinutes;
@@ -179,8 +176,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
     if (key.isEmpty) return;
     setState(() => _loadingOpenAiModels = true);
     try {
-      final List<({String value, String label})> models = await _aiModelService
-          .fetchOpenAiModels(apiKey: key);
+      final List<({String value, String label})> models =
+          await _aiModelService.fetchOpenAiModels(apiKey: key);
       if (mounted) {
         setState(() {
           _openAiModels = models;
@@ -202,8 +199,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
     if (key.isEmpty) return;
     setState(() => _loadingGeminiModels = true);
     try {
-      final List<({String value, String label})> models = await _aiModelService
-          .fetchGeminiModels(apiKey: key);
+      final List<({String value, String label})> models =
+          await _aiModelService.fetchGeminiModels(apiKey: key);
       if (mounted) {
         setState(() {
           _geminiModelList = models;
@@ -225,8 +222,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
     if (key.isEmpty) return;
     setState(() => _loadingClaudeModels = true);
     try {
-      final List<({String value, String label})> models = await _aiModelService
-          .fetchClaudeModels(apiKey: key);
+      final List<({String value, String label})> models =
+          await _aiModelService.fetchClaudeModels(apiKey: key);
       if (mounted) {
         setState(() {
           _claudeModelList = models;
@@ -248,8 +245,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
     if (key.isEmpty) return;
     setState(() => _loadingGrokModels = true);
     try {
-      final List<({String value, String label})> models = await _aiModelService
-          .fetchGrokModels(apiKey: key);
+      final List<({String value, String label})> models =
+          await _aiModelService.fetchGrokModels(apiKey: key);
       if (mounted) {
         setState(() {
           _grokModelList = models;
@@ -360,10 +357,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
     setState(() => _loadingChannels = true);
     try {
       final EngiTrackController controller = EngiTrackScope.of(context);
-      final Map<String, String> channels = await controller
-          .slackProvider
-          .service
-          .fetchChannelList(token: token);
+      final Map<String, String> channels =
+          await controller.slackProvider.service.fetchChannelList(token: token);
       if (mounted) setState(() => _cachedChannelList = channels);
     } catch (_) {
     } finally {
@@ -402,8 +397,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
               _saveCurrentConfig();
             },
             onRequestNotifications: () async {
-              final bool granted = await controller
-                  .requestNotificationPermissions();
+              final bool granted =
+                  await controller.requestNotificationPermissions();
               if (!mounted) return;
               if (granted) setState(() => _notificationsEnabled = true);
               if (!context.mounted) return;
@@ -1317,9 +1312,8 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final double progress = widget.fieldCount > 0
-        ? widget.filledCount / widget.fieldCount
-        : 0;
+    final double progress =
+        widget.fieldCount > 0 ? widget.filledCount / widget.fieldCount : 0;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -1330,8 +1324,8 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
         border: Border.all(
           color: widget.enabled
               ? (widget.isConfigured
-                    ? AppColors.success.withValues(alpha: 0.25)
-                    : widget.brandColor.withValues(alpha: 0.15))
+                  ? AppColors.success.withValues(alpha: 0.25)
+                  : widget.brandColor.withValues(alpha: 0.15))
               : AppColors.outline.withValues(alpha: 0.4),
           width: 0.5,
         ),
@@ -1399,9 +1393,8 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
                     child: FittedBox(
                       child: Switch.adaptive(
                         value: widget.enabled,
-                        onChanged: widget.canEnable
-                            ? widget.onEnabledChanged
-                            : null,
+                        onChanged:
+                            widget.canEnable ? widget.onEnabledChanged : null,
                       ),
                     ),
                   ),
@@ -1656,9 +1649,9 @@ class _SectionLabel extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            fontSize: 12,
-            color: AppColors.secondaryInk,
-          ),
+                fontSize: 12,
+                color: AppColors.secondaryInk,
+              ),
         ),
         const Spacer(),
         if (trailing != null) trailing!,
@@ -1823,42 +1816,39 @@ class _ChannelChipInputState extends State<_ChannelChipInput> {
               if (value.text.trim().isEmpty) {
                 return const Iterable<String>.empty();
               }
-              final String query = value.text
-                  .trim()
-                  .replaceFirst('#', '')
-                  .toLowerCase();
+              final String query =
+                  value.text.trim().replaceFirst('#', '').toLowerCase();
               return widget.cachedChannels!.keys
                   .where((String name) => name.toLowerCase().contains(query))
                   .take(15);
             },
             displayStringForOption: (String option) => '#$option',
             onSelected: _addChannel,
-            fieldViewBuilder:
-                (
-                  BuildContext ctx,
-                  TextEditingController ctrl,
-                  FocusNode node,
-                  VoidCallback onSubmit,
-                ) {
-                  return TextField(
-                    controller: ctrl,
-                    focusNode: node,
-                    style: const TextStyle(fontSize: 13),
-                    decoration: const InputDecoration(
-                      hintText: 'Search channels...',
-                      prefixIcon: Icon(
-                        Icons.search_rounded,
-                        size: 16,
-                        color: AppColors.tertiaryInk,
-                      ),
-                      fillColor: AppColors.surface,
-                      isDense: true,
-                    ),
-                    onSubmitted: (_) {
-                      if (ctrl.text.trim().isNotEmpty) _addChannel(ctrl.text);
-                    },
-                  );
+            fieldViewBuilder: (
+              BuildContext ctx,
+              TextEditingController ctrl,
+              FocusNode node,
+              VoidCallback onSubmit,
+            ) {
+              return TextField(
+                controller: ctrl,
+                focusNode: node,
+                style: const TextStyle(fontSize: 13),
+                decoration: const InputDecoration(
+                  hintText: 'Search channels...',
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    size: 16,
+                    color: AppColors.tertiaryInk,
+                  ),
+                  fillColor: AppColors.surface,
+                  isDense: true,
+                ),
+                onSubmitted: (_) {
+                  if (ctrl.text.trim().isNotEmpty) _addChannel(ctrl.text);
                 },
+              );
+            },
           )
         else
           TextField(

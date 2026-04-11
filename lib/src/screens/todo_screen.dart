@@ -26,23 +26,21 @@ class _TodoScreenState extends State<TodoScreen> {
     final List<TodoItem> filtered = _searchQuery.isEmpty
         ? allTodos
         : allTodos
-              .where(
-                (TodoItem t) =>
-                    t.title.toLowerCase().contains(
-                      _searchQuery.toLowerCase(),
-                    ) ||
-                    t.subtitle.toLowerCase().contains(
-                      _searchQuery.toLowerCase(),
-                    ),
-              )
-              .toList();
+            .where(
+              (TodoItem t) =>
+                  t.title.toLowerCase().contains(
+                        _searchQuery.toLowerCase(),
+                      ) ||
+                  t.subtitle.toLowerCase().contains(
+                        _searchQuery.toLowerCase(),
+                      ),
+            )
+            .toList();
 
-    final List<TodoItem> activeTodos = filtered
-        .where((TodoItem t) => !t.completed)
-        .toList();
-    final List<TodoItem> completedTodos = filtered
-        .where((TodoItem t) => t.completed)
-        .toList();
+    final List<TodoItem> activeTodos =
+        filtered.where((TodoItem t) => !t.completed).toList();
+    final List<TodoItem> completedTodos =
+        filtered.where((TodoItem t) => t.completed).toList();
     final int totalCount = allTodos.length;
     final int doneCount = allTodos.where((TodoItem t) => t.completed).length;
 
@@ -351,9 +349,8 @@ class _TodoRow extends StatelessWidget {
                           todo.title,
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontSize: 14,
-                            decoration: done
-                                ? TextDecoration.lineThrough
-                                : null,
+                            decoration:
+                                done ? TextDecoration.lineThrough : null,
                             color: done ? AppColors.tertiaryInk : AppColors.ink,
                           ),
                           maxLines: 1,
@@ -803,7 +800,7 @@ class _CreateTodoSheetState extends State<_CreateTodoSheet> {
                         value: _reminderRepeat == 'none'
                             ? 'Never'
                             : _reminderRepeat[0].toUpperCase() +
-                                  _reminderRepeat.substring(1),
+                                _reminderRepeat.substring(1),
                         valueHighlight: _reminderRepeat != 'none',
                         onTap: () => _showRepeatPicker(context),
                       ),
@@ -873,8 +870,8 @@ class _CreateTodoSheetState extends State<_CreateTodoSheet> {
                   child: Text(
                     'Repeat',
                     style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -891,9 +888,8 @@ class _CreateTodoSheetState extends State<_CreateTodoSheet> {
                       label,
                       style: TextStyle(
                         fontSize: 14,
-                        fontWeight: selected
-                            ? FontWeight.w600
-                            : FontWeight.w400,
+                        fontWeight:
+                            selected ? FontWeight.w600 : FontWeight.w400,
                         color: selected ? AppColors.accent : AppColors.ink,
                       ),
                     ),
@@ -1260,7 +1256,7 @@ class _TodoDetailSheetState extends State<_TodoDetailSheet> {
                           value: _reminderRepeat == 'none'
                               ? 'Never'
                               : _reminderRepeat[0].toUpperCase() +
-                                    _reminderRepeat.substring(1),
+                                  _reminderRepeat.substring(1),
                           valueHighlight: _reminderRepeat != 'none',
                           onTap: () => _showRepeatPicker(context),
                         ),
@@ -1403,8 +1399,8 @@ class _TodoDetailSheetState extends State<_TodoDetailSheet> {
                   child: Text(
                     'Repeat',
                     style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -1421,9 +1417,8 @@ class _TodoDetailSheetState extends State<_TodoDetailSheet> {
                       label,
                       style: TextStyle(
                         fontSize: 14,
-                        fontWeight: selected
-                            ? FontWeight.w600
-                            : FontWeight.w400,
+                        fontWeight:
+                            selected ? FontWeight.w600 : FontWeight.w400,
                         color: selected ? AppColors.accent : AppColors.ink,
                       ),
                     ),
@@ -1519,9 +1514,8 @@ class _OptionTile extends StatelessWidget {
                       color: valueHighlight
                           ? AppColors.accent
                           : AppColors.tertiaryInk,
-                      fontWeight: valueHighlight
-                          ? FontWeight.w500
-                          : FontWeight.w400,
+                      fontWeight:
+                          valueHighlight ? FontWeight.w500 : FontWeight.w400,
                     ),
                   ),
                 ],

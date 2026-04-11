@@ -104,11 +104,10 @@ class OpenAiProvider extends AiProvider {
     );
 
     final Map<String, dynamic> json = decodeJsonBody(response);
-    final String output =
-        (json['review'] as String? ??
-                json['output_text'] as String? ??
-                _extractProxyText(json))
-            .trim();
+    final String output = (json['review'] as String? ??
+            json['output_text'] as String? ??
+            _extractProxyText(json))
+        .trim();
     if (output.isEmpty) {
       throw ServiceException('The AI review proxy returned an empty review.');
     }
@@ -150,8 +149,7 @@ class OpenAiProvider extends AiProvider {
         }),
       );
       final Map<String, dynamic> json = decodeJsonBody(response);
-      responseText =
-          json['review'] as String? ??
+      responseText = json['review'] as String? ??
           json['output_text'] as String? ??
           _extractProxyText(json);
     } else {

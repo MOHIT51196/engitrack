@@ -40,13 +40,13 @@ class _SplashScreenState extends State<SplashScreen>
       parent: _controller,
       curve: const Interval(0.35, 0.7, curve: Curves.easeOut),
     );
-    _taglineSlide = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
-        .animate(
-          CurvedAnimation(
-            parent: _controller,
-            curve: const Interval(0.35, 0.7, curve: Curves.easeOutCubic),
-          ),
-        );
+    _taglineSlide =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.35, 0.7, curve: Curves.easeOutCubic),
+      ),
+    );
 
     _controller.forward();
 

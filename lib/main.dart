@@ -94,8 +94,8 @@ class _EngiTrackAppState extends State<EngiTrackApp> {
       home: _showSplash
           ? SplashScreen(onComplete: _onSplashComplete)
           : _ready
-          ? const EngiTrackShell()
-          : const _LoadingScreen(),
+              ? const EngiTrackShell()
+              : const _LoadingScreen(),
     );
   }
 }

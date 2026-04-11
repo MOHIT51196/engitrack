@@ -25,9 +25,9 @@ class EngiTrackController extends ChangeNotifier {
     JiraService? jiraService,
     SlackService? slackService,
     http.Client? httpClient,
-  }) : _storage = storage,
-       _notificationsService = notificationsService,
-       _httpClient = httpClient ?? http.Client() {
+  })  : _storage = storage,
+        _notificationsService = notificationsService,
+        _httpClient = httpClient ?? http.Client() {
     final GitHubService ghSvc = gitHubService ?? GitHubService();
     final JiraService jrSvc = jiraService ?? JiraService();
     final SlackService slSvc = slackService ?? SlackService();
@@ -221,12 +221,11 @@ class EngiTrackController extends ChangeNotifier {
   }
 
   Future<void> refreshProvider(String providerId, {bool silent = false}) async {
-    final IntegrationProvider? provider = _providers
-        .cast<IntegrationProvider?>()
-        .firstWhere(
-          (IntegrationProvider? p) => p?.id == providerId,
-          orElse: () => null,
-        );
+    final IntegrationProvider? provider =
+        _providers.cast<IntegrationProvider?>().firstWhere(
+              (IntegrationProvider? p) => p?.id == providerId,
+              orElse: () => null,
+            );
     if (provider == null || !provider.isConfigured(config)) return;
 
     try {
@@ -263,12 +262,12 @@ class EngiTrackController extends ChangeNotifier {
     }
 
     try {
-      final Map<String, String> result = await _slackProvider.service
-          .refreshAccessToken(
-            refreshToken: config.slackRefreshToken,
-            clientId: config.slackClientId,
-            clientSecret: config.slackClientSecret,
-          );
+      final Map<String, String> result =
+          await _slackProvider.service.refreshAccessToken(
+        refreshToken: config.slackRefreshToken,
+        clientId: config.slackClientId,
+        clientSecret: config.slackClientSecret,
+      );
 
       final String newAccess = result['access_token'] ?? '';
       final String newRefresh = result['refresh_token'] ?? '';
@@ -316,8 +315,8 @@ class EngiTrackController extends ChangeNotifier {
             final bool refreshed = await _attemptSlackTokenRefresh();
             if (refreshed) {
               try {
-                final List<IntegrationItem> retryItems = await provider
-                    .fetchItems(config);
+                final List<IntegrationItem> retryItems =
+                    await provider.fetchItems(config);
                 _itemsByProvider[provider.id] = retryItems;
                 await _processSlackAlertNotifications(retryItems);
                 continue;
@@ -452,8 +451,7 @@ class EngiTrackController extends ChangeNotifier {
     required String sourceLabel,
     String sourceUrl = '',
   }) async {
-    final bool alreadyExists =
-        sourceUrl.isNotEmpty &&
+    final bool alreadyExists = sourceUrl.isNotEmpty &&
         todos.any(
           (TodoItem item) =>
               item.sourceUrl.isNotEmpty && item.sourceUrl == sourceUrl,
@@ -672,8 +670,7 @@ class EngiTrackController extends ChangeNotifier {
         if (Directory(_lastExportDir!).existsSync()) return _lastExportDir;
       } catch (_) {}
     }
-    final String home =
-        Platform.environment['HOME'] ??
+    final String home = Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '';
     if (home.isEmpty) return null;
@@ -783,8 +780,8 @@ class EngiTrackScope extends InheritedNotifier<EngiTrackController> {
   }) : super(notifier: controller);
 
   static EngiTrackController of(BuildContext context) {
-    final EngiTrackScope? scope = context
-        .dependOnInheritedWidgetOfExactType<EngiTrackScope>();
+    final EngiTrackScope? scope =
+        context.dependOnInheritedWidgetOfExactType<EngiTrackScope>();
     assert(scope != null, 'EngiTrackScope not found in the widget tree.');
     return scope!.notifier!;
   }

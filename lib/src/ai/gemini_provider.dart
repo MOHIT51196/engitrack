@@ -37,9 +37,9 @@ class GeminiProvider extends AiProvider {
 
   @override
   Uri get chatCompletionsUri => Uri.https(
-    'generativelanguage.googleapis.com',
-    '/v1beta/openai/chat/completions',
-  );
+        'generativelanguage.googleapis.com',
+        '/v1beta/openai/chat/completions',
+      );
 
   @override
   Future<AiReviewResult> reviewPullRequest({

@@ -283,11 +283,10 @@ class ItemDetailScreen extends StatelessWidget {
           label: kind == 'pr'
               ? 'PR'
               : kind == 'doc'
-              ? 'Doc'
-              : kind,
-          backgroundColor: kind == 'pr'
-              ? AppColors.githubLight
-              : AppColors.infoLight,
+                  ? 'Doc'
+                  : kind,
+          backgroundColor:
+              kind == 'pr' ? AppColors.githubLight : AppColors.infoLight,
           foregroundColor: kind == 'pr' ? AppColors.github : AppColors.info,
           dense: true,
         ),
@@ -356,7 +355,7 @@ class ItemDetailScreen extends StatelessWidget {
     final bool isCodeReview = item.category == IntegrationCategory.codeReview;
     final bool hasSlackLink =
         (item.meta<String>('slackDeepLink') ?? '').isNotEmpty ||
-        (item.meta<String>('slackWebLink') ?? '').isNotEmpty;
+            (item.meta<String>('slackWebLink') ?? '').isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1133,9 +1132,8 @@ class _AiReviewSectionState extends State<_AiReviewSection> {
                     final AiChatMessage msg = _chatHistory[index];
                     final bool isUser = msg.role == 'user';
                     return Align(
-                      alignment: isUser
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
+                      alignment:
+                          isUser ? Alignment.centerRight : Alignment.centerLeft,
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 6),
                         padding: const EdgeInsets.all(10),

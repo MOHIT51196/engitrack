@@ -116,7 +116,7 @@ String extractChatCompletionText(Map<String, dynamic> json) {
         choices.first as Map<String, dynamic>;
     final Map<String, dynamic> message =
         firstChoice['message'] as Map<String, dynamic>? ??
-        const <String, dynamic>{};
+            const <String, dynamic>{};
     return message['content'] as String? ?? '';
   }
   return json['output_text'] as String? ?? '';

@@ -9,8 +9,8 @@ class AppStorage {
   AppStorage({
     SharedPreferencesAsync? preferences,
     FlutterSecureStorage? secureStorage,
-  }) : _preferences = preferences ?? SharedPreferencesAsync(),
-       _secureStorage = secureStorage ?? const FlutterSecureStorage();
+  })  : _preferences = preferences ?? SharedPreferencesAsync(),
+        _secureStorage = secureStorage ?? const FlutterSecureStorage();
 
   final SharedPreferencesAsync _preferences;
   final FlutterSecureStorage _secureStorage;
