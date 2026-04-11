@@ -320,6 +320,25 @@ class GitHubService {
     return json['html_url'] as String? ?? '';
   }
 
+  /// Tests the GitHub connection by calling the authenticated user endpoint.
+  /// Returns the authenticated username on success.
+  Future<String> testConnection({
+    required String username,
+    required String token,
+  }) async {
+    final Uri uri = Uri.https('api.github.com', '/user');
+    final http.Response response = await _client.get(
+      uri,
+      headers: _headers(token),
+    );
+    final Map<String, dynamic> json = _decodeJsonBody(response);
+    final String login = json['login'] as String? ?? '';
+    if (login.isEmpty) {
+      throw ServiceException('GitHub returned an empty username.');
+    }
+    return login;
+  }
+
   Map<String, String> _headers(String token) {
     return <String, String>{
       'Accept': 'application/vnd.github+json',
@@ -522,6 +541,33 @@ class JiraService {
         description: description,
       );
     }).toList();
+  }
+
+  /// Tests the Jira connection by calling the /myself endpoint.
+  /// Returns the display name on success.
+  Future<String> testConnection({
+    required String baseUrl,
+    required String email,
+    required String apiToken,
+  }) async {
+    final String normalizedBase = baseUrl.trim().endsWith('/')
+        ? baseUrl.trim().substring(0, baseUrl.trim().length - 1)
+        : baseUrl.trim();
+
+    final String url = '$normalizedBase/rest/api/3/myself';
+    final http.Response response = await _client.get(
+      Uri.parse(url),
+      headers: <String, String>{
+        'Accept': 'application/json',
+        'Authorization': 'Basic ${_basicAuth(email, apiToken)}',
+      },
+    );
+    final Map<String, dynamic> json = _decodeJsonBody(response);
+    final String displayName = json['displayName'] as String? ?? '';
+    if (displayName.isEmpty) {
+      throw ServiceException('Jira returned an empty display name.');
+    }
+    return displayName;
   }
 }
 

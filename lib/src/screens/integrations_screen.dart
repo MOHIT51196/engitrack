@@ -425,10 +425,13 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             enabled: _githubEnabled,
             canEnable: _canEnableGithub,
             isConfigured: controller.config.isGitHubConfigured,
+            connectionState: controller.connectionStateFor('github'),
             onEnabledChanged: (bool v) {
               setState(() => _githubEnabled = v);
               _saveCurrentConfig();
             },
+            onTestConnection: () =>
+                controller.testProviderConnection('github'),
             syncMinutes: _githubSyncMinutes,
             onSyncMinutesChanged: (int v) {
               setState(() => _githubSyncMinutes = v);
@@ -476,10 +479,13 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             enabled: _jiraEnabled,
             canEnable: _canEnableJira,
             isConfigured: controller.config.isJiraConfigured,
+            connectionState: controller.connectionStateFor('jira'),
             onEnabledChanged: (bool v) {
               setState(() => _jiraEnabled = v);
               _saveCurrentConfig();
             },
+            onTestConnection: () =>
+                controller.testProviderConnection('jira'),
             syncMinutes: _jiraSyncMinutes,
             onSyncMinutesChanged: (int v) {
               setState(() => _jiraSyncMinutes = v);
@@ -538,10 +544,13 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             enabled: _slackEnabled,
             canEnable: _canEnableSlack,
             isConfigured: controller.config.isSlackConfigured,
+            connectionState: controller.connectionStateFor('slack'),
             onEnabledChanged: (bool v) {
               setState(() => _slackEnabled = v);
               _saveCurrentConfig();
             },
+            onTestConnection: () =>
+                controller.testProviderConnection('slack'),
             syncMinutes: _slackSyncMinutes,
             onSyncMinutesChanged: (int v) {
               setState(() => _slackSyncMinutes = v);
@@ -652,6 +661,9 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             enabled: _openAiEnabled,
             canEnable: _canEnableOpenAi,
             isConfigured: controller.config.isOpenAiConfigured,
+            connectionState: controller.config.isOpenAiConfigured
+                ? const ConnectionState(status: ConnectionStatus.connected)
+                : const ConnectionState(),
             onEnabledChanged: (bool v) {
               setState(() => _openAiEnabled = v);
               _saveCurrentConfig();
@@ -697,6 +709,9 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             enabled: _geminiEnabled,
             canEnable: _canEnableGemini,
             isConfigured: controller.config.isGeminiConfigured,
+            connectionState: controller.config.isGeminiConfigured
+                ? const ConnectionState(status: ConnectionStatus.connected)
+                : const ConnectionState(),
             onEnabledChanged: (bool v) {
               setState(() => _geminiEnabled = v);
               _saveCurrentConfig();
@@ -742,6 +757,9 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             enabled: _claudeEnabled,
             canEnable: _canEnableClaude,
             isConfigured: controller.config.isClaudeConfigured,
+            connectionState: controller.config.isClaudeConfigured
+                ? const ConnectionState(status: ConnectionStatus.connected)
+                : const ConnectionState(),
             onEnabledChanged: (bool v) {
               setState(() => _claudeEnabled = v);
               _saveCurrentConfig();
@@ -787,6 +805,9 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             enabled: _grokEnabled,
             canEnable: _canEnableGrok,
             isConfigured: controller.config.isGrokConfigured,
+            connectionState: controller.config.isGrokConfigured
+                ? const ConnectionState(status: ConnectionStatus.connected)
+                : const ConnectionState(),
             onEnabledChanged: (bool v) {
               setState(() => _grokEnabled = v);
               _saveCurrentConfig();
@@ -1276,10 +1297,12 @@ class _CollapsibleIntegration extends StatefulWidget {
     required this.enabled,
     required this.canEnable,
     required this.isConfigured,
+    required this.connectionState,
     required this.onEnabledChanged,
     required this.children,
     this.syncMinutes,
     this.onSyncMinutesChanged,
+    this.onTestConnection,
     this.fieldCount = 0,
     this.filledCount = 0,
   });
@@ -1293,10 +1316,12 @@ class _CollapsibleIntegration extends StatefulWidget {
   final bool enabled;
   final bool canEnable;
   final bool isConfigured;
+  final ConnectionState connectionState;
   final ValueChanged<bool> onEnabledChanged;
   final List<Widget> children;
   final int? syncMinutes;
   final ValueChanged<int>? onSyncMinutesChanged;
+  final VoidCallback? onTestConnection;
   final int fieldCount;
   final int filledCount;
 
@@ -1323,9 +1348,12 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: widget.enabled
-              ? (widget.isConfigured
-                  ? AppColors.success.withValues(alpha: 0.25)
-                  : widget.brandColor.withValues(alpha: 0.15))
+              ? (widget.connectionState.status == ConnectionStatus.error
+                  ? AppColors.error.withValues(alpha: 0.35)
+                  : widget.connectionState.status ==
+                          ConnectionStatus.connected
+                      ? AppColors.success.withValues(alpha: 0.25)
+                      : widget.brandColor.withValues(alpha: 0.15))
               : AppColors.outline.withValues(alpha: 0.4),
           width: 0.5,
         ),
@@ -1373,6 +1401,7 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
                             _StatusChip(
                               enabled: widget.enabled,
                               isConfigured: widget.isConfigured,
+                              connectionState: widget.connectionState,
                             ),
                           ],
                         ),
@@ -1426,9 +1455,13 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
                       minHeight: 2,
                       backgroundColor: AppColors.divider,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        widget.isConfigured
-                            ? AppColors.success
-                            : widget.brandColor.withValues(alpha: 0.5),
+                        widget.connectionState.status ==
+                                ConnectionStatus.error
+                            ? AppColors.error
+                            : widget.connectionState.status ==
+                                    ConnectionStatus.connected
+                                ? AppColors.success
+                                : widget.brandColor.withValues(alpha: 0.5),
                       ),
                     ),
                   ),
@@ -1480,18 +1513,69 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
             firstChild: const SizedBox(width: double.infinity, height: 8),
             secondChild: Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.softSurface,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.divider, width: 0.5),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: widget.children,
-                ),
+              child: Column(
+                children: <Widget>[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.softSurface,
+                      borderRadius: BorderRadius.circular(10),
+                      border:
+                          Border.all(color: AppColors.divider, width: 0.5),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: widget.children,
+                    ),
+                  ),
+                  if (widget.isConfigured &&
+                      widget.onTestConnection != null) ...<Widget>[
+                    const SizedBox(height: 10),
+                    _TestConnectionButton(
+                      connectionState: widget.connectionState,
+                      onPressed: widget.onTestConnection!,
+                      brandColor: widget.brandColor,
+                    ),
+                  ],
+                  if (widget.connectionState.status ==
+                          ConnectionStatus.error &&
+                      widget.connectionState.errorMessage != null) ...<Widget>[
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.errorLight,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: AppColors.error.withValues(alpha: 0.3),
+                          width: 0.5,
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          const Icon(
+                            Icons.error_outline_rounded,
+                            size: 14,
+                            color: AppColors.error,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              widget.connectionState.errorMessage!,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.error,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ),
@@ -1554,10 +1638,15 @@ class _BrandAvatar extends StatelessWidget {
 }
 
 class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.enabled, required this.isConfigured});
+  const _StatusChip({
+    required this.enabled,
+    required this.isConfigured,
+    required this.connectionState,
+  });
 
   final bool enabled;
   final bool isConfigured;
+  final ConnectionState connectionState;
 
   @override
   Widget build(BuildContext context) {
@@ -1568,10 +1657,35 @@ class _StatusChip extends StatelessWidget {
         AppColors.softSurface,
       );
     }
-    if (isConfigured) {
-      return _buildChip('Connected', AppColors.success, AppColors.successLight);
+    if (!isConfigured) {
+      return _buildChip(
+        'Not set up',
+        AppColors.warning,
+        AppColors.warningLight,
+      );
     }
-    return _buildChip('Not set up', AppColors.warning, AppColors.warningLight);
+    switch (connectionState.status) {
+      case ConnectionStatus.connected:
+        return _buildChip(
+          'Connected',
+          AppColors.success,
+          AppColors.successLight,
+        );
+      case ConnectionStatus.error:
+        return _buildChip('Error', AppColors.error, AppColors.errorLight);
+      case ConnectionStatus.testing:
+        return _buildChip(
+          'Testing...',
+          AppColors.tertiaryInk,
+          AppColors.softSurface,
+        );
+      case ConnectionStatus.untested:
+        return _buildChip(
+          'Not verified',
+          AppColors.warning,
+          AppColors.warningLight,
+        );
+    }
   }
 
   Widget _buildChip(String label, Color fg, Color bg) {
@@ -1588,6 +1702,60 @@ class _StatusChip extends StatelessWidget {
           fontWeight: FontWeight.w600,
           color: fg,
           letterSpacing: 0.2,
+        ),
+      ),
+    );
+  }
+}
+
+class _TestConnectionButton extends StatelessWidget {
+  const _TestConnectionButton({
+    required this.connectionState,
+    required this.onPressed,
+    required this.brandColor,
+  });
+
+  final ConnectionState connectionState;
+  final VoidCallback onPressed;
+  final Color brandColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isTesting =
+        connectionState.status == ConnectionStatus.testing;
+
+    return SizedBox(
+      width: double.infinity,
+      height: 34,
+      child: OutlinedButton.icon(
+        onPressed: isTesting ? null : onPressed,
+        icon: isTesting
+            ? const SizedBox(
+                width: 12,
+                height: 12,
+                child: CircularProgressIndicator(strokeWidth: 1.5),
+              )
+            : Icon(
+                connectionState.status == ConnectionStatus.connected
+                    ? Icons.check_circle_outline_rounded
+                    : Icons.wifi_tethering_rounded,
+                size: 14,
+              ),
+        label: Text(
+          isTesting
+              ? 'Testing...'
+              : connectionState.status == ConnectionStatus.connected
+                  ? 'Re-test connection'
+                  : 'Test connection',
+          style: const TextStyle(fontSize: 11),
+        ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: brandColor,
+          side: BorderSide(color: brandColor.withValues(alpha: 0.3)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
         ),
       ),
     );

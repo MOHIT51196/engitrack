@@ -411,6 +411,68 @@ void main() {
     });
   });
 
+  group('connectionStateFor', () {
+    test('returns untested by default', () {
+      final controller = createController();
+      final state = controller.connectionStateFor('github');
+      expect(state.status, ConnectionStatus.untested);
+      expect(state.errorMessage, isNull);
+    });
+
+    test('testProviderConnection sets connected on success', () async {
+      final controller = createController(
+        initialConfig: const ConnectorConfig(
+          githubEnabled: true,
+          githubUsername: 'alice',
+          githubToken: 'ghp_valid',
+        ),
+      );
+
+      when(
+        () => mockGitHub.testConnection(
+          username: any(named: 'username'),
+          token: any(named: 'token'),
+        ),
+      ).thenAnswer((_) async => 'alice');
+
+      final result = await controller.testProviderConnection('github');
+      expect(result.status, ConnectionStatus.connected);
+      expect(controller.connectionStateFor('github').status,
+          ConnectionStatus.connected);
+    });
+
+    test('testProviderConnection sets error on failure', () async {
+      final controller = createController(
+        initialConfig: const ConnectorConfig(
+          githubEnabled: true,
+          githubUsername: 'alice',
+          githubToken: 'bad-token',
+        ),
+      );
+
+      when(
+        () => mockGitHub.testConnection(
+          username: any(named: 'username'),
+          token: any(named: 'token'),
+        ),
+      ).thenThrow(ServiceException('Request failed (401): Bad credentials'));
+
+      final result = await controller.testProviderConnection('github');
+      expect(result.status, ConnectionStatus.error);
+      expect(result.errorMessage, contains('401'));
+      expect(controller.connectionStateFor('github').status,
+          ConnectionStatus.error);
+    });
+
+    test('testProviderConnection returns error when not configured', () async {
+      final controller = createController();
+
+      final result = await controller.testProviderConnection('github');
+      expect(result.status, ConnectionStatus.error);
+      expect(result.errorMessage, contains('not fully configured'));
+    });
+  });
+
   group('dispose', () {
     test('can be called without error', () {
       final controller = createController();
