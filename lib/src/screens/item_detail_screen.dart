@@ -115,7 +115,15 @@ class ItemDetailScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        // Row 1: reason, date, time
+        // Row 1: jira title (wrapping)
+        Text(
+          item.title,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Row 2: reason, date, time
         Row(
           children: <Widget>[
             SoftTag(
@@ -136,7 +144,7 @@ class ItemDetailScreen extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 6),
-        // Row 2: jira tracker type + parent tracker
+        // Row 3: jira tracker type + parent tracker
         Row(
           children: <Widget>[
             if (issueType.isNotEmpty)
@@ -161,7 +169,7 @@ class ItemDetailScreen extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 6),
-        // Row 3: status, priority
+        // Row 4: status, priority
         Row(
           children: <Widget>[
             if (status.isNotEmpty)
@@ -187,7 +195,7 @@ class ItemDetailScreen extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 6),
-        // Row 4: assignee
+        // Row 5: assignee
         SoftTag(
           label: assignee.isEmpty ? 'Unassigned' : assignee,
           icon: Icons.person_outline_rounded,
@@ -195,18 +203,27 @@ class ItemDetailScreen extends StatelessWidget {
           backgroundColor: assignee.isEmpty ? AppColors.warningLight : null,
           dense: true,
         ),
-        const SizedBox(height: 6),
-        // Row 5: jira title (horizontal scrollable)
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Text(
-            item.title,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
+        // Row 6: due date (if present)
+        if (_dueDateTag() case final Widget tag) ...<Widget>[
+          const SizedBox(height: 6),
+          tag,
+        ],
       ],
+    );
+  }
+
+  Widget? _dueDateTag() {
+    final String dueDateStr = item.meta<String>('dueDate') ?? '';
+    if (dueDateStr.isEmpty) return null;
+    final DateTime? dueDate = DateTime.tryParse(dueDateStr);
+    if (dueDate == null) return null;
+    final bool overdue = dueDate.isBefore(DateTime.now());
+    return SoftTag(
+      label: 'Due ${formatCompactTimestamp(dueDate)}',
+      icon: Icons.event_rounded,
+      foregroundColor: overdue ? AppColors.danger : AppColors.info,
+      backgroundColor: overdue ? AppColors.dangerLight : AppColors.infoLight,
+      dense: true,
     );
   }
 
