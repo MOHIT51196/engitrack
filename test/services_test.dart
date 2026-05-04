@@ -174,6 +174,36 @@ void main() {
       );
       expect(url, contains('comment-123'));
     });
+
+    test('testConnection returns login on success', () async {
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer(
+        (_) async => http.Response(
+          jsonEncode(<String, dynamic>{'login': 'alice'}),
+          200,
+        ),
+      );
+
+      final login = await service.testConnection(token: 'ghp_valid');
+      expect(login, 'alice');
+    });
+
+    test('testConnection throws on 401', () async {
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer(
+        (_) async => http.Response(
+          jsonEncode(<String, dynamic>{'message': 'Bad credentials'}),
+          401,
+        ),
+      );
+
+      expect(
+        () => service.testConnection(token: 'bad'),
+        throwsA(isA<ServiceException>()),
+      );
+    });
   });
 
   group('JiraService', () {
@@ -250,6 +280,47 @@ void main() {
       expect(issues.first.parentKey, 'PROJ-1');
       expect(issues.first.dueDate, isNotNull);
       expect(issues.first.description, 'Login page crashes on submit');
+    });
+
+    test('testConnection returns displayName on success', () async {
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer(
+        (_) async => http.Response(
+          jsonEncode(<String, dynamic>{
+            'accountId': '12345:abc',
+            'displayName': 'Alice Smith',
+          }),
+          200,
+        ),
+      );
+
+      final name = await service.testConnection(
+        baseUrl: 'https://x.atlassian.net',
+        email: 'a@b.com',
+        apiToken: 'tok',
+      );
+      expect(name, 'Alice Smith');
+    });
+
+    test('testConnection throws on invalid URL', () async {
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer(
+        (_) async => http.Response(
+          '<!DOCTYPE html><html><body>Not Found</body></html>',
+          404,
+        ),
+      );
+
+      expect(
+        () => service.testConnection(
+          baseUrl: 'https://wrong-url.example.com',
+          email: 'a@b.com',
+          apiToken: 'tok',
+        ),
+        throwsA(isA<ServiceException>()),
+      );
     });
   });
 

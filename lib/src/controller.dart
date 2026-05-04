@@ -17,6 +17,18 @@ import 'models.dart';
 import 'services.dart';
 import 'storage.dart';
 
+enum ConnectionStatus { untested, testing, connected, error }
+
+class ProviderConnectionState {
+  const ProviderConnectionState({
+    this.status = ConnectionStatus.untested,
+    this.errorMessage,
+  });
+
+  final ConnectionStatus status;
+  final String? errorMessage;
+}
+
 class EngiTrackController extends ChangeNotifier {
   EngiTrackController({
     required AppStorage storage,
@@ -68,6 +80,12 @@ class EngiTrackController extends ChangeNotifier {
   DateTime? lastSyncedAt;
   String? errorMessage;
   String? activeReviewPrId;
+
+  final Map<String, ProviderConnectionState> _connectionStates =
+      <String, ProviderConnectionState>{};
+
+  ProviderConnectionState connectionStateFor(String providerId) =>
+      _connectionStates[providerId] ?? const ProviderConnectionState();
 
   List<IntegrationProvider> get providers => _providers;
   GitHubProvider get githubProvider => _githubProvider;
@@ -231,6 +249,9 @@ class EngiTrackController extends ChangeNotifier {
     try {
       final List<IntegrationItem> items = await provider.fetchItems(config);
       _itemsByProvider[providerId] = items;
+      _connectionStates[providerId] = const ProviderConnectionState(
+        status: ConnectionStatus.connected,
+      );
 
       if (providerId == 'slack') {
         await _processSlackAlertNotifications(items);
@@ -242,8 +263,16 @@ class EngiTrackController extends ChangeNotifier {
           return refreshProvider(providerId, silent: silent);
         }
       }
+      _connectionStates[providerId] = ProviderConnectionState(
+        status: ConnectionStatus.error,
+        errorMessage: error.message,
+      );
       if (kDebugMode) debugPrint('$providerId sync failed: $error');
     } catch (error) {
+      _connectionStates[providerId] = ProviderConnectionState(
+        status: ConnectionStatus.error,
+        errorMessage: error.toString(),
+      );
       if (kDebugMode) debugPrint('$providerId sync failed: $error');
     }
     if (!silent) notifyListeners();
@@ -306,6 +335,9 @@ class EngiTrackController extends ChangeNotifier {
         try {
           final List<IntegrationItem> items = await provider.fetchItems(config);
           _itemsByProvider[provider.id] = items;
+          _connectionStates[provider.id] = const ProviderConnectionState(
+            status: ConnectionStatus.connected,
+          );
 
           if (provider.id == 'slack') {
             await _processSlackAlertNotifications(items);
@@ -318,18 +350,29 @@ class EngiTrackController extends ChangeNotifier {
                 final List<IntegrationItem> retryItems =
                     await provider.fetchItems(config);
                 _itemsByProvider[provider.id] = retryItems;
+                _connectionStates[provider.id] = const ProviderConnectionState(
+                  status: ConnectionStatus.connected,
+                );
                 await _processSlackAlertNotifications(retryItems);
                 continue;
               } catch (_) {}
             }
           }
           _itemsByProvider[provider.id] = previous;
+          _connectionStates[provider.id] = ProviderConnectionState(
+            status: ConnectionStatus.error,
+            errorMessage: error.message,
+          );
           errors.add(provider.displayName);
           if (kDebugMode) {
             debugPrint('${provider.displayName} sync failed: $error');
           }
         } catch (error) {
           _itemsByProvider[provider.id] = previous;
+          _connectionStates[provider.id] = ProviderConnectionState(
+            status: ConnectionStatus.error,
+            errorMessage: error.toString(),
+          );
           errors.add(provider.displayName);
           if (kDebugMode) {
             debugPrint('${provider.displayName} sync failed: $error');
@@ -392,10 +435,84 @@ class EngiTrackController extends ChangeNotifier {
     }
   }
 
+  /// Tests a single provider's connection by making a lightweight API call.
+  /// Updates [_connectionStates] and notifies listeners.
+  Future<ProviderConnectionState> testProviderConnection(String providerId) async {
+    _connectionStates[providerId] = const ProviderConnectionState(
+      status: ConnectionStatus.testing,
+    );
+    notifyListeners();
+
+    try {
+      switch (providerId) {
+        case 'github':
+          if (!config.isGitHubConfigured) {
+            throw ServiceException('GitHub is not fully configured.');
+          }
+          await _githubProvider.service.testConnection(
+            token: config.githubToken,
+          );
+        case 'jira':
+          if (!config.isJiraConfigured) {
+            throw ServiceException('Jira is not fully configured.');
+          }
+          await _jiraProvider.service.testConnection(
+            baseUrl: config.normalizedJiraBaseUrl,
+            email: config.jiraEmail,
+            apiToken: config.jiraApiToken,
+          );
+        case 'slack':
+          if (!config.isSlackConfigured) {
+            throw ServiceException('Slack is not fully configured.');
+          }
+          await _slackProvider.service.validateToken(
+            token: config.slackToken,
+          );
+        default:
+          throw ServiceException('Unknown provider: $providerId');
+      }
+      _connectionStates[providerId] = const ProviderConnectionState(
+        status: ConnectionStatus.connected,
+      );
+    } on ServiceException catch (e) {
+      _connectionStates[providerId] = ProviderConnectionState(
+        status: ConnectionStatus.error,
+        errorMessage: e.message,
+      );
+    } catch (e) {
+      _connectionStates[providerId] = ProviderConnectionState(
+        status: ConnectionStatus.error,
+        errorMessage: e.toString(),
+      );
+    }
+
+    notifyListeners();
+    return _connectionStates[providerId]!;
+  }
+
   Future<void> updateConfig(ConnectorConfig nextConfig) async {
+    final ConnectorConfig previousConfig = config;
     config = nextConfig;
     await _storage.saveConfig(config);
     _setupSyncTimers();
+
+    // Reset connection states for integrations whose credentials changed.
+    if (previousConfig.githubUsername != nextConfig.githubUsername ||
+        previousConfig.githubToken != nextConfig.githubToken ||
+        previousConfig.githubEnabled != nextConfig.githubEnabled) {
+      _connectionStates['github'] = const ProviderConnectionState();
+    }
+    if (previousConfig.jiraBaseUrl != nextConfig.jiraBaseUrl ||
+        previousConfig.jiraEmail != nextConfig.jiraEmail ||
+        previousConfig.jiraApiToken != nextConfig.jiraApiToken ||
+        previousConfig.jiraEnabled != nextConfig.jiraEnabled) {
+      _connectionStates['jira'] = const ProviderConnectionState();
+    }
+    if (previousConfig.slackToken != nextConfig.slackToken ||
+        previousConfig.slackEnabled != nextConfig.slackEnabled) {
+      _connectionStates['slack'] = const ProviderConnectionState();
+    }
+
     notifyListeners();
     await refreshAll();
   }
