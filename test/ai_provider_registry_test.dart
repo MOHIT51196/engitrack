@@ -5,11 +5,12 @@ import 'package:engitrack/src/models.dart';
 
 void main() {
   group('AiProviderRegistry', () {
-    test('all returns all four providers', () {
+    test('all returns all five providers', () {
       final all = AiProviderRegistry.all;
-      expect(all, hasLength(4));
+      expect(all, hasLength(5));
       final ids = all.map((p) => p.id).toSet();
-      expect(ids, containsAll(['openai', 'gemini', 'claude', 'grok']));
+      expect(
+          ids, containsAll(['openai', 'gemini', 'claude', 'grok', 'cursor']));
     });
 
     test('all list is unmodifiable', () {
@@ -22,6 +23,7 @@ void main() {
       expect(AiProviderRegistry.byId('gemini')?.id, 'gemini');
       expect(AiProviderRegistry.byId('claude')?.id, 'claude');
       expect(AiProviderRegistry.byId('grok')?.id, 'grok');
+      expect(AiProviderRegistry.byId('cursor')?.id, 'cursor');
     });
 
     test('byId returns null for unknown id', () {

@@ -24,6 +24,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
   bool _geminiEnabled = false;
   bool _claudeEnabled = false;
   bool _grokEnabled = false;
+  bool _cursorEnabled = false;
 
   late final TextEditingController _githubUsernameController;
   late final TextEditingController _githubTokenController;
@@ -39,12 +40,14 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
   late final TextEditingController _geminiApiKeyController;
   late final TextEditingController _claudeApiKeyController;
   late final TextEditingController _grokApiKeyController;
+  late final TextEditingController _cursorApiKeyController;
 
   bool _slackTokenIsRotating = false;
   String _selectedModel = 'gpt-4.1-mini';
   String _selectedGeminiModel = 'gemini-2.0-flash';
   String _selectedClaudeModel = 'claude-sonnet-4-20250514';
   String _selectedGrokModel = 'grok-3-mini-fast';
+  String _selectedCursorModel = 'cursor-small';
 
   List<({String value, String label})> _openAiModels =
       <({String value, String label})>[];
@@ -54,10 +57,13 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
       <({String value, String label})>[];
   List<({String value, String label})> _grokModelList =
       <({String value, String label})>[];
+  List<({String value, String label})> _cursorModelList =
+      <({String value, String label})>[];
   bool _loadingOpenAiModels = false;
   bool _loadingGeminiModels = false;
   bool _loadingClaudeModels = false;
   bool _loadingGrokModels = false;
+  bool _loadingCursorModels = false;
 
   int _githubSyncMinutes = 5;
   int _jiraSyncMinutes = 5;
@@ -86,6 +92,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
     _geminiApiKeyController = TextEditingController();
     _claudeApiKeyController = TextEditingController();
     _grokApiKeyController = TextEditingController();
+    _cursorApiKeyController = TextEditingController();
 
     _slackTokenController.addListener(_onSlackTokenChanged);
   }
@@ -111,6 +118,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
     _geminiEnabled = config.geminiEnabled;
     _claudeEnabled = config.claudeEnabled;
     _grokEnabled = config.grokEnabled;
+    _cursorEnabled = config.cursorEnabled;
     _githubUsernameController.text = config.githubUsername;
     _githubTokenController.text = config.githubToken;
     _jiraBaseUrlController.text = config.jiraBaseUrl;
@@ -136,6 +144,9 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
     _grokApiKeyController.text = config.grokApiKey;
     _selectedGrokModel =
         config.grokModel.isNotEmpty ? config.grokModel : 'grok-3-mini-fast';
+    _cursorApiKeyController.text = config.cursorApiKey;
+    _selectedCursorModel =
+        config.cursorModel.isNotEmpty ? config.cursorModel : 'cursor-small';
     _githubSyncMinutes = config.githubSyncMinutes;
     _jiraSyncMinutes = config.jiraSyncMinutes;
     _slackSyncMinutes = config.slackSyncMinutes;
@@ -145,6 +156,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
     if (config.geminiApiKey.trim().isNotEmpty) _fetchGeminiModels();
     if (config.claudeApiKey.trim().isNotEmpty) _fetchClaudeModels();
     if (config.grokApiKey.trim().isNotEmpty) _fetchGrokModels();
+    if (config.cursorApiKey.trim().isNotEmpty) _fetchCursorModels();
   }
 
   @override
@@ -164,6 +176,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
     _geminiApiKeyController.dispose();
     _claudeApiKeyController.dispose();
     _grokApiKeyController.dispose();
+    _cursorApiKeyController.dispose();
     super.dispose();
   }
 
@@ -275,6 +288,29 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
     }
   }
 
+  Future<void> _fetchCursorModels() async {
+    final String key = _cursorApiKeyController.text.trim();
+    if (key.isEmpty) return;
+    setState(() => _loadingCursorModels = true);
+    try {
+      final List<({String value, String label})> models =
+          await _aiModelService.fetchCursorModels(apiKey: key);
+      if (mounted) {
+        setState(() {
+          _cursorModelList = models;
+          if (models.isNotEmpty &&
+              !models.any((m) => m.value == _selectedCursorModel)) {
+            _selectedCursorModel = models.first.value;
+          }
+        });
+      }
+    } catch (_) {
+      if (mounted) showInfoSnackBar(context, 'Could not fetch Cursor models.');
+    } finally {
+      if (mounted) setState(() => _loadingCursorModels = false);
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Auto-save
   // ---------------------------------------------------------------------------
@@ -290,6 +326,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
       geminiEnabled: _geminiEnabled,
       claudeEnabled: _claudeEnabled,
       grokEnabled: _grokEnabled,
+      cursorEnabled: _cursorEnabled,
       githubUsername: _githubUsernameController.text.trim(),
       githubToken: _githubTokenController.text.trim(),
       jiraBaseUrl: _jiraBaseUrlController.text.trim(),
@@ -309,6 +346,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
       claudeModel: _selectedClaudeModel,
       grokApiKey: _grokApiKeyController.text.trim(),
       grokModel: _selectedGrokModel,
+      cursorApiKey: _cursorApiKeyController.text.trim(),
+      cursorModel: _selectedCursorModel,
       githubSyncMinutes: _githubSyncMinutes,
       jiraSyncMinutes: _jiraSyncMinutes,
       slackSyncMinutes: _slackSyncMinutes,
@@ -346,6 +385,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
   bool get _canEnableClaude => _claudeApiKeyController.text.trim().isNotEmpty;
 
   bool get _canEnableGrok => _grokApiKeyController.text.trim().isNotEmpty;
+
+  bool get _canEnableCursor => _cursorApiKeyController.text.trim().isNotEmpty;
 
   // ---------------------------------------------------------------------------
   // Slack channels
@@ -813,6 +854,51 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
                   theme: theme,
                   onChanged: (String v) {
                     setState(() => _selectedGrokModel = v);
+                    _saveCurrentConfig();
+                  },
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          _CollapsibleIntegration(
+            brandName: 'Cursor',
+            brandSubtitle: 'AI-powered pull request review',
+            logoAsset: null,
+            brandIcon: Icons.computer_rounded,
+            brandColor: AppColors.cursor,
+            brandBg: AppColors.cursorLight,
+            enabled: _cursorEnabled,
+            canEnable: _canEnableCursor,
+            isConfigured: controller.config.isCursorConfigured,
+            onEnabledChanged: (bool v) {
+              setState(() => _cursorEnabled = v);
+              _saveCurrentConfig();
+            },
+            fieldCount: 1,
+            filledCount: _countFilled(<String>[_cursorApiKeyController.text]),
+            children: <Widget>[
+              _SecretField(
+                controller: _cursorApiKeyController,
+                label: 'API key',
+                hint: 'cur-...',
+                onSubmitted: (String v) {
+                  _onFieldSubmitted(v);
+                  _fetchCursorModels();
+                },
+              ),
+              _RevealModelSection(
+                visible: _cursorApiKeyController.text.trim().isNotEmpty,
+                loading: _loadingCursorModels,
+                child: _DynamicModelDropdown(
+                  value: _selectedCursorModel,
+                  models: _cursorModelList,
+                  loading: _loadingCursorModels,
+                  theme: theme,
+                  onChanged: (String v) {
+                    setState(() => _selectedCursorModel = v);
                     _saveCurrentConfig();
                   },
                 ),

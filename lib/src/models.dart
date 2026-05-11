@@ -14,6 +14,7 @@ class ConnectorConfig {
     this.geminiEnabled = false,
     this.claudeEnabled = false,
     this.grokEnabled = false,
+    this.cursorEnabled = false,
     this.githubUsername = '',
     this.githubToken = '',
     this.jiraBaseUrl = '',
@@ -34,6 +35,8 @@ class ConnectorConfig {
     this.claudeModel = 'claude-sonnet-4-20250514',
     this.grokApiKey = '',
     this.grokModel = 'grok-3-mini-fast',
+    this.cursorApiKey = '',
+    this.cursorModel = 'cursor-small',
     this.githubSyncMinutes = 5,
     this.jiraSyncMinutes = 5,
     this.slackSyncMinutes = 5,
@@ -47,6 +50,7 @@ class ConnectorConfig {
   final bool geminiEnabled;
   final bool claudeEnabled;
   final bool grokEnabled;
+  final bool cursorEnabled;
   final String githubUsername;
   final String githubToken;
   final String jiraBaseUrl;
@@ -67,6 +71,8 @@ class ConnectorConfig {
   final String claudeModel;
   final String grokApiKey;
   final String grokModel;
+  final String cursorApiKey;
+  final String cursorModel;
   final int githubSyncMinutes;
   final int jiraSyncMinutes;
   final int slackSyncMinutes;
@@ -80,6 +86,7 @@ class ConnectorConfig {
     bool? geminiEnabled,
     bool? claudeEnabled,
     bool? grokEnabled,
+    bool? cursorEnabled,
     String? githubUsername,
     String? githubToken,
     String? jiraBaseUrl,
@@ -100,6 +107,8 @@ class ConnectorConfig {
     String? claudeModel,
     String? grokApiKey,
     String? grokModel,
+    String? cursorApiKey,
+    String? cursorModel,
     int? githubSyncMinutes,
     int? jiraSyncMinutes,
     int? slackSyncMinutes,
@@ -113,6 +122,7 @@ class ConnectorConfig {
       geminiEnabled: geminiEnabled ?? this.geminiEnabled,
       claudeEnabled: claudeEnabled ?? this.claudeEnabled,
       grokEnabled: grokEnabled ?? this.grokEnabled,
+      cursorEnabled: cursorEnabled ?? this.cursorEnabled,
       githubUsername: githubUsername ?? this.githubUsername,
       githubToken: githubToken ?? this.githubToken,
       jiraBaseUrl: jiraBaseUrl ?? this.jiraBaseUrl,
@@ -133,6 +143,8 @@ class ConnectorConfig {
       claudeModel: claudeModel ?? this.claudeModel,
       grokApiKey: grokApiKey ?? this.grokApiKey,
       grokModel: grokModel ?? this.grokModel,
+      cursorApiKey: cursorApiKey ?? this.cursorApiKey,
+      cursorModel: cursorModel ?? this.cursorModel,
       githubSyncMinutes: githubSyncMinutes ?? this.githubSyncMinutes,
       jiraSyncMinutes: jiraSyncMinutes ?? this.jiraSyncMinutes,
       slackSyncMinutes: slackSyncMinutes ?? this.slackSyncMinutes,
@@ -158,6 +170,8 @@ class ConnectorConfig {
       'claudeModel': claudeModel,
       'grokEnabled': grokEnabled,
       'grokModel': grokModel,
+      'cursorEnabled': cursorEnabled,
+      'cursorModel': cursorModel,
       'githubSyncMinutes': githubSyncMinutes,
       'jiraSyncMinutes': jiraSyncMinutes,
       'slackSyncMinutes': slackSyncMinutes,
@@ -177,6 +191,7 @@ class ConnectorConfig {
     String geminiApiKey = '',
     String claudeApiKey = '',
     String grokApiKey = '',
+    String cursorApiKey = '',
   }) {
     final data = json ?? <String, dynamic>{};
     return ConnectorConfig(
@@ -188,6 +203,7 @@ class ConnectorConfig {
       geminiEnabled: data['geminiEnabled'] as bool? ?? false,
       claudeEnabled: data['claudeEnabled'] as bool? ?? false,
       grokEnabled: data['grokEnabled'] as bool? ?? false,
+      cursorEnabled: data['cursorEnabled'] as bool? ?? false,
       githubUsername: data['githubUsername'] as String? ?? '',
       githubToken: githubToken,
       jiraBaseUrl: data['jiraBaseUrl'] as String? ?? '',
@@ -211,6 +227,8 @@ class ConnectorConfig {
       claudeModel: data['claudeModel'] as String? ?? 'claude-sonnet-4-20250514',
       grokApiKey: grokApiKey,
       grokModel: data['grokModel'] as String? ?? 'grok-3-mini-fast',
+      cursorApiKey: cursorApiKey,
+      cursorModel: data['cursorModel'] as String? ?? 'cursor-small',
       githubSyncMinutes: data['githubSyncMinutes'] as int? ?? 5,
       jiraSyncMinutes: data['jiraSyncMinutes'] as int? ?? 5,
       slackSyncMinutes: data['slackSyncMinutes'] as int? ?? 5,
@@ -256,6 +274,9 @@ class ConnectorConfig {
       'grokEnabled': grokEnabled,
       'grokApiKey': grokApiKey,
       'grokModel': grokModel,
+      'cursorEnabled': cursorEnabled,
+      'cursorApiKey': cursorApiKey,
+      'cursorModel': cursorModel,
       'githubSyncMinutes': githubSyncMinutes,
       'jiraSyncMinutes': jiraSyncMinutes,
       'slackSyncMinutes': slackSyncMinutes,
@@ -295,6 +316,9 @@ class ConnectorConfig {
       grokEnabled: json['grokEnabled'] as bool? ?? false,
       grokApiKey: json['grokApiKey'] as String? ?? '',
       grokModel: json['grokModel'] as String? ?? 'grok-3-mini-fast',
+      cursorEnabled: json['cursorEnabled'] as bool? ?? false,
+      cursorApiKey: json['cursorApiKey'] as String? ?? '',
+      cursorModel: json['cursorModel'] as String? ?? 'cursor-small',
       githubSyncMinutes: json['githubSyncMinutes'] as int? ?? 5,
       jiraSyncMinutes: json['jiraSyncMinutes'] as int? ?? 5,
       slackSyncMinutes: json['slackSyncMinutes'] as int? ?? 5,
@@ -346,6 +370,9 @@ class ConnectorConfig {
       claudeEnabled && claudeApiKey.trim().isNotEmpty;
 
   bool get isGrokConfigured => grokEnabled && grokApiKey.trim().isNotEmpty;
+
+  bool get isCursorConfigured =>
+      cursorEnabled && cursorApiKey.trim().isNotEmpty;
 
   bool get hasAnyIntegrationEnabled =>
       githubEnabled || jiraEnabled || slackEnabled;
