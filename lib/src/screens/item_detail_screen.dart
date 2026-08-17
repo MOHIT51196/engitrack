@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../ai/ai_provider.dart';
+import '../ai/ai_provider_registry.dart';
+import '../ai/ai_review_helpers.dart';
 import '../controller.dart';
 import '../integrations/integration_provider.dart';
 import '../models.dart';
@@ -775,6 +778,13 @@ class _AiReviewButton extends StatelessWidget {
     final EngiTrackController controller = EngiTrackScope.of(context);
     final List<AiProvider> providers = controller.configuredAiProviders;
 
+    // A Cursor cloud agent is already running (or finished) for this PR --
+    // re-attach to it instead of asking for a provider again.
+    if (controller.hasPendingCursorRun(item.id)) {
+      await _runReview(context, 'cursor');
+      return;
+    }
+
     if (providers.length == 1) {
       await _runReview(context, providers.first.id);
       return;
@@ -800,6 +810,7 @@ class _AiReviewButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final EngiTrackController controller = EngiTrackScope.of(context);
     final bool isReviewing = controller.activeReviewPrId == item.id;
+    final bool hasPendingRun = controller.hasPendingCursorRun(item.id);
 
     return FilledButton.icon(
       onPressed: !controller.canRunAiReview || isReviewing
@@ -814,8 +825,19 @@ class _AiReviewButton extends StatelessWidget {
                 color: Colors.white,
               ),
             )
-          : const Icon(Icons.auto_awesome_rounded, size: 14),
-      label: Text(isReviewing ? 'Reviewing...' : 'AI Review'),
+          : Icon(
+              hasPendingRun
+                  ? Icons.restart_alt_rounded
+                  : Icons.auto_awesome_rounded,
+              size: 14,
+            ),
+      label: Text(
+        isReviewing
+            ? 'Reviewing...'
+            : hasPendingRun
+                ? 'Resume review'
+                : 'AI Review',
+      ),
     );
   }
 }
@@ -1044,8 +1066,64 @@ class _AiReviewSectionState extends State<_AiReviewSection> {
                     formatCompactTimestamp(review.generatedAt),
                     style: theme.textTheme.labelMedium?.copyWith(fontSize: 10),
                   ),
+                  const SizedBox(width: 4),
+                  SizedBox(
+                    width: 26,
+                    height: 26,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      tooltip: 'Copy full review',
+                      onPressed: () async {
+                        await Clipboard.setData(
+                          ClipboardData(text: review.review),
+                        );
+                        if (!context.mounted) return;
+                        showInfoSnackBar(context, 'Review copied.');
+                      },
+                      icon: const Icon(
+                        Icons.copy_rounded,
+                        size: 14,
+                        color: AppColors.accent,
+                      ),
+                    ),
+                  ),
                 ],
               ),
+              if (_reviewedByLabel(review) case final String reviewedBy
+                  when reviewedBy.isNotEmpty) ...<Widget>[
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: <Widget>[
+                    SoftTag(
+                      label: reviewedBy,
+                      icon: AiProviderRegistry.byId(review.providerId)?.icon ??
+                          Icons.psychology_outlined,
+                      backgroundColor:
+                          AiProviderRegistry.byId(review.providerId)
+                                  ?.brandColorLight ??
+                              AppColors.softSurface,
+                      foregroundColor: AiProviderRegistry.byId(
+                            review.providerId,
+                          )?.brandColor ??
+                          AppColors.secondaryInk,
+                      dense: true,
+                      shrinkable: false,
+                    ),
+                    if (controller.postedReviewDecisionFor(widget.item.id)
+                        case final PrReviewDecision posted?)
+                      SoftTag(
+                        label: 'Posted: ${posted.label}',
+                        icon: _decisionIcon(posted),
+                        foregroundColor: _decisionColor(posted),
+                        backgroundColor:
+                            _decisionColor(posted).withValues(alpha: 0.1),
+                        dense: true,
+                      ),
+                  ],
+                ),
+              ],
               if (review.verdict.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 10),
                 Text(
@@ -1058,13 +1136,20 @@ class _AiReviewSectionState extends State<_AiReviewSection> {
               if (review.concerns.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 12),
                 Text(
-                  'Concerns',
+                  'Concerns (${review.concerns.length})',
                   style: theme.textTheme.labelLarge?.copyWith(fontSize: 12),
                 ),
                 const SizedBox(height: 6),
-                ...review.concerns.map(
-                  (AiReviewConcern c) =>
-                      _ConcernCard(item: widget.item, concern: c),
+                _SeveritySummary(concerns: review.concerns),
+                const SizedBox(height: 8),
+                ...sortConcernsBySeverity(review.concerns).map(
+                  (AiReviewConcern c) => _ConcernCard(
+                    concern: c,
+                    initiallyExpanded: c.severity.toLowerCase() == 'critical' ||
+                        review.concerns.length <= 3,
+                    onPost: () =>
+                        _openPostReviewFlow(context, review, preselected: c),
+                  ),
                 ),
               ],
               if (review.mergeConfidence.isNotEmpty) ...<Widget>[
@@ -1085,13 +1170,17 @@ class _AiReviewSectionState extends State<_AiReviewSection> {
               if (review.concerns.isEmpty &&
                   review.rawReview.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 8),
-                Text(
-                  review.rawReview.length <= 600
-                      ? review.rawReview
-                      : '${review.rawReview.substring(0, 597)}...',
-                  style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12),
-                ),
+                _ExpandableReviewText(text: review.rawReview),
               ],
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _openPostReviewFlow(context, review),
+                  icon: const Icon(Icons.rate_review_outlined, size: 14),
+                  label: const Text('Post review to GitHub'),
+                ),
+              ),
             ],
           ),
         ),
@@ -1099,6 +1188,75 @@ class _AiReviewSectionState extends State<_AiReviewSection> {
         _buildChatSection(context, review, theme),
       ],
     );
+  }
+
+  /// e.g. "Cursor · claude-fable-5" or "OpenAI · gpt-4o".
+  String _reviewedByLabel(AiReviewResult review) {
+    final String providerName =
+        AiProviderRegistry.byId(review.providerId)?.displayName ??
+            review.providerId;
+    return <String>[
+      if (providerName.isNotEmpty) providerName,
+      if (review.model.isNotEmpty) review.model,
+    ].join(' · ');
+  }
+
+  IconData _decisionIcon(PrReviewDecision decision) {
+    switch (decision) {
+      case PrReviewDecision.comment:
+        return Icons.chat_bubble_outline_rounded;
+      case PrReviewDecision.requestChanges:
+        return Icons.published_with_changes_rounded;
+      case PrReviewDecision.approve:
+        return Icons.check_circle_outline_rounded;
+    }
+  }
+
+  Color _decisionColor(PrReviewDecision decision) {
+    switch (decision) {
+      case PrReviewDecision.comment:
+        return AppColors.info;
+      case PrReviewDecision.requestChanges:
+        return AppColors.warning;
+      case PrReviewDecision.approve:
+        return AppColors.success;
+    }
+  }
+
+  /// Opens the post-review sheet: pick the review state, select which
+  /// concerns to include (all by default, or a single preselected one), and
+  /// edit the consolidated comment before it is posted as one GitHub review.
+  Future<void> _openPostReviewFlow(
+    BuildContext context,
+    AiReviewResult review, {
+    AiReviewConcern? preselected,
+  }) async {
+    final ({PrReviewDecision decision, String body})? result =
+        await showModalBottomSheet<({PrReviewDecision decision, String body})>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (BuildContext ctx) => _PostReviewSheet(
+        review: review,
+        subtitle: widget.item.subtitle,
+        preselected: preselected,
+      ),
+    );
+    if (result == null || !context.mounted) return;
+
+    final EngiTrackController controller = EngiTrackScope.of(context);
+    try {
+      await controller.submitPrReview(
+        widget.item,
+        body: result.body,
+        decision: result.decision,
+      );
+      if (!context.mounted) return;
+      showInfoSnackBar(context, 'Review posted (${result.decision.label}).');
+    } catch (error) {
+      if (!context.mounted) return;
+      showInfoSnackBar(context, 'Failed to post review: $error');
+    }
   }
 
   Widget _buildChatSection(
@@ -1260,20 +1418,144 @@ class _AiReviewSectionState extends State<_AiReviewSection> {
   }
 }
 
-class _ConcernCard extends StatelessWidget {
-  const _ConcernCard({required this.item, required this.concern});
-  final IntegrationItem item;
-  final AiReviewConcern concern;
+/// Severity counts shown above a long concern list so the scale of the
+/// feedback is clear at a glance.
+class _SeveritySummary extends StatelessWidget {
+  const _SeveritySummary({required this.concerns});
+  final List<AiReviewConcern> concerns;
+
+  @override
+  Widget build(BuildContext context) {
+    final Map<String, int> counts = <String, int>{};
+    for (final AiReviewConcern concern in concerns) {
+      final String key = concern.severity.toLowerCase();
+      counts[key] = (counts[key] ?? 0) + 1;
+    }
+
+    final List<Widget> tags = <Widget>[];
+    void addTag(String severity, String label, Color color) {
+      final int count = counts.remove(severity) ?? 0;
+      if (count == 0) return;
+      tags.add(
+        SoftTag(
+          label: '$count $label',
+          foregroundColor: color,
+          backgroundColor: color.withValues(alpha: 0.1),
+          dense: true,
+        ),
+      );
+    }
+
+    addTag('critical', 'critical', AppColors.danger);
+    addTag('suggestion', 'suggestions', AppColors.info);
+    addTag('nitpick', 'nitpicks', AppColors.tertiaryInk);
+    for (final MapEntry<String, int> entry in counts.entries) {
+      tags.add(
+        SoftTag(
+          label: '${entry.value} ${entry.key}',
+          foregroundColor: AppColors.warning,
+          backgroundColor: AppColors.warningLight,
+          dense: true,
+        ),
+      );
+    }
+
+    if (tags.isEmpty) return const SizedBox.shrink();
+    return Wrap(spacing: 4, runSpacing: 4, children: tags);
+  }
+}
+
+/// Full model output with expand/collapse -- never truncates the content, so
+/// long free-form reviews stay readable and scrollable.
+class _ExpandableReviewText extends StatefulWidget {
+  const _ExpandableReviewText({required this.text});
+  final String text;
+
+  @override
+  State<_ExpandableReviewText> createState() => _ExpandableReviewTextState();
+}
+
+class _ExpandableReviewTextState extends State<_ExpandableReviewText> {
+  static const int _collapsedMaxLines = 12;
+
+  bool _expanded = false;
+
+  bool get _isLong =>
+      widget.text.length > 700 ||
+      '\n'.allMatches(widget.text).length >= _collapsedMaxLines;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final EngiTrackController controller = EngiTrackScope.of(context);
+    final TextStyle? style =
+        theme.textTheme.bodyMedium?.copyWith(fontSize: 12, height: 1.45);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: AppColors.outline.withValues(alpha: 0.5),
+              width: 0.5,
+            ),
+          ),
+          child: _expanded || !_isLong
+              ? SelectableText(widget.text.trim(), style: style)
+              : Text(
+                  widget.text.trim(),
+                  style: style,
+                  maxLines: _collapsedMaxLines,
+                  overflow: TextOverflow.ellipsis,
+                ),
+        ),
+        if (_isLong)
+          TextButton.icon(
+            onPressed: () => setState(() => _expanded = !_expanded),
+            icon: Icon(
+              _expanded ? Icons.unfold_less_rounded : Icons.unfold_more_rounded,
+              size: 14,
+            ),
+            label: Text(
+              _expanded ? 'Show less' : 'Show full review',
+              style: const TextStyle(fontSize: 11),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _ConcernCard extends StatefulWidget {
+  const _ConcernCard({
+    required this.concern,
+    required this.onPost,
+    this.initiallyExpanded = true,
+  });
+  final AiReviewConcern concern;
+  final VoidCallback onPost;
+  final bool initiallyExpanded;
+
+  @override
+  State<_ConcernCard> createState() => _ConcernCardState();
+}
+
+class _ConcernCardState extends State<_ConcernCard> {
+  late bool _expanded = widget.initiallyExpanded;
+
+  AiReviewConcern get concern => widget.concern;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
 
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
@@ -1285,112 +1567,89 @@ class _ConcernCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              SoftTag(
-                label: concern.severity,
-                foregroundColor: _severityColor(concern.severity),
-                backgroundColor: _severityColor(
-                  concern.severity,
-                ).withValues(alpha: 0.1),
-                dense: true,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  concern.title,
-                  style: theme.textTheme.titleMedium?.copyWith(fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            concern.description,
-            style: theme.textTheme.bodyMedium?.copyWith(fontSize: 11),
-          ),
-          if (concern.filePath != null) ...<Widget>[
-            const SizedBox(height: 4),
-            Text(
-              '${concern.filePath}${concern.lineNumber != null ? ':${concern.lineNumber}' : ''}',
-              style: theme.textTheme.labelMedium?.copyWith(
-                fontSize: 10,
-                fontFamily: 'monospace',
-              ),
-            ),
-          ],
-          const SizedBox(height: 6),
-          SizedBox(
-            height: 28,
-            child: OutlinedButton.icon(
-              onPressed: () => _addComment(context, controller),
-              icon: const Icon(Icons.comment_outlined, size: 12),
-              label: const Text('Add comment', style: TextStyle(fontSize: 10)),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+          InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
+              child: Row(
+                children: <Widget>[
+                  SoftTag(
+                    label: concern.severity,
+                    foregroundColor: _severityColor(concern.severity),
+                    backgroundColor: _severityColor(
+                      concern.severity,
+                    ).withValues(alpha: 0.1),
+                    dense: true,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      concern.title,
+                      style:
+                          theme.textTheme.titleMedium?.copyWith(fontSize: 12),
+                      maxLines: _expanded ? null : 2,
+                      overflow: _expanded ? null : TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  AnimatedRotation(
+                    turns: _expanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 150),
+                    child: const Icon(
+                      Icons.expand_more_rounded,
+                      size: 16,
+                      color: AppColors.tertiaryInk,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
+          if (_expanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  SelectableText(
+                    concern.description,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontSize: 11,
+                      height: 1.45,
+                    ),
+                  ),
+                  if (concern.filePath != null) ...<Widget>[
+                    const SizedBox(height: 4),
+                    Text(
+                      '${concern.filePath}${concern.lineNumber != null ? ':${concern.lineNumber}' : ''}',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontSize: 10,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    height: 28,
+                    child: OutlinedButton.icon(
+                      onPressed: widget.onPost,
+                      icon: const Icon(Icons.rate_review_outlined, size: 12),
+                      label: const Text(
+                        'Post to GitHub',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
-  }
-
-  Future<void> _addComment(
-    BuildContext context,
-    EngiTrackController controller,
-  ) async {
-    final TextEditingController textController = TextEditingController(
-      text:
-          '**[${concern.severity}] ${concern.title}**\n\n${concern.description}'
-          '${concern.filePath != null ? '\n\nFile: `${concern.filePath}${concern.lineNumber != null ? ':${concern.lineNumber}' : ''}`' : ''}',
-    );
-
-    final String? result = await showDialog<String>(
-      context: context,
-      builder: (BuildContext ctx) {
-        return AlertDialog(
-          title: const Text('Add PR Comment'),
-          content: SizedBox(
-            width: 500,
-            child: TextField(
-              controller: textController,
-              maxLines: 8,
-              style: const TextStyle(fontSize: 13),
-              decoration: const InputDecoration(
-                hintText: 'Edit your comment...',
-              ),
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, textController.text),
-              child: const Text('Post comment'),
-            ),
-          ],
-        );
-      },
-    );
-
-    textController.dispose();
-
-    if (result != null && result.trim().isNotEmpty && context.mounted) {
-      try {
-        final String url = await controller.postPrComment(item, result);
-        if (!context.mounted) return;
-        showInfoSnackBar(
-          context,
-          url.isNotEmpty ? 'Comment posted!' : 'Comment posted.',
-        );
-      } catch (error) {
-        if (!context.mounted) return;
-        showInfoSnackBar(context, 'Failed to post: $error');
-      }
-    }
   }
 
   Color _severityColor(String severity) {
@@ -1404,5 +1663,244 @@ class _ConcernCard extends StatelessWidget {
       default:
         return AppColors.warning;
     }
+  }
+}
+
+/// Bottom sheet for posting the AI review to GitHub as a single pull request
+/// review: pick the review state, choose which concerns to include, and edit
+/// the consolidated comment before posting.
+class _PostReviewSheet extends StatefulWidget {
+  const _PostReviewSheet({
+    required this.review,
+    required this.subtitle,
+    this.preselected,
+  });
+
+  final AiReviewResult review;
+  final String subtitle;
+  final AiReviewConcern? preselected;
+
+  @override
+  State<_PostReviewSheet> createState() => _PostReviewSheetState();
+}
+
+class _PostReviewSheetState extends State<_PostReviewSheet> {
+  PrReviewDecision _decision = PrReviewDecision.comment;
+  late final Set<int> _selectedIndexes = widget.preselected == null
+      ? <int>{for (int i = 0; i < widget.review.concerns.length; i++) i}
+      : <int>{
+          widget.review.concerns.indexOf(widget.preselected!),
+        }.where((int i) => i >= 0).toSet();
+  late final TextEditingController _bodyController =
+      TextEditingController(text: _generatedBody());
+  bool _userEdited = false;
+
+  @override
+  void dispose() {
+    _bodyController.dispose();
+    super.dispose();
+  }
+
+  String _generatedBody() {
+    return buildConsolidatedReviewComment(
+      review: widget.review,
+      concerns: <AiReviewConcern>[
+        for (int i = 0; i < widget.review.concerns.length; i++)
+          if (_selectedIndexes.contains(i)) widget.review.concerns[i],
+      ],
+    );
+  }
+
+  void _toggleConcern(int index, bool selected) {
+    setState(() {
+      if (selected) {
+        _selectedIndexes.add(index);
+      } else {
+        _selectedIndexes.remove(index);
+      }
+      // Keep the body in sync with the selection until the user starts
+      // editing it manually.
+      if (!_userEdited) {
+        _bodyController.text = _generatedBody();
+      }
+    });
+  }
+
+  bool get _canPost =>
+      _decision == PrReviewDecision.approve ||
+      _bodyController.text.trim().isNotEmpty;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final List<AiReviewConcern> concerns = widget.review.concerns;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.outline,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Post review to GitHub',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                widget.subtitle,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.secondaryInk,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Review state',
+                style: theme.textTheme.labelLarge?.copyWith(fontSize: 12),
+              ),
+              const SizedBox(height: 6),
+              SegmentedButton<PrReviewDecision>(
+                segments: const <ButtonSegment<PrReviewDecision>>[
+                  ButtonSegment<PrReviewDecision>(
+                    value: PrReviewDecision.comment,
+                    label: Text('Comment'),
+                    icon: Icon(Icons.chat_bubble_outline_rounded, size: 13),
+                  ),
+                  ButtonSegment<PrReviewDecision>(
+                    value: PrReviewDecision.requestChanges,
+                    label: Text('Request changes'),
+                    icon: Icon(Icons.published_with_changes_rounded, size: 13),
+                  ),
+                  ButtonSegment<PrReviewDecision>(
+                    value: PrReviewDecision.approve,
+                    label: Text('Approve'),
+                    icon: Icon(Icons.check_circle_outline_rounded, size: 13),
+                  ),
+                ],
+                selected: <PrReviewDecision>{_decision},
+                onSelectionChanged: (Set<PrReviewDecision> selection) {
+                  setState(() => _decision = selection.first);
+                },
+                showSelectedIcon: false,
+                style: ButtonStyle(
+                  visualDensity: VisualDensity.compact,
+                  textStyle: WidgetStateProperty.all(
+                    const TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              if (concerns.isNotEmpty) ...<Widget>[
+                const SizedBox(height: 14),
+                Text(
+                  'Include concerns (${_selectedIndexes.length}/${concerns.length})',
+                  style: theme.textTheme.labelLarge?.copyWith(fontSize: 12),
+                ),
+                const SizedBox(height: 4),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 220),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: <Widget>[
+                        for (int i = 0; i < concerns.length; i++)
+                          CheckboxListTile(
+                            value: _selectedIndexes.contains(i),
+                            onChanged: (bool? v) =>
+                                _toggleConcern(i, v ?? false),
+                            dense: true,
+                            visualDensity: VisualDensity.compact,
+                            contentPadding: EdgeInsets.zero,
+                            controlAffinity: ListTileControlAffinity.leading,
+                            title: Text(
+                              '[${concerns[i].severity}] ${concerns[i].title}',
+                              style: const TextStyle(fontSize: 12),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 14),
+              Text(
+                'Comment',
+                style: theme.textTheme.labelLarge?.copyWith(fontSize: 12),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _bodyController,
+                minLines: 4,
+                maxLines: 10,
+                style: const TextStyle(fontSize: 12, height: 1.4),
+                decoration: InputDecoration(
+                  hintText: _decision == PrReviewDecision.approve
+                      ? 'Optional comment (approvals can be empty)...'
+                      : 'Review comment (posted as one message)...',
+                ),
+                onChanged: (String _) {
+                  _userEdited = true;
+                  setState(() {});
+                },
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 2,
+                    child: FilledButton.icon(
+                      onPressed: _canPost
+                          ? () => Navigator.pop(
+                                context,
+                                (
+                                  decision: _decision,
+                                  body: _bodyController.text,
+                                ),
+                              )
+                          : null,
+                      icon: const Icon(Icons.send_rounded, size: 14),
+                      label: Text('Post (${_decision.label})'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

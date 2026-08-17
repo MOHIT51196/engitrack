@@ -6,6 +6,25 @@ import 'package:http/http.dart' as http;
 import '../models.dart';
 import '../services.dart';
 
+const String reviewJsonSchemaInstructions =
+    '''Return your review as a JSON object with this exact schema:
+{
+  "verdict": "string - overall verdict",
+  "concerns": [
+    {
+      "title": "string - short title of the concern",
+      "severity": "critical|suggestion|nitpick",
+      "description": "string - detailed explanation",
+      "filePath": "string or null - file path if applicable",
+      "lineNumber": "number or null - line number if applicable"
+    }
+  ],
+  "mergeConfidence": "string - Low/Medium/High with brief rationale",
+  "executiveSummary": "string - 1-2 sentence summary"
+}
+
+Be direct. Prioritize correctness, reliability, security, performance, migrations, concurrency, and rollback safety. Call out anything that deserves human verification.''';
+
 String buildReviewPrompt(PullRequestContext context) {
   final List<PullRequestFile> cappedFiles = context.files.take(12).toList();
   final StringBuffer diffBuffer = StringBuffer();
@@ -28,23 +47,7 @@ String buildReviewPrompt(PullRequestContext context) {
   return '''
 You are reviewing a pull request for a senior software engineer.
 
-Return your review as a JSON object with this exact schema:
-{
-  "verdict": "string - overall verdict",
-  "concerns": [
-    {
-      "title": "string - short title of the concern",
-      "severity": "critical|suggestion|nitpick",
-      "description": "string - detailed explanation",
-      "filePath": "string or null - file path if applicable",
-      "lineNumber": "number or null - line number if applicable"
-    }
-  ],
-  "mergeConfidence": "string - Low/Medium/High with brief rationale",
-  "executiveSummary": "string - 1-2 sentence summary"
-}
-
-Be direct. Prioritize correctness, reliability, security, performance, migrations, concurrency, and rollback safety. Call out anything that deserves human verification.
+$reviewJsonSchemaInstructions
 
 Pull request metadata:
 - Repository: ${context.pullRequest.repository}
@@ -60,6 +63,45 @@ ${context.body.trim().isEmpty ? 'No PR description was provided.' : context.body
 
 Diff excerpts:
 ${diffBuffer.toString().trim()}
+''';
+}
+
+/// Prompt for a Cursor Cloud Agent. Unlike the chat-completion providers, the
+/// agent has the PR's repository checked out in its workspace, so it inspects
+/// the diff itself instead of relying on inlined patch excerpts.
+String buildCloudAgentReviewPrompt(PullRequestContext context) {
+  final StringBuffer fileList = StringBuffer();
+  for (final PullRequestFile file in context.files.take(50)) {
+    fileList.writeln(
+      '- ${file.filename} (${file.status}, '
+      '+${file.additions}/-${file.deletions})',
+    );
+  }
+
+  return '''
+You are reviewing GitHub pull request #${context.pullRequest.number} ("${context.pullRequest.title}") in ${context.pullRequest.repository}. The repository is checked out in this workspace on the pull request's branch.
+
+STRICT RULES:
+- This is a READ-ONLY review. Do NOT modify files, run formatters, commit, push, or open pull requests.
+- Inspect the changes with read-only commands such as `git diff origin/${context.baseBranch}...HEAD` and `git log`, and by reading the changed files.
+
+$reviewJsonSchemaInstructions
+
+Your final assistant message must contain ONLY that JSON object.
+
+Pull request metadata:
+- Repository: ${context.pullRequest.repository}
+- PR: #${context.pullRequest.number}
+- Author: ${context.pullRequest.author}
+- Base branch: ${context.baseBranch}
+- Head branch: ${context.headBranch}
+- Changed files: ${context.changedFiles}
+
+PR description:
+${context.body.trim().isEmpty ? 'No PR description was provided.' : context.body.trim()}
+
+Changed files according to GitHub:
+${fileList.toString().trim()}
 ''';
 }
 
@@ -88,13 +130,24 @@ AiReviewResult parseStructuredReview(String output) {
     }
     final Map<String, dynamic> parsed =
         jsonDecode(jsonStr) as Map<String, dynamic>;
-    final List<AiReviewConcern> concerns =
-        (parsed['concerns'] as List<dynamic>? ?? const <dynamic>[])
-            .map(
-              (dynamic c) =>
-                  AiReviewConcern.fromJson(c as Map<String, dynamic>),
-            )
-            .toList();
+    // Tolerate imperfect entries: models sometimes emit concerns as plain
+    // strings or mix malformed entries into an otherwise valid list. Keep
+    // everything usable instead of discarding the whole structure.
+    final List<AiReviewConcern> concerns = <AiReviewConcern>[];
+    for (final dynamic entry
+        in parsed['concerns'] as List<dynamic>? ?? const <dynamic>[]) {
+      if (entry is Map<String, dynamic>) {
+        concerns.add(AiReviewConcern.fromJson(entry));
+      } else if (entry is String && entry.trim().isNotEmpty) {
+        concerns.add(
+          AiReviewConcern(
+            title: entry.trim().split('\n').first,
+            severity: 'suggestion',
+            description: entry.trim(),
+          ),
+        );
+      }
+    }
     return AiReviewResult(
       verdict: parsed['verdict'] as String? ?? '',
       concerns: concerns,
@@ -106,6 +159,81 @@ AiReviewResult parseStructuredReview(String output) {
   } catch (_) {
     return AiReviewResult(rawReview: output, generatedAt: DateTime.now());
   }
+}
+
+/// Builds a single consolidated GitHub review comment (markdown) from the
+/// selected concerns plus the review's verdict/confidence/summary.
+String buildConsolidatedReviewComment({
+  required AiReviewResult review,
+  required List<AiReviewConcern> concerns,
+}) {
+  final StringBuffer buffer = StringBuffer();
+
+  if (review.verdict.isNotEmpty) {
+    buffer.writeln('**Verdict:** ${review.verdict}');
+    buffer.writeln();
+  }
+
+  final List<AiReviewConcern> ordered = sortConcernsBySeverity(concerns);
+  if (ordered.isNotEmpty) {
+    buffer.writeln('### Concerns');
+    for (int i = 0; i < ordered.length; i++) {
+      final AiReviewConcern concern = ordered[i];
+      buffer.writeln('${i + 1}. **[${concern.severity}] ${concern.title}**');
+      if (concern.description.trim().isNotEmpty) {
+        buffer.writeln('   ${concern.description.trim()}');
+      }
+      if (concern.filePath != null) {
+        buffer.writeln(
+          '   `${concern.filePath}'
+          '${concern.lineNumber != null ? ':${concern.lineNumber}' : ''}`',
+        );
+      }
+    }
+    buffer.writeln();
+  }
+
+  if (review.mergeConfidence.isNotEmpty) {
+    buffer.writeln('**Merge confidence:** ${review.mergeConfidence}');
+    buffer.writeln();
+  }
+  if (review.executiveSummary.isNotEmpty) {
+    buffer.writeln('**Summary:** ${review.executiveSummary}');
+  }
+
+  final String result = buffer.toString().trim();
+  final String content = result.isEmpty ? review.rawReview.trim() : result;
+  if (content.isEmpty) return '';
+  // <sub> renders as small text on GitHub -- an unobtrusive footer.
+  return '$content\n\n<sub>Posted via EngiTrack</sub>';
+}
+
+/// Sorts concerns for triage: critical first, then suggestions, then
+/// nitpicks, preserving the model's order within each severity.
+List<AiReviewConcern> sortConcernsBySeverity(List<AiReviewConcern> concerns) {
+  int rank(String severity) {
+    switch (severity.toLowerCase()) {
+      case 'critical':
+        return 0;
+      case 'suggestion':
+        return 2;
+      case 'nitpick':
+        return 3;
+      default:
+        return 1;
+    }
+  }
+
+  final List<AiReviewConcern> sorted = List<AiReviewConcern>.from(concerns);
+  final Map<AiReviewConcern, int> originalIndex = <AiReviewConcern, int>{
+    for (int i = 0; i < concerns.length; i++) concerns[i]: i,
+  };
+  sorted.sort((AiReviewConcern a, AiReviewConcern b) {
+    final int bySeverity = rank(a.severity).compareTo(rank(b.severity));
+    if (bySeverity != 0) return bySeverity;
+    return (originalIndex[a] ?? 0).compareTo(originalIndex[b] ?? 0);
+  });
+  return sorted;
 }
 
 String extractChatCompletionText(Map<String, dynamic> json) {

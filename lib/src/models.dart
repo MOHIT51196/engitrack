@@ -4,6 +4,34 @@ enum SlackReviewKind { pr, doc }
 
 enum AlertSeverity { critical, high, medium, info }
 
+/// Review state submitted alongside a pull request review on GitHub.
+enum PrReviewDecision { comment, requestChanges, approve }
+
+extension PrReviewDecisionInfo on PrReviewDecision {
+  String get label {
+    switch (this) {
+      case PrReviewDecision.comment:
+        return 'Comment';
+      case PrReviewDecision.requestChanges:
+        return 'Request changes';
+      case PrReviewDecision.approve:
+        return 'Approve';
+    }
+  }
+
+  /// Event name expected by GitHub's pull request reviews API.
+  String get githubEvent {
+    switch (this) {
+      case PrReviewDecision.comment:
+        return 'COMMENT';
+      case PrReviewDecision.requestChanges:
+        return 'REQUEST_CHANGES';
+      case PrReviewDecision.approve:
+        return 'APPROVE';
+    }
+  }
+}
+
 /// Live connection state of an integration, based on real API calls
 /// (credential verification or sync results) -- never on config presence alone.
 enum IntegrationStatus { unknown, checking, connected, error }
@@ -424,6 +452,49 @@ class ConnectorConfig {
       githubEnabled || jiraEnabled || slackEnabled;
 }
 
+/// A Cursor Cloud Agent review run that was launched but not yet collected.
+/// Persisted so a review survives app backgrounding, restarts, and network
+/// suspensions -- the run keeps executing on Cursor's side.
+class PendingCursorRun {
+  const PendingCursorRun({
+    required this.prId,
+    required this.agentId,
+    required this.runId,
+    required this.startedAt,
+    this.model = '',
+  });
+
+  final String prId;
+  final String agentId;
+  final String runId;
+  final DateTime startedAt;
+
+  /// Model label captured at launch time, so a resumed review reports the
+  /// model that actually ran even if settings changed meanwhile.
+  final String model;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'prId': prId,
+      'agentId': agentId,
+      'runId': runId,
+      'startedAt': startedAt.toIso8601String(),
+      'model': model,
+    };
+  }
+
+  factory PendingCursorRun.fromJson(Map<String, dynamic> json) {
+    return PendingCursorRun(
+      prId: json['prId'] as String? ?? '',
+      agentId: json['agentId'] as String? ?? '',
+      runId: json['runId'] as String? ?? '',
+      startedAt: DateTime.tryParse(json['startedAt'] as String? ?? '') ??
+          DateTime.now(),
+      model: json['model'] as String? ?? '',
+    );
+  }
+}
+
 class TodoItem {
   const TodoItem({
     required this.id,
@@ -806,6 +877,8 @@ class AiReviewResult {
     this.mergeConfidence = '',
     this.executiveSummary = '',
     this.rawReview = '',
+    this.providerId = '',
+    this.model = '',
   });
 
   final String verdict;
@@ -814,6 +887,25 @@ class AiReviewResult {
   final String executiveSummary;
   final DateTime generatedAt;
   final String rawReview;
+
+  /// Which AI provider produced this review (e.g. `cursor`, `openai`).
+  final String providerId;
+
+  /// Human-readable model label used for the review.
+  final String model;
+
+  AiReviewResult copyWith({String? providerId, String? model}) {
+    return AiReviewResult(
+      generatedAt: generatedAt,
+      verdict: verdict,
+      concerns: concerns,
+      mergeConfidence: mergeConfidence,
+      executiveSummary: executiveSummary,
+      rawReview: rawReview,
+      providerId: providerId ?? this.providerId,
+      model: model ?? this.model,
+    );
+  }
 
   String get review {
     if (rawReview.isNotEmpty) return rawReview;

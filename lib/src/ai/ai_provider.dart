@@ -13,6 +13,11 @@ abstract class AiProvider {
   bool isConfigured(ConnectorConfig config);
   String apiKey(ConnectorConfig config);
   String model(ConnectorConfig config);
+
+  /// Human-readable model label for display. Defaults to [model]; providers
+  /// can override when the raw value is not what actually runs.
+  String modelLabel(ConnectorConfig config) => model(config);
+
   Uri get chatCompletionsUri;
 
   Future<AiReviewResult> reviewPullRequest({

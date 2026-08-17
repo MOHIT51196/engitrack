@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 
 import 'ai/ai_provider.dart';
 import 'ai/ai_provider_registry.dart';
+import 'ai/cursor_provider.dart';
 import 'integrations/github_provider.dart';
 import 'integrations/integration_provider.dart';
 import 'integrations/jira_provider.dart';
@@ -238,41 +239,24 @@ class EngiTrackController extends ChangeNotifier {
         }
         return 'Workspace token verified';
       case 'openai':
-        return _modelsDetail(
-          await _aiModelService.fetchOpenAiModels(
-            apiKey: config.openAiApiKey,
-          ),
-        );
+        await _aiModelService.fetchOpenAiModels(apiKey: config.openAiApiKey);
+        return 'API key valid';
       case 'gemini':
-        return _modelsDetail(
-          await _aiModelService.fetchGeminiModels(
-            apiKey: config.geminiApiKey,
-          ),
-        );
+        await _aiModelService.fetchGeminiModels(apiKey: config.geminiApiKey);
+        return 'API key valid';
       case 'claude':
-        return _modelsDetail(
-          await _aiModelService.fetchClaudeModels(
-            apiKey: config.claudeApiKey,
-          ),
-        );
+        await _aiModelService.fetchClaudeModels(apiKey: config.claudeApiKey);
+        return 'API key valid';
       case 'grok':
-        return _modelsDetail(
-          await _aiModelService.fetchGrokModels(apiKey: config.grokApiKey),
-        );
+        await _aiModelService.fetchGrokModels(apiKey: config.grokApiKey);
+        return 'API key valid';
       case 'cursor':
-        return _modelsDetail(
-          await _aiModelService.fetchCursorModels(
-            apiKey: config.cursorApiKey,
-          ),
-        );
+        await _aiModelService.fetchCursorModels(apiKey: config.cursorApiKey);
+        return 'API key valid';
       default:
         throw ServiceException('Unknown integration "$integrationId".');
     }
   }
-
-  String _modelsDetail(List<({String value, String label})> models) =>
-      'API key valid -- ${models.length} '
-      'model${models.length == 1 ? '' : 's'} available';
 
   String _credentialSignature(String integrationId, ConnectorConfig c) {
     switch (integrationId) {
@@ -353,6 +337,7 @@ class EngiTrackController extends ChangeNotifier {
     notes = await _storage.loadNotes();
     _seenAlertIds = await _storage.loadSeenAlertIds();
     _resolvedItemIds = await _storage.loadResolvedItemIds();
+    _pendingCursorRuns = await _storage.loadPendingCursorRuns();
 
     if (notes.isEmpty) {
       final DateTime now = DateTime.now();
@@ -381,6 +366,10 @@ class EngiTrackController extends ChangeNotifier {
         unawaited(verifyIntegration(id));
       }
     }
+
+    // Cloud agent reviews keep running on Cursor's side while the app is
+    // suspended or closed; re-attach to any run we launched earlier.
+    unawaited(_resumePendingCursorRuns());
   }
 
   @override
@@ -794,8 +783,15 @@ class EngiTrackController extends ChangeNotifier {
       aiReviewCache[pullRequestId];
 
   Map<String, String> _reviewProviderCache = <String, String>{};
+  Map<String, PendingCursorRun> _pendingCursorRuns =
+      <String, PendingCursorRun>{};
 
   String? reviewProviderFor(String itemId) => _reviewProviderCache[itemId];
+
+  /// Whether a Cursor cloud agent review was launched for this item and can
+  /// be resumed instead of starting a new agent.
+  bool hasPendingCursorRun(String itemId) =>
+      _pendingCursorRuns.containsKey(itemId);
 
   Future<AiReviewResult> reviewPullRequest(
     IntegrationItem item, {
@@ -815,13 +811,36 @@ class EngiTrackController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final PullRequestContext context = await _githubProvider.service
-          .fetchPullRequestContext(pullRequest: pr, token: config.githubToken);
-      final AiReviewResult review = await aiProvider.reviewPullRequest(
-        context: context,
-        config: config,
-        client: _httpClient,
-      );
+      AiReviewResult review;
+      if (aiProvider is CursorProvider) {
+        review = await _runCursorReview(
+          prId: item.id,
+          provider: aiProvider,
+          contextForLaunch: hasPendingCursorRun(item.id)
+              ? null
+              : await _githubProvider.service.fetchPullRequestContext(
+                  pullRequest: pr,
+                  token: config.githubToken,
+                ),
+        );
+      } else {
+        final PullRequestContext context =
+            await _githubProvider.service.fetchPullRequestContext(
+          pullRequest: pr,
+          token: config.githubToken,
+        );
+        review = await aiProvider.reviewPullRequest(
+          context: context,
+          config: config,
+          client: _httpClient,
+        );
+      }
+      if (review.providerId.isEmpty) {
+        review = review.copyWith(
+          providerId: aiProvider.id,
+          model: aiProvider.modelLabel(config),
+        );
+      }
       aiReviewCache = <String, AiReviewResult>{
         ...aiReviewCache,
         item.id: review,
@@ -837,6 +856,130 @@ class EngiTrackController extends ChangeNotifier {
     }
   }
 
+  /// Runs (or resumes) a Cursor cloud agent review. The agent/run ids are
+  /// persisted immediately after launch so the run survives backgrounding
+  /// and app restarts; they are cleared once the run reaches a terminal
+  /// outcome.
+  Future<AiReviewResult> _runCursorReview({
+    required String prId,
+    required CursorProvider provider,
+    PullRequestContext? contextForLaunch,
+  }) async {
+    PendingCursorRun? pending = _pendingCursorRuns[prId];
+
+    if (pending == null) {
+      if (contextForLaunch == null) {
+        throw ServiceException('No pending Cursor run to resume.');
+      }
+      final ({String agentId, String runId}) launched =
+          await provider.launchReviewAgent(
+        context: contextForLaunch,
+        config: config,
+        client: _httpClient,
+      );
+      pending = PendingCursorRun(
+        prId: prId,
+        agentId: launched.agentId,
+        runId: launched.runId,
+        startedAt: DateTime.now(),
+        model: provider.modelLabel(config),
+      );
+      await _setPendingCursorRun(pending);
+    } else {
+      // Re-link the agent for follow-up chat after a restart.
+      provider.registerAgentForPr(prId, pending.agentId);
+    }
+
+    try {
+      final AiReviewResult review = await provider.awaitReviewResult(
+        agentId: pending.agentId,
+        runId: pending.runId,
+        config: config,
+        client: _httpClient,
+      );
+      await _clearPendingCursorRun(prId);
+      return review.copyWith(
+        providerId: provider.id,
+        model: pending.model.isNotEmpty
+            ? pending.model
+            : provider.modelLabel(config),
+      );
+    } on ServiceException catch (error) {
+      // Keep the pending run for network blips and poll timeouts so it can
+      // be resumed; clear it for terminal outcomes (auth errors, run
+      // ended/expired, agent deleted).
+      if (!_isRecoverableCursorFailure(error)) {
+        await _clearPendingCursorRun(prId);
+      }
+      rethrow;
+    }
+  }
+
+  bool _isRecoverableCursorFailure(ServiceException error) {
+    if (error.statusCode != null) return false;
+    final String message = error.message.toLowerCase();
+    return message.contains('timed out') || message.contains('could not reach');
+  }
+
+  Future<void> _setPendingCursorRun(PendingCursorRun run) async {
+    _pendingCursorRuns = <String, PendingCursorRun>{
+      ..._pendingCursorRuns,
+      run.prId: run,
+    };
+    await _storage.savePendingCursorRuns(_pendingCursorRuns);
+    notifyListeners();
+  }
+
+  Future<void> _clearPendingCursorRun(String prId) async {
+    if (!_pendingCursorRuns.containsKey(prId)) return;
+    _pendingCursorRuns = Map<String, PendingCursorRun>.from(_pendingCursorRuns)
+      ..remove(prId);
+    await _storage.savePendingCursorRuns(_pendingCursorRuns);
+    notifyListeners();
+  }
+
+  static const Duration _maxPendingCursorRunAge = Duration(hours: 6);
+
+  Future<void> _resumePendingCursorRuns() async {
+    if (_pendingCursorRuns.isEmpty) return;
+    final AiProvider? provider = AiProviderRegistry.byId('cursor');
+    if (provider is! CursorProvider) return;
+
+    for (final PendingCursorRun pending
+        in List<PendingCursorRun>.of(_pendingCursorRuns.values)) {
+      if (!provider.isConfigured(config)) return;
+      if (DateTime.now().difference(pending.startedAt) >
+          _maxPendingCursorRunAge) {
+        await _clearPendingCursorRun(pending.prId);
+        continue;
+      }
+
+      activeReviewPrId = pending.prId;
+      notifyListeners();
+      try {
+        final AiReviewResult review = await _runCursorReview(
+          prId: pending.prId,
+          provider: provider,
+        );
+        aiReviewCache = <String, AiReviewResult>{
+          ...aiReviewCache,
+          pending.prId: review,
+        };
+        _reviewProviderCache = <String, String>{
+          ..._reviewProviderCache,
+          pending.prId: 'cursor',
+        };
+      } catch (error) {
+        if (kDebugMode) {
+          debugPrint('[Cursor] Resume of ${pending.prId} failed: $error');
+        }
+      } finally {
+        activeReviewPrId = null;
+        notifyListeners();
+      }
+    }
+  }
+
   Future<String> postPrComment(IntegrationItem item, String body) async {
     return _githubProvider.service.postPrComment(
       owner: item.meta<String>('owner') ?? '',
@@ -845,6 +988,36 @@ class EngiTrackController extends ChangeNotifier {
       token: config.githubToken,
       body: body,
     );
+  }
+
+  Map<String, PrReviewDecision> _postedReviewDecisions =
+      <String, PrReviewDecision>{};
+
+  /// The review state last posted to GitHub for this item, if any.
+  PrReviewDecision? postedReviewDecisionFor(String itemId) =>
+      _postedReviewDecisions[itemId];
+
+  /// Submits a GitHub pull request review with the chosen state
+  /// (comment / request changes / approve) and remembers the decision.
+  Future<String> submitPrReview(
+    IntegrationItem item, {
+    required String body,
+    required PrReviewDecision decision,
+  }) async {
+    final String url = await _githubProvider.service.submitPrReview(
+      owner: item.meta<String>('owner') ?? '',
+      repo: item.meta<String>('repo') ?? '',
+      number: item.meta<int>('number') ?? 0,
+      token: config.githubToken,
+      body: body,
+      event: decision.githubEvent,
+    );
+    _postedReviewDecisions = <String, PrReviewDecision>{
+      ..._postedReviewDecisions,
+      item.id: decision,
+    };
+    notifyListeners();
+    return url;
   }
 
   /// Fetches lightweight PR details (commits count, changed files, body) for

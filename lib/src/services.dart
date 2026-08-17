@@ -380,6 +380,53 @@ class GitHubService {
     return json['html_url'] as String? ?? '';
   }
 
+  /// Submits a pull request review with a state: COMMENT, REQUEST_CHANGES,
+  /// or APPROVE. Returns the review's html_url.
+  Future<String> submitPrReview({
+    required String owner,
+    required String repo,
+    required int number,
+    required String token,
+    required String body,
+    required String event,
+  }) async {
+    final String trimmedBody = body.trim();
+    if (event != 'APPROVE' && trimmedBody.isEmpty) {
+      throw ServiceException(
+        'A review comment is required unless you are approving.',
+      );
+    }
+
+    final Uri uri = Uri.https(
+      'api.github.com',
+      '/repos/$owner/$repo/pulls/$number/reviews',
+    );
+    final http.Response response = await _guarded(
+      _serviceName,
+      () => _client.post(
+        uri,
+        headers: <String, String>{
+          ..._headers(token),
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(<String, String>{
+          if (trimmedBody.isNotEmpty) 'body': trimmedBody,
+          'event': event,
+        }),
+      ),
+    );
+    final Map<String, dynamic> json = _decodeJsonBody(
+      response,
+      service: _serviceName,
+      statusMessages: <int, String>{
+        ..._statusMessages(response),
+        422: 'GitHub rejected the review. Note that you cannot approve or '
+            'request changes on your own pull request.',
+      },
+    );
+    return json['html_url'] as String? ?? '';
+  }
+
   String _normalizeUsername(String username) {
     final String cleaned = username.trim();
     return cleaned.startsWith('@') ? cleaned.substring(1) : cleaned;
@@ -1277,16 +1324,34 @@ class AiModelService {
       service: 'Cursor',
       statusMessages: _invalidKeyMessages('Cursor'),
     );
-    final List<dynamic> data =
-        json['data'] as List<dynamic>? ?? const <dynamic>[];
+
     final List<({String value, String label})> models =
         <({String value, String label})>[];
-    for (final dynamic item in data) {
-      final Map<String, dynamic> map = item as Map<String, dynamic>;
-      final String id = map['id'] as String? ?? '';
+
+    // Current API (v1): {"items": [{"id": ..., "displayName": ...}, ...]}
+    final List<dynamic> items =
+        json['items'] as List<dynamic>? ?? const <dynamic>[];
+    for (final dynamic item in items) {
+      if (item is! Map<String, dynamic>) continue;
+      final String id = item['id'] as String? ?? '';
       if (id.isEmpty) continue;
-      models.add((value: id, label: id));
+      final String displayName = item['displayName'] as String? ?? '';
+      models.add(
+        (value: id, label: displayName.isNotEmpty ? displayName : id),
+      );
     }
+
+    // Legacy API (v0): {"models": ["model-id", ...]}
+    if (models.isEmpty) {
+      final List<dynamic> names =
+          json['models'] as List<dynamic>? ?? const <dynamic>[];
+      for (final dynamic name in names) {
+        final String id = name.toString();
+        if (id.isEmpty) continue;
+        models.add((value: id, label: id));
+      }
+    }
+
     models.sort((a, b) => a.label.compareTo(b.label));
     return models;
   }
@@ -1312,9 +1377,12 @@ Future<http.Response> _guarded(
     throw ServiceException(
       '$service request timed out. Check your network connection.',
     );
-  } on http.ClientException {
+  } on http.ClientException catch (error) {
+    // Keep the transport-level detail (e.g. "SocketException: Permission
+    // denied") -- it distinguishes device network issues from API problems.
     throw ServiceException(
-      'Could not reach $service. Check your network connection.',
+      'Could not reach $service. Check your network connection. '
+      '(${error.message})',
     );
   }
 }

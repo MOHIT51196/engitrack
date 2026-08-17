@@ -906,7 +906,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
 
           _CollapsibleIntegration(
             brandName: 'Cursor',
-            brandSubtitle: 'AI-powered pull request review',
+            brandSubtitle: 'Cloud agent reviews PRs in a Cursor-hosted VM',
             logoAsset: null,
             brandIcon: Icons.computer_rounded,
             brandColor: AppColors.cursor,
@@ -926,7 +926,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
               _SecretField(
                 controller: _cursorApiKeyController,
                 label: 'API key',
-                hint: 'cur-...',
+                hint: 'key_...',
                 onSubmitted: (String v) {
                   _onFieldSubmitted(v);
                   _fetchCursorModels();

@@ -719,6 +719,29 @@ void main() {
       final result = AiReviewResult(generatedAt: DateTime.utc(2025));
       expect(result.review, isEmpty);
     });
+
+    test('providerId and model default to empty', () {
+      final result = AiReviewResult(generatedAt: DateTime.utc(2026));
+      expect(result.providerId, isEmpty);
+      expect(result.model, isEmpty);
+    });
+
+    test('copyWith stamps provider and model, preserving content', () {
+      final result = AiReviewResult(
+        generatedAt: DateTime.utc(2026),
+        verdict: 'Approve',
+        rawReview: 'raw',
+      );
+      final stamped = result.copyWith(
+        providerId: 'cursor',
+        model: 'claude-fable-5',
+      );
+      expect(stamped.providerId, 'cursor');
+      expect(stamped.model, 'claude-fable-5');
+      expect(stamped.verdict, 'Approve');
+      expect(stamped.rawReview, 'raw');
+      expect(stamped.generatedAt, result.generatedAt);
+    });
   });
 
   group('AiChatMessage', () {
@@ -743,6 +766,32 @@ void main() {
       expect(msg.id, '');
       expect(msg.role, 'user');
       expect(msg.content, '');
+    });
+  });
+
+  group('PendingCursorRun', () {
+    test('toJson / fromJson roundtrip', () {
+      final run = PendingCursorRun(
+        prId: 'o/r#1',
+        agentId: 'bc-123',
+        runId: 'run-456',
+        startedAt: DateTime.utc(2026, 8, 17, 23, 30),
+        model: 'claude-fable-5',
+      );
+      final restored = PendingCursorRun.fromJson(run.toJson());
+      expect(restored.prId, 'o/r#1');
+      expect(restored.agentId, 'bc-123');
+      expect(restored.runId, 'run-456');
+      expect(restored.startedAt, DateTime.utc(2026, 8, 17, 23, 30));
+      expect(restored.model, 'claude-fable-5');
+    });
+
+    test('fromJson tolerates missing fields', () {
+      final run = PendingCursorRun.fromJson(<String, dynamic>{});
+      expect(run.prId, '');
+      expect(run.agentId, '');
+      expect(run.runId, '');
+      expect(run.model, '');
     });
   });
 
@@ -775,6 +824,20 @@ void main() {
       final health = IntegrationHealth.failure('Bad token').asChecking();
       expect(health.isChecking, isTrue);
       expect(health.message, 'Bad token');
+    });
+  });
+
+  group('PrReviewDecision extension', () {
+    test('labels', () {
+      expect(PrReviewDecision.comment.label, 'Comment');
+      expect(PrReviewDecision.requestChanges.label, 'Request changes');
+      expect(PrReviewDecision.approve.label, 'Approve');
+    });
+
+    test('github events', () {
+      expect(PrReviewDecision.comment.githubEvent, 'COMMENT');
+      expect(PrReviewDecision.requestChanges.githubEvent, 'REQUEST_CHANGES');
+      expect(PrReviewDecision.approve.githubEvent, 'APPROVE');
     });
   });
 

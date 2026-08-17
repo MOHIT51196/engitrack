@@ -210,6 +210,127 @@ void main() {
       );
     });
 
+    group('submitPrReview', () {
+      test('posts review with state and returns html_url', () async {
+        Uri? postedUri;
+        String? postedBody;
+        when(
+          () => mockClient.post(
+            any(),
+            headers: any(named: 'headers'),
+            body: any(named: 'body'),
+          ),
+        ).thenAnswer((Invocation invocation) async {
+          postedUri = invocation.positionalArguments.first as Uri;
+          postedBody = invocation.namedArguments[#body] as String;
+          return http.Response(
+            jsonEncode(<String, dynamic>{
+              'html_url': 'https://github.com/o/r/pull/1#pullrequestreview-9',
+            }),
+            200,
+          );
+        });
+
+        final url = await service.submitPrReview(
+          owner: 'o',
+          repo: 'r',
+          number: 1,
+          token: 'tok',
+          body: 'Consolidated review body',
+          event: 'REQUEST_CHANGES',
+        );
+
+        expect(url, contains('pullrequestreview-9'));
+        expect(postedUri!.path, '/repos/o/r/pulls/1/reviews');
+        final Map<String, dynamic> payload =
+            jsonDecode(postedBody!) as Map<String, dynamic>;
+        expect(payload['event'], 'REQUEST_CHANGES');
+        expect(payload['body'], 'Consolidated review body');
+      });
+
+      test('allows empty body only for APPROVE', () async {
+        String? postedBody;
+        when(
+          () => mockClient.post(
+            any(),
+            headers: any(named: 'headers'),
+            body: any(named: 'body'),
+          ),
+        ).thenAnswer((Invocation invocation) async {
+          postedBody = invocation.namedArguments[#body] as String;
+          return http.Response('{"html_url":"u"}', 200);
+        });
+
+        await service.submitPrReview(
+          owner: 'o',
+          repo: 'r',
+          number: 1,
+          token: 'tok',
+          body: '   ',
+          event: 'APPROVE',
+        );
+        final Map<String, dynamic> payload =
+            jsonDecode(postedBody!) as Map<String, dynamic>;
+        expect(payload['event'], 'APPROVE');
+        expect(payload.containsKey('body'), isFalse);
+      });
+
+      test('rejects empty body for non-approve states without HTTP call',
+          () async {
+        expect(
+          () => service.submitPrReview(
+            owner: 'o',
+            repo: 'r',
+            number: 1,
+            token: 'tok',
+            body: '',
+            event: 'COMMENT',
+          ),
+          throwsA(isA<ServiceException>()),
+        );
+        verifyNever(
+          () => mockClient.post(
+            any(),
+            headers: any(named: 'headers'),
+            body: any(named: 'body'),
+          ),
+        );
+      });
+
+      test('maps 422 to own-PR hint', () async {
+        when(
+          () => mockClient.post(
+            any(),
+            headers: any(named: 'headers'),
+            body: any(named: 'body'),
+          ),
+        ).thenAnswer(
+          (_) async => http.Response(
+            '{"message":"Can not approve your own pull request"}',
+            422,
+          ),
+        );
+
+        expect(
+          () => service.submitPrReview(
+            owner: 'o',
+            repo: 'r',
+            number: 1,
+            token: 'tok',
+            body: 'x',
+            event: 'APPROVE',
+          ),
+          throwsA(
+            isA<ServiceException>().having(
+              (ServiceException e) => e.message,
+              'message',
+              contains('your own pull request'),
+            ),
+          ),
+        );
+      });
+    });
+
     group('verifyCredentials', () {
       test('returns login when token matches username', () async {
         when(
@@ -730,6 +851,62 @@ void main() {
       expect(models, hasLength(1));
       expect(models.first.value, 'claude-sonnet-4-20250514');
       expect(models.first.label, 'Claude Sonnet 4');
+    });
+
+    test('fetchCursorModels parses v1 items with display names', () async {
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer(
+        (_) async => http.Response(
+          jsonEncode(<String, dynamic>{
+            'items': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'id': 'composer-2',
+                'displayName': 'Composer 2',
+              },
+              <String, dynamic>{'id': 'claude-4-sonnet-thinking'},
+            ],
+          }),
+          200,
+        ),
+      );
+
+      final models = await service.fetchCursorModels(apiKey: 'key_test');
+
+      expect(models, hasLength(2));
+      expect(
+        models.map((m) => m.value),
+        containsAll(<String>['composer-2', 'claude-4-sonnet-thinking']),
+      );
+      expect(
+        models.firstWhere((m) => m.value == 'composer-2').label,
+        'Composer 2',
+      );
+      expect(
+        models.firstWhere((m) => m.value == 'claude-4-sonnet-thinking').label,
+        'claude-4-sonnet-thinking',
+      );
+    });
+
+    test('fetchCursorModels falls back to legacy v0 models array', () async {
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer(
+        (_) async => http.Response(
+          jsonEncode(<String, dynamic>{
+            'models': <String>['gpt-5.2', 'claude-4.5-sonnet-thinking'],
+          }),
+          200,
+        ),
+      );
+
+      final models = await service.fetchCursorModels(apiKey: 'key_test');
+
+      expect(models, hasLength(2));
+      expect(
+        models.map((m) => m.value),
+        containsAll(<String>['gpt-5.2', 'claude-4.5-sonnet-thinking']),
+      );
     });
 
     test('fetchGrokModels filters grok prefix', () async {

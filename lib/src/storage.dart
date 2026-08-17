@@ -20,6 +20,7 @@ class AppStorage {
   static const String _notesKey = 'engitrack.notes.v1';
   static const String _seenAlertsKey = 'engitrack.seenAlerts.v1';
   static const String _resolvedItemsKey = 'engitrack.resolvedItems.v1';
+  static const String _cursorRunsKey = 'engitrack.cursorRuns.v1';
   static const String _aiChatPrefix = 'engitrack.aiChat.';
 
   static const String _githubTokenKey = 'engitrack.secret.githubToken';
@@ -143,6 +144,29 @@ class AppStorage {
 
   Future<void> saveResolvedItemIds(Set<String> ids) async {
     await _preferences.setString(_resolvedItemsKey, jsonEncode(ids.toList()));
+  }
+
+  Future<Map<String, PendingCursorRun>> loadPendingCursorRuns() async {
+    final raw = await _preferences.getString(_cursorRunsKey);
+    if (raw == null || raw.isEmpty) return <String, PendingCursorRun>{};
+    final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    return decoded.map(
+      (String key, dynamic value) => MapEntry(
+        key,
+        PendingCursorRun.fromJson(value as Map<String, dynamic>),
+      ),
+    );
+  }
+
+  Future<void> savePendingCursorRuns(Map<String, PendingCursorRun> runs) async {
+    await _preferences.setString(
+      _cursorRunsKey,
+      jsonEncode(
+        runs.map(
+          (String key, PendingCursorRun run) => MapEntry(key, run.toJson()),
+        ),
+      ),
+    );
   }
 
   Future<List<AiChatMessage>> loadAiChat(String prId) async {

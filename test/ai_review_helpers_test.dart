@@ -160,6 +160,157 @@ End of review.''';
       final result = parseStructuredReview(raw);
       expect(result.verdict, 'OK');
     });
+
+    test('parses a long list of concerns', () {
+      final jsonStr = jsonEncode(<String, dynamic>{
+        'verdict': 'Request changes',
+        'concerns': List<Map<String, dynamic>>.generate(
+          15,
+          (int i) => <String, dynamic>{
+            'title': 'Concern $i',
+            'severity': i < 5 ? 'critical' : 'suggestion',
+            'description': 'Description $i',
+          },
+        ),
+        'mergeConfidence': 'Low',
+        'executiveSummary': 'Many blockers',
+      });
+
+      final result = parseStructuredReview(jsonStr);
+      expect(result.concerns, hasLength(15));
+    });
+
+    test('tolerates string entries in concerns list', () {
+      final jsonStr = jsonEncode(<String, dynamic>{
+        'verdict': 'Needs work',
+        'concerns': <dynamic>[
+          <String, dynamic>{
+            'title': 'Real concern',
+            'severity': 'critical',
+            'description': 'Detail',
+          },
+          'Missing null check in parser\nCould crash on empty input',
+          42,
+        ],
+        'mergeConfidence': 'Low',
+        'executiveSummary': 'Mixed entries',
+      });
+
+      final result = parseStructuredReview(jsonStr);
+      expect(result.concerns, hasLength(2));
+      expect(result.concerns.first.title, 'Real concern');
+      expect(
+        result.concerns.last.title,
+        'Missing null check in parser',
+      );
+      expect(result.concerns.last.severity, 'suggestion');
+    });
+  });
+
+  group('buildConsolidatedReviewComment', () {
+    final review = AiReviewResult(
+      generatedAt: DateTime.utc(2026),
+      verdict: 'Request changes',
+      concerns: const <AiReviewConcern>[
+        AiReviewConcern(
+          title: 'Minor naming',
+          severity: 'nitpick',
+          description: 'Rename x to count',
+        ),
+        AiReviewConcern(
+          title: 'SQL injection',
+          severity: 'critical',
+          description: 'Query is concatenated',
+          filePath: 'lib/db.dart',
+          lineNumber: 42,
+        ),
+      ],
+      mergeConfidence: 'Low',
+      executiveSummary: 'Fix the injection first.',
+    );
+
+    test('builds one markdown message with critical concerns first', () {
+      final body = buildConsolidatedReviewComment(
+        review: review,
+        concerns: review.concerns,
+      );
+
+      expect(body, contains('**Verdict:** Request changes'));
+      expect(body, contains('### Concerns'));
+      expect(body, contains('1. **[critical] SQL injection**'));
+      expect(body, contains('2. **[nitpick] Minor naming**'));
+      expect(body, contains('`lib/db.dart:42`'));
+      expect(body, contains('**Merge confidence:** Low'));
+      expect(body, contains('**Summary:** Fix the injection first.'));
+      expect(body, endsWith('<sub>Posted via EngiTrack</sub>'));
+    });
+
+    test('includes only the selected concerns', () {
+      final body = buildConsolidatedReviewComment(
+        review: review,
+        concerns: <AiReviewConcern>[review.concerns.first],
+      );
+
+      expect(body, contains('Minor naming'));
+      expect(body, isNot(contains('SQL injection')));
+    });
+
+    test('falls back to raw review when nothing structured', () {
+      final rawOnly = AiReviewResult(
+        generatedAt: DateTime.utc(2026),
+        rawReview: 'Free-form review text',
+      );
+      final body = buildConsolidatedReviewComment(
+        review: rawOnly,
+        concerns: const <AiReviewConcern>[],
+      );
+      expect(body, 'Free-form review text\n\n<sub>Posted via EngiTrack</sub>');
+    });
+
+    test('returns empty string when there is nothing to post', () {
+      final empty = AiReviewResult(generatedAt: DateTime.utc(2026));
+      final body = buildConsolidatedReviewComment(
+        review: empty,
+        concerns: const <AiReviewConcern>[],
+      );
+      expect(body, isEmpty);
+    });
+  });
+
+  group('sortConcernsBySeverity', () {
+    test('orders critical first, preserving order within severity', () {
+      const concerns = <AiReviewConcern>[
+        AiReviewConcern(title: 'nit A', severity: 'nitpick', description: ''),
+        AiReviewConcern(
+            title: 'sug A', severity: 'suggestion', description: ''),
+        AiReviewConcern(title: 'crit A', severity: 'critical', description: ''),
+        AiReviewConcern(
+            title: 'sug B', severity: 'suggestion', description: ''),
+        AiReviewConcern(title: 'crit B', severity: 'Critical', description: ''),
+      ];
+
+      final sorted = sortConcernsBySeverity(concerns);
+      expect(
+        sorted.map((AiReviewConcern c) => c.title).toList(),
+        <String>['crit A', 'crit B', 'sug A', 'sug B', 'nit A'],
+      );
+      // Original list is untouched.
+      expect(concerns.first.title, 'nit A');
+    });
+
+    test('places unknown severities after critical', () {
+      const concerns = <AiReviewConcern>[
+        AiReviewConcern(title: 'odd', severity: 'blocker', description: ''),
+        AiReviewConcern(title: 'crit', severity: 'critical', description: ''),
+        AiReviewConcern(title: 'sug', severity: 'suggestion', description: ''),
+      ];
+
+      final sorted = sortConcernsBySeverity(concerns);
+      expect(
+        sorted.map((AiReviewConcern c) => c.title).toList(),
+        <String>['crit', 'odd', 'sug'],
+      );
+    });
   });
 
   group('extractChatCompletionText', () {

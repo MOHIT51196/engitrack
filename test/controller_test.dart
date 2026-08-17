@@ -34,6 +34,7 @@ void main() {
     registerFallbackValue(<TodoItem>[]);
     registerFallbackValue(<NoteItem>[]);
     registerFallbackValue(<String>{});
+    registerFallbackValue(<String, PendingCursorRun>{});
   });
 
   setUp(() {
@@ -62,6 +63,12 @@ void main() {
     when(() => mockStorage.saveConfig(any())).thenAnswer((_) async {});
     when(() => mockStorage.saveSeenAlertIds(any())).thenAnswer((_) async {});
     when(() => mockStorage.saveResolvedItemIds(any())).thenAnswer((_) async {});
+    when(
+      () => mockStorage.loadPendingCursorRuns(),
+    ).thenAnswer((_) async => <String, PendingCursorRun>{});
+    when(
+      () => mockStorage.savePendingCursorRuns(any()),
+    ).thenAnswer((_) async {});
 
     when(() => mockNotifications.initialize()).thenAnswer((_) async {});
     when(
@@ -412,6 +419,62 @@ void main() {
     });
   });
 
+  group('submitPrReview', () {
+    test('posts review with decision and records the state', () async {
+      when(
+        () => mockGitHub.submitPrReview(
+          owner: any(named: 'owner'),
+          repo: any(named: 'repo'),
+          number: any(named: 'number'),
+          token: any(named: 'token'),
+          body: any(named: 'body'),
+          event: any(named: 'event'),
+        ),
+      ).thenAnswer((_) async => 'https://github.com/o/r/pull/1#review-1');
+
+      final controller = createController();
+      final item = IntegrationItem(
+        id: 'o/r#1',
+        providerId: 'github',
+        category: IntegrationCategory.codeReview,
+        title: 'PR',
+        subtitle: 'o/r #1',
+        url: 'https://github.com/o/r/pull/1',
+        timestamp: DateTime.utc(2026),
+        reason: ItemReason.reviewRequested,
+        metadata: const <String, dynamic>{
+          'owner': 'o',
+          'repo': 'r',
+          'number': 1,
+        },
+      );
+
+      expect(controller.postedReviewDecisionFor(item.id), isNull);
+
+      final url = await controller.submitPrReview(
+        item,
+        body: 'Consolidated body',
+        decision: PrReviewDecision.requestChanges,
+      );
+
+      expect(url, contains('review-1'));
+      expect(
+        controller.postedReviewDecisionFor(item.id),
+        PrReviewDecision.requestChanges,
+      );
+      verify(
+        () => mockGitHub.submitPrReview(
+          owner: 'o',
+          repo: 'r',
+          number: 1,
+          token: any(named: 'token'),
+          body: 'Consolidated body',
+          event: 'REQUEST_CHANGES',
+        ),
+      ).called(1);
+    });
+  });
+
   group('addItemToTodo', () {
     test('delegates to addToTodo with item fields', () async {
       final controller = createController();
@@ -513,7 +576,7 @@ void main() {
 
       expect(ok, isTrue);
       expect(controller.healthFor('claude').isConnected, isTrue);
-      expect(controller.healthFor('claude').message, contains('1 model'));
+      expect(controller.healthFor('claude').message, 'API key valid');
     });
 
     test('updateConfig resets health when credentials change', () async {
