@@ -174,6 +174,101 @@ void main() {
       );
       expect(url, contains('comment-123'));
     });
+
+    test('fetchPendingReviews strips leading @ from username', () async {
+      Uri? requestedUri;
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer((Invocation invocation) async {
+        requestedUri = invocation.positionalArguments.first as Uri;
+        return http.Response('{"items":[]}', 200);
+      });
+
+      await service.fetchPendingReviews(username: '@alice', token: 't');
+      expect(
+        requestedUri!.queryParameters['q'],
+        contains('review-requested:alice'),
+      );
+    });
+
+    test('non-JSON error body becomes ServiceException', () async {
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer(
+        (_) async => http.Response('<html>Bad gateway</html>', 502),
+      );
+
+      expect(
+        () => service.fetchPendingReviews(username: 'u', token: 't'),
+        throwsA(
+          isA<ServiceException>().having(
+            (ServiceException e) => e.statusCode,
+            'statusCode',
+            502,
+          ),
+        ),
+      );
+    });
+
+    group('verifyCredentials', () {
+      test('returns login when token matches username', () async {
+        when(
+          () => mockClient.get(any(), headers: any(named: 'headers')),
+        ).thenAnswer(
+          (_) async => http.Response(
+            jsonEncode(<String, dynamic>{'login': 'Alice'}),
+            200,
+          ),
+        );
+
+        final login = await service.verifyCredentials(
+          username: 'alice',
+          token: 'tok',
+        );
+        expect(login, 'Alice');
+      });
+
+      test('throws when token belongs to a different user', () async {
+        when(
+          () => mockClient.get(any(), headers: any(named: 'headers')),
+        ).thenAnswer(
+          (_) async => http.Response(
+            jsonEncode(<String, dynamic>{'login': 'bob'}),
+            200,
+          ),
+        );
+
+        expect(
+          () => service.verifyCredentials(username: 'alice', token: 'tok'),
+          throwsA(
+            isA<ServiceException>().having(
+              (ServiceException e) => e.message,
+              'message',
+              contains('Token belongs to "bob"'),
+            ),
+          ),
+        );
+      });
+
+      test('throws friendly message on 401', () async {
+        when(
+          () => mockClient.get(any(), headers: any(named: 'headers')),
+        ).thenAnswer(
+          (_) async => http.Response('{"message":"Bad credentials"}', 401),
+        );
+
+        expect(
+          () => service.verifyCredentials(username: 'alice', token: 'bad'),
+          throwsA(
+            isA<ServiceException>().having(
+              (ServiceException e) => e.message,
+              'message',
+              contains('invalid or expired'),
+            ),
+          ),
+        );
+      });
+    });
   });
 
   group('JiraService', () {
@@ -225,15 +320,16 @@ void main() {
         ],
       });
 
+      final List<Uri> requestedUris = <Uri>[];
       when(
         () => mockClient.get(any(), headers: any(named: 'headers')),
-      ).thenAnswer((_) async => http.Response(myselfBody, 200));
-
-      when(() => mockClient.send(any())).thenAnswer((_) async {
-        return http.StreamedResponse(
-          Stream.value(utf8.encode(searchBody)),
-          200,
-        );
+      ).thenAnswer((Invocation invocation) async {
+        final Uri uri = invocation.positionalArguments.first as Uri;
+        requestedUris.add(uri);
+        if (uri.path.endsWith('/myself')) {
+          return http.Response(myselfBody, 200);
+        }
+        return http.Response(searchBody, 200);
       });
 
       final issues = await service.fetchAssignedIssues(
@@ -250,6 +346,110 @@ void main() {
       expect(issues.first.parentKey, 'PROJ-1');
       expect(issues.first.dueDate, isNotNull);
       expect(issues.first.description, 'Login page crashes on submit');
+
+      // Account ids contain a colon and must be quoted in JQL, otherwise
+      // Jira rejects the query with a syntax error.
+      final Uri searchUri = requestedUris.lastWhere(
+        (Uri u) => u.path.contains('/search/jql'),
+      );
+      expect(
+        searchUri.queryParameters['jql'],
+        contains('assignee = "12345:abc"'),
+      );
+    });
+
+    test('falls back to quoted email when /myself is unavailable', () async {
+      final List<Uri> requestedUris = <Uri>[];
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer((Invocation invocation) async {
+        final Uri uri = invocation.positionalArguments.first as Uri;
+        requestedUris.add(uri);
+        if (uri.path.endsWith('/myself')) {
+          return http.Response('server error', 500);
+        }
+        return http.Response('{"issues":[]}', 200);
+      });
+
+      final issues = await service.fetchAssignedIssues(
+        baseUrl: 'https://x.atlassian.net',
+        email: 'a@b.com',
+        apiToken: 'tok',
+      );
+
+      expect(issues, isEmpty);
+      final Uri searchUri = requestedUris.lastWhere(
+        (Uri u) => u.path.contains('/search/jql'),
+      );
+      expect(
+        searchUri.queryParameters['jql'],
+        contains('assignee = "a@b.com"'),
+      );
+    });
+
+    test('surfaces auth errors from /myself immediately', () async {
+      when(
+        () => mockClient.get(any(), headers: any(named: 'headers')),
+      ).thenAnswer((_) async => http.Response('{}', 401));
+
+      expect(
+        () => service.fetchAssignedIssues(
+          baseUrl: 'https://x.atlassian.net',
+          email: 'a@b.com',
+          apiToken: 'bad',
+        ),
+        throwsA(
+          isA<ServiceException>().having(
+            (ServiceException e) => e.message,
+            'message',
+            contains('Check the email and API token'),
+          ),
+        ),
+      );
+    });
+
+    group('verifyCredentials', () {
+      test('returns display name on success', () async {
+        when(
+          () => mockClient.get(any(), headers: any(named: 'headers')),
+        ).thenAnswer(
+          (_) async => http.Response(
+            jsonEncode(<String, dynamic>{
+              'accountId': '712020:uuid',
+              'displayName': 'Alice B',
+            }),
+            200,
+          ),
+        );
+
+        final name = await service.verifyCredentials(
+          baseUrl: 'x.atlassian.net',
+          email: 'a@b.com',
+          apiToken: 'tok',
+        );
+        expect(name, 'Alice B');
+      });
+
+      test('throws friendly message on 404 (wrong site url)', () async {
+        when(
+          () => mockClient.get(any(), headers: any(named: 'headers')),
+        ).thenAnswer((_) async => http.Response('not found', 404));
+
+        expect(
+          () => service.verifyCredentials(
+            baseUrl: 'https://wrong.example.com',
+            email: 'a@b.com',
+            apiToken: 'tok',
+          ),
+          throwsA(
+            isA<ServiceException>().having(
+              (ServiceException e) => e.message,
+              'message',
+              contains('Check the site URL'),
+            ),
+          ),
+        );
+      });
     });
   });
 

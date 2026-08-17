@@ -4,6 +4,46 @@ enum SlackReviewKind { pr, doc }
 
 enum AlertSeverity { critical, high, medium, info }
 
+/// Live connection state of an integration, based on real API calls
+/// (credential verification or sync results) -- never on config presence alone.
+enum IntegrationStatus { unknown, checking, connected, error }
+
+class IntegrationHealth {
+  const IntegrationHealth({
+    this.status = IntegrationStatus.unknown,
+    this.message = '',
+    this.checkedAt,
+  });
+
+  final IntegrationStatus status;
+  final String message;
+  final DateTime? checkedAt;
+
+  static const IntegrationHealth initial = IntegrationHealth();
+
+  IntegrationHealth asChecking() => IntegrationHealth(
+        status: IntegrationStatus.checking,
+        message: message,
+        checkedAt: checkedAt,
+      );
+
+  static IntegrationHealth connected(String message) => IntegrationHealth(
+        status: IntegrationStatus.connected,
+        message: message,
+        checkedAt: DateTime.now(),
+      );
+
+  static IntegrationHealth failure(String message) => IntegrationHealth(
+        status: IntegrationStatus.error,
+        message: message,
+        checkedAt: DateTime.now(),
+      );
+
+  bool get isConnected => status == IntegrationStatus.connected;
+  bool get isError => status == IntegrationStatus.error;
+  bool get isChecking => status == IntegrationStatus.checking;
+}
+
 class ConnectorConfig {
   const ConnectorConfig({
     this.notificationsEnabled = false,
@@ -326,9 +366,15 @@ class ConnectorConfig {
   }
 
   String get normalizedJiraBaseUrl {
-    final trimmed = jiraBaseUrl.trim();
-    if (trimmed.endsWith('/')) {
-      return trimmed.substring(0, trimmed.length - 1);
+    String trimmed = jiraBaseUrl.trim();
+    if (trimmed.isEmpty) {
+      return '';
+    }
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+      trimmed = 'https://$trimmed';
+    }
+    while (trimmed.endsWith('/')) {
+      trimmed = trimmed.substring(0, trimmed.length - 1);
     }
     return trimmed;
   }

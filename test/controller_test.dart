@@ -17,12 +17,15 @@ class MockJiraService extends Mock implements JiraService {}
 
 class MockSlackService extends Mock implements SlackService {}
 
+class MockAiModelService extends Mock implements AiModelService {}
+
 void main() {
   late MockAppStorage mockStorage;
   late MockNotificationsService mockNotifications;
   late MockGitHubService mockGitHub;
   late MockJiraService mockJira;
   late MockSlackService mockSlack;
+  late MockAiModelService mockAiModels;
 
   ConnectorConfig defaultConfig() => const ConnectorConfig();
 
@@ -39,6 +42,7 @@ void main() {
     mockGitHub = MockGitHubService();
     mockJira = MockJiraService();
     mockSlack = MockSlackService();
+    mockAiModels = MockAiModelService();
   });
 
   EngiTrackController createController({ConnectorConfig? initialConfig}) {
@@ -116,12 +120,32 @@ void main() {
       () => mockSlack.fetchDmMentions(token: any(named: 'token')),
     ).thenAnswer((_) async => <SlackReviewRequest>[]);
 
+    when(
+      () => mockGitHub.verifyCredentials(
+        username: any(named: 'username'),
+        token: any(named: 'token'),
+      ),
+    ).thenAnswer((_) async => 'alice');
+
+    when(
+      () => mockJira.verifyCredentials(
+        baseUrl: any(named: 'baseUrl'),
+        email: any(named: 'email'),
+        apiToken: any(named: 'apiToken'),
+      ),
+    ).thenAnswer((_) async => 'Alice B');
+
+    when(
+      () => mockSlack.validateToken(token: any(named: 'token')),
+    ).thenAnswer((_) async => 'U123');
+
     return EngiTrackController(
       storage: mockStorage,
       notificationsService: mockNotifications,
       gitHubService: mockGitHub,
       jiraService: mockJira,
       slackService: mockSlack,
+      aiModelService: mockAiModels,
     );
   }
 
@@ -408,6 +432,150 @@ void main() {
       expect(controller.todos.first.title, 'Review PR');
       expect(controller.todos.first.sourceLabel, 'github');
       expect(controller.todos.first.sourceUrl, item.url);
+    });
+  });
+
+  group('integration health', () {
+    const ConnectorConfig githubConfig = ConnectorConfig(
+      githubEnabled: true,
+      githubUsername: 'alice',
+      githubToken: 'tok',
+    );
+
+    test('healthFor returns unknown by default', () {
+      final controller = createController();
+      expect(controller.healthFor('github').status, IntegrationStatus.unknown);
+      expect(controller.healthFor('jira').status, IntegrationStatus.unknown);
+    });
+
+    test('verifyIntegration fails when not configured', () async {
+      final controller = createController();
+
+      final ok = await controller.verifyIntegration('github');
+
+      expect(ok, isFalse);
+      expect(controller.healthFor('github').isError, isTrue);
+      expect(
+        controller.healthFor('github').message,
+        contains('not fully configured'),
+      );
+    });
+
+    test('verifyIntegration marks github connected on success', () async {
+      final controller = createController();
+      await controller.updateConfig(githubConfig, refresh: false);
+
+      final ok = await controller.verifyIntegration('github');
+
+      expect(ok, isTrue);
+      expect(controller.healthFor('github').isConnected, isTrue);
+      expect(controller.healthFor('github').message, contains('alice'));
+      controller.dispose();
+    });
+
+    test('verifyIntegration records failure message on bad token', () async {
+      final controller = createController();
+      when(
+        () => mockGitHub.verifyCredentials(
+          username: any(named: 'username'),
+          token: any(named: 'token'),
+        ),
+      ).thenThrow(ServiceException('GitHub token is invalid or expired.'));
+      await controller.updateConfig(githubConfig, refresh: false);
+
+      final ok = await controller.verifyIntegration('github');
+
+      expect(ok, isFalse);
+      expect(controller.healthFor('github').isError, isTrue);
+      expect(
+        controller.healthFor('github').message,
+        contains('invalid or expired'),
+      );
+      controller.dispose();
+    });
+
+    test('verifyIntegration uses model listing for AI providers', () async {
+      when(
+        () => mockAiModels.fetchClaudeModels(apiKey: any(named: 'apiKey')),
+      ).thenAnswer(
+        (_) async => <({String value, String label})>[
+          (value: 'claude-x', label: 'Claude X'),
+        ],
+      );
+
+      final controller = createController();
+      await controller.updateConfig(
+        const ConnectorConfig(claudeEnabled: true, claudeApiKey: 'key'),
+        refresh: false,
+      );
+
+      final ok = await controller.verifyIntegration('claude');
+
+      expect(ok, isTrue);
+      expect(controller.healthFor('claude').isConnected, isTrue);
+      expect(controller.healthFor('claude').message, contains('1 model'));
+    });
+
+    test('updateConfig resets health when credentials change', () async {
+      final controller = createController();
+      await controller.updateConfig(githubConfig, refresh: false);
+      await controller.verifyIntegration('github');
+      expect(controller.healthFor('github').isConnected, isTrue);
+
+      await controller.updateConfig(
+        githubConfig.copyWith(githubToken: 'different'),
+        refresh: false,
+      );
+
+      expect(controller.healthFor('github').status, IntegrationStatus.unknown);
+      controller.dispose();
+    });
+
+    test('updateConfig keeps health when credentials unchanged', () async {
+      final controller = createController();
+      await controller.updateConfig(githubConfig, refresh: false);
+      await controller.verifyIntegration('github');
+
+      await controller.updateConfig(
+        githubConfig.copyWith(githubSyncMinutes: 15),
+        refresh: false,
+      );
+
+      expect(controller.healthFor('github').isConnected, isTrue);
+      controller.dispose();
+    });
+
+    test('refreshAll records connected health after successful sync', () async {
+      final controller = createController();
+      await controller.updateConfig(githubConfig, refresh: false);
+
+      await controller.refreshAll();
+
+      expect(controller.healthFor('github').isConnected, isTrue);
+      expect(controller.healthFor('github').message, contains('Synced'));
+      expect(controller.errorMessage, isNull);
+      controller.dispose();
+    });
+
+    test('refreshAll records failure health when sync throws', () async {
+      final controller = createController();
+      when(
+        () => mockGitHub.fetchPendingReviews(
+          username: any(named: 'username'),
+          token: any(named: 'token'),
+        ),
+      ).thenThrow(ServiceException('GitHub token is invalid or expired.'));
+      await controller.updateConfig(githubConfig, refresh: false);
+
+      await controller.refreshAll();
+
+      expect(controller.healthFor('github').isError, isTrue);
+      expect(
+        controller.healthFor('github').message,
+        contains('invalid or expired'),
+      );
+      expect(controller.errorMessage, contains('GitHub'));
+      controller.dispose();
     });
   });
 

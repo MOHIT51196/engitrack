@@ -24,9 +24,11 @@ class EngiTrackController extends ChangeNotifier {
     GitHubService? gitHubService,
     JiraService? jiraService,
     SlackService? slackService,
+    AiModelService? aiModelService,
     http.Client? httpClient,
   })  : _storage = storage,
         _notificationsService = notificationsService,
+        _aiModelService = aiModelService ?? AiModelService(),
         _httpClient = httpClient ?? http.Client() {
     final GitHubService ghSvc = gitHubService ?? GitHubService();
     final JiraService jrSvc = jiraService ?? JiraService();
@@ -45,6 +47,7 @@ class EngiTrackController extends ChangeNotifier {
 
   final AppStorage _storage;
   final NotificationsService _notificationsService;
+  final AiModelService _aiModelService;
   final http.Client _httpClient;
 
   late final GitHubProvider _githubProvider;
@@ -52,9 +55,25 @@ class EngiTrackController extends ChangeNotifier {
   late final SlackProvider _slackProvider;
   late final List<IntegrationProvider> _providers;
 
+  static const List<String> _aiIntegrationIds = <String>[
+    'openai',
+    'gemini',
+    'claude',
+    'grok',
+    'cursor',
+  ];
+  static const List<String> _allIntegrationIds = <String>[
+    'github',
+    'jira',
+    'slack',
+    ..._aiIntegrationIds,
+  ];
+
   final Map<String, Timer> _syncTimers = <String, Timer>{};
   Set<String> _seenAlertIds = <String>{};
   Set<String> _resolvedItemIds = <String>{};
+  Map<String, IntegrationHealth> _integrationHealth =
+      <String, IntegrationHealth>{};
 
   ConnectorConfig config = const ConnectorConfig();
   List<TodoItem> todos = <TodoItem>[];
@@ -109,6 +128,177 @@ class EngiTrackController extends ChangeNotifier {
 
   bool get canRunAiReview =>
       config.isGitHubConfigured && configuredAiProviders.isNotEmpty;
+
+  /// Live connection health per integration id. Only reports `connected`
+  /// after a real API call succeeded (verification or sync).
+  IntegrationHealth healthFor(String integrationId) =>
+      _integrationHealth[integrationId] ?? IntegrationHealth.initial;
+
+  void _setHealth(String integrationId, IntegrationHealth health) {
+    _integrationHealth = <String, IntegrationHealth>{
+      ..._integrationHealth,
+      integrationId: health,
+    };
+  }
+
+  bool _canVerify(String integrationId) {
+    switch (integrationId) {
+      case 'github':
+        return config.isGitHubConfigured;
+      case 'jira':
+        return config.isJiraConfigured;
+      case 'slack':
+        return config.slackEnabled && config.slackToken.trim().isNotEmpty;
+      case 'openai':
+        return config.openAiEnabled && config.openAiApiKey.trim().isNotEmpty;
+      case 'gemini':
+        return config.isGeminiConfigured;
+      case 'claude':
+        return config.isClaudeConfigured;
+      case 'grok':
+        return config.isGrokConfigured;
+      case 'cursor':
+        return config.isCursorConfigured;
+      default:
+        return false;
+    }
+  }
+
+  /// Verifies an integration with a real credential check against its API and
+  /// records the outcome. Returns true when the connection is healthy.
+  Future<bool> verifyIntegration(String integrationId) async {
+    if (integrationId == 'openai' &&
+        config.openAiApiKey.trim().isEmpty &&
+        config.openAiProxyUrl.trim().isNotEmpty) {
+      _setHealth(
+        'openai',
+        const IntegrationHealth(
+          message: 'Proxy endpoint configured -- cannot verify automatically.',
+        ),
+      );
+      notifyListeners();
+      return false;
+    }
+    if (!_canVerify(integrationId)) {
+      _setHealth(
+        integrationId,
+        IntegrationHealth.failure(
+          'Integration is not fully configured. Fill in all fields first.',
+        ),
+      );
+      notifyListeners();
+      return false;
+    }
+
+    _setHealth(integrationId, healthFor(integrationId).asChecking());
+    notifyListeners();
+
+    try {
+      final String detail = await _runVerification(integrationId);
+      _setHealth(integrationId, IntegrationHealth.connected(detail));
+      return true;
+    } on ServiceException catch (error) {
+      _setHealth(integrationId, IntegrationHealth.failure(error.message));
+      return false;
+    } catch (error) {
+      _setHealth(
+        integrationId,
+        IntegrationHealth.failure('Verification failed: $error'),
+      );
+      return false;
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  Future<String> _runVerification(String integrationId) async {
+    switch (integrationId) {
+      case 'github':
+        final String login = await _githubProvider.service.verifyCredentials(
+          username: config.githubUsername,
+          token: config.githubToken,
+        );
+        return 'Authenticated as $login';
+      case 'jira':
+        final String name = await _jiraProvider.service.verifyCredentials(
+          baseUrl: config.normalizedJiraBaseUrl,
+          email: config.jiraEmail,
+          apiToken: config.jiraApiToken,
+        );
+        return 'Authenticated as $name';
+      case 'slack':
+        try {
+          await _slackProvider.service.validateToken(token: config.slackToken);
+        } on ServiceException catch (error) {
+          if (!_isSlackTokenExpired(error) ||
+              !await _attemptSlackTokenRefresh()) {
+            rethrow;
+          }
+          await _slackProvider.service.validateToken(token: config.slackToken);
+        }
+        return 'Workspace token verified';
+      case 'openai':
+        return _modelsDetail(
+          await _aiModelService.fetchOpenAiModels(
+            apiKey: config.openAiApiKey,
+          ),
+        );
+      case 'gemini':
+        return _modelsDetail(
+          await _aiModelService.fetchGeminiModels(
+            apiKey: config.geminiApiKey,
+          ),
+        );
+      case 'claude':
+        return _modelsDetail(
+          await _aiModelService.fetchClaudeModels(
+            apiKey: config.claudeApiKey,
+          ),
+        );
+      case 'grok':
+        return _modelsDetail(
+          await _aiModelService.fetchGrokModels(apiKey: config.grokApiKey),
+        );
+      case 'cursor':
+        return _modelsDetail(
+          await _aiModelService.fetchCursorModels(
+            apiKey: config.cursorApiKey,
+          ),
+        );
+      default:
+        throw ServiceException('Unknown integration "$integrationId".');
+    }
+  }
+
+  String _modelsDetail(List<({String value, String label})> models) =>
+      'API key valid -- ${models.length} '
+      'model${models.length == 1 ? '' : 's'} available';
+
+  String _credentialSignature(String integrationId, ConnectorConfig c) {
+    switch (integrationId) {
+      case 'github':
+        return '${c.githubEnabled}|${c.githubUsername.trim()}'
+            '|${c.githubToken.trim()}';
+      case 'jira':
+        return '${c.jiraEnabled}|${c.normalizedJiraBaseUrl}'
+            '|${c.jiraEmail.trim()}|${c.jiraApiToken.trim()}';
+      case 'slack':
+        return '${c.slackEnabled}|${c.slackToken.trim()}';
+      case 'openai':
+        return '${c.openAiEnabled}|${c.openAiApiKey.trim()}'
+            '|${c.openAiProxyUrl.trim()}';
+      case 'gemini':
+        return '${c.geminiEnabled}|${c.geminiApiKey.trim()}';
+      case 'claude':
+        return '${c.claudeEnabled}|${c.claudeApiKey.trim()}';
+      case 'grok':
+        return '${c.grokEnabled}|${c.grokApiKey.trim()}';
+      case 'cursor':
+        return '${c.cursorEnabled}|${c.cursorApiKey.trim()}';
+      default:
+        return '';
+    }
+  }
 
   int get totalActionableCount => allActiveItems.length;
 
@@ -183,6 +373,14 @@ class EngiTrackController extends ChangeNotifier {
     _setupSyncTimers();
     await _syncAllReminders();
     notifyListeners();
+
+    // AI providers are not part of the sync loop; verify them at startup so
+    // their connection status reflects reality instead of stored config.
+    for (final String id in _aiIntegrationIds) {
+      if (_canVerify(id)) {
+        unawaited(verifyIntegration(id));
+      }
+    }
   }
 
   @override
@@ -231,6 +429,7 @@ class EngiTrackController extends ChangeNotifier {
     try {
       final List<IntegrationItem> items = await provider.fetchItems(config);
       _itemsByProvider[providerId] = items;
+      _setHealth(providerId, IntegrationHealth.connected(_syncDetail(items)));
 
       if (providerId == 'slack') {
         await _processSlackAlertNotifications(items);
@@ -242,12 +441,19 @@ class EngiTrackController extends ChangeNotifier {
           return refreshProvider(providerId, silent: silent);
         }
       }
+      _setHealth(providerId, IntegrationHealth.failure(error.message));
       if (kDebugMode) debugPrint('$providerId sync failed: $error');
     } catch (error) {
+      _setHealth(providerId, IntegrationHealth.failure('Sync failed: $error'));
       if (kDebugMode) debugPrint('$providerId sync failed: $error');
     }
-    if (!silent) notifyListeners();
+    // Always notify: background timer syncs must still surface new items.
+    // `silent` only means the caller did not want an eager spinner update.
+    notifyListeners();
   }
+
+  String _syncDetail(List<IntegrationItem> items) =>
+      'Synced ${items.length} item${items.length == 1 ? '' : 's'}';
 
   bool _isSlackTokenExpired(ServiceException error) {
     final String msg = error.message.toLowerCase();
@@ -306,6 +512,10 @@ class EngiTrackController extends ChangeNotifier {
         try {
           final List<IntegrationItem> items = await provider.fetchItems(config);
           _itemsByProvider[provider.id] = items;
+          _setHealth(
+            provider.id,
+            IntegrationHealth.connected(_syncDetail(items)),
+          );
 
           if (provider.id == 'slack') {
             await _processSlackAlertNotifications(items);
@@ -318,18 +528,27 @@ class EngiTrackController extends ChangeNotifier {
                 final List<IntegrationItem> retryItems =
                     await provider.fetchItems(config);
                 _itemsByProvider[provider.id] = retryItems;
+                _setHealth(
+                  provider.id,
+                  IntegrationHealth.connected(_syncDetail(retryItems)),
+                );
                 await _processSlackAlertNotifications(retryItems);
                 continue;
               } catch (_) {}
             }
           }
           _itemsByProvider[provider.id] = previous;
+          _setHealth(provider.id, IntegrationHealth.failure(error.message));
           errors.add(provider.displayName);
           if (kDebugMode) {
             debugPrint('${provider.displayName} sync failed: $error');
           }
         } catch (error) {
           _itemsByProvider[provider.id] = previous;
+          _setHealth(
+            provider.id,
+            IntegrationHealth.failure('Sync failed: $error'),
+          );
           errors.add(provider.displayName);
           if (kDebugMode) {
             debugPrint('${provider.displayName} sync failed: $error');
@@ -392,12 +611,38 @@ class EngiTrackController extends ChangeNotifier {
     }
   }
 
-  Future<void> updateConfig(ConnectorConfig nextConfig) async {
+  Future<void> updateConfig(
+    ConnectorConfig nextConfig, {
+    bool refresh = true,
+  }) async {
+    final ConnectorConfig previous = config;
     config = nextConfig;
     await _storage.saveConfig(config);
+
+    final List<String> changed = _allIntegrationIds
+        .where(
+          (String id) =>
+              _credentialSignature(id, previous) !=
+              _credentialSignature(id, nextConfig),
+        )
+        .toList();
+    for (final String id in changed) {
+      _setHealth(id, IntegrationHealth.initial);
+    }
+
     _setupSyncTimers();
     notifyListeners();
-    await refreshAll();
+
+    if (refresh) {
+      await refreshAll();
+      // Sync outcomes above already updated github/jira/slack health;
+      // run the strict credential check for anything whose secrets changed.
+      for (final String id in changed) {
+        if (_canVerify(id)) {
+          unawaited(verifyIntegration(id));
+        }
+      }
+    }
   }
 
   Future<bool> requestNotificationPermissions() async {

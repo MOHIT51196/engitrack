@@ -150,23 +150,26 @@ Future<http.Response> postChatCompletion({
   );
 
   if (kDebugMode) {
+    // Log status only -- bodies contain PR code and review content.
     debugPrint('[$tag] Response status=${response.statusCode}');
-    debugPrint(
-      '[$tag] Response body=${response.body.length > 500 ? '${response.body.substring(0, 500)}...' : response.body}',
-    );
   }
 
   return response;
 }
 
 Map<String, dynamic> decodeJsonBody(http.Response response) {
-  final dynamic decoded = jsonDecode(
-    response.body.isEmpty ? '{}' : response.body,
-  );
+  // Check the status before decoding: error bodies are not always JSON.
   if (response.statusCode < 200 || response.statusCode >= 300) {
     throw ServiceException(
       'Request failed (${response.statusCode}): ${response.body}',
+      statusCode: response.statusCode,
     );
+  }
+  final dynamic decoded;
+  try {
+    decoded = jsonDecode(response.body.isEmpty ? '{}' : response.body);
+  } on FormatException {
+    throw ServiceException('The AI provider returned a malformed response.');
   }
   if (decoded is Map<String, dynamic>) {
     return decoded;

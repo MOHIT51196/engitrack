@@ -171,6 +171,16 @@ void main() {
         );
         expect(config.normalizedJiraBaseUrl, 'https://x.atlassian.net');
       });
+
+      test('prepends https scheme when missing', () {
+        const config = ConnectorConfig(jiraBaseUrl: 'x.atlassian.net');
+        expect(config.normalizedJiraBaseUrl, 'https://x.atlassian.net');
+      });
+
+      test('returns empty string for blank input', () {
+        const config = ConnectorConfig(jiraBaseUrl: '   ');
+        expect(config.normalizedJiraBaseUrl, '');
+      });
     });
 
     test('slackReviewChannelsDisplay joins with newlines', () {
@@ -733,6 +743,38 @@ void main() {
       expect(msg.id, '');
       expect(msg.role, 'user');
       expect(msg.content, '');
+    });
+  });
+
+  group('IntegrationHealth', () {
+    test('initial state is unknown with no timestamp', () {
+      const health = IntegrationHealth.initial;
+      expect(health.status, IntegrationStatus.unknown);
+      expect(health.message, isEmpty);
+      expect(health.checkedAt, isNull);
+      expect(health.isConnected, isFalse);
+      expect(health.isError, isFalse);
+      expect(health.isChecking, isFalse);
+    });
+
+    test('connected factory records message and timestamp', () {
+      final health = IntegrationHealth.connected('Authenticated as alice');
+      expect(health.isConnected, isTrue);
+      expect(health.message, 'Authenticated as alice');
+      expect(health.checkedAt, isNotNull);
+    });
+
+    test('failure factory records message and timestamp', () {
+      final health = IntegrationHealth.failure('Bad token');
+      expect(health.isError, isTrue);
+      expect(health.message, 'Bad token');
+      expect(health.checkedAt, isNotNull);
+    });
+
+    test('asChecking preserves previous message', () {
+      final health = IntegrationHealth.failure('Bad token').asChecking();
+      expect(health.isChecking, isTrue);
+      expect(health.message, 'Bad token');
     });
   });
 

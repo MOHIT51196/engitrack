@@ -136,10 +136,8 @@ class ClaudeProvider extends AiProvider {
     );
 
     if (kDebugMode) {
+      // Log status only -- bodies contain PR code and review content.
       debugPrint('[$tag] Response status=${response.statusCode}');
-      debugPrint(
-        '[$tag] Response body=${response.body.length > 500 ? '${response.body.substring(0, 500)}...' : response.body}',
-      );
     }
 
     return response;

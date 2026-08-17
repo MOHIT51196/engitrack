@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../controller.dart';
@@ -315,7 +317,7 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
   // Auto-save
   // ---------------------------------------------------------------------------
 
-  Future<void> _saveCurrentConfig() async {
+  Future<void> _saveCurrentConfig({bool refresh = true}) async {
     final EngiTrackController controller = EngiTrackScope.of(context);
     final ConnectorConfig nextConfig = controller.config.copyWith(
       notificationsEnabled: _notificationsEnabled,
@@ -354,13 +356,38 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
     );
 
     try {
-      await controller.updateConfig(nextConfig);
+      await controller.updateConfig(nextConfig, refresh: refresh);
     } catch (_) {}
   }
 
   void _onFieldSubmitted(String value) {
     _saveCurrentConfig();
     if (mounted) showInfoSnackBar(context, 'Saved.');
+  }
+
+  /// Saves the current form values, then runs a real credential check for the
+  /// given integration and reports the outcome.
+  Future<void> _testIntegration(String integrationId) async {
+    final EngiTrackController controller = EngiTrackScope.of(context);
+    await _saveCurrentConfig(refresh: false);
+    if (!mounted) return;
+
+    final bool ok = await controller.verifyIntegration(integrationId);
+    if (ok &&
+        (integrationId == 'github' ||
+            integrationId == 'jira' ||
+            integrationId == 'slack')) {
+      unawaited(controller.refreshProvider(integrationId));
+    }
+    if (!mounted) return;
+
+    final IntegrationHealth health = controller.healthFor(integrationId);
+    showInfoSnackBar(
+      context,
+      ok
+          ? 'Connection verified. ${health.message}'
+          : (health.message.isEmpty ? 'Connection failed.' : health.message),
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -466,6 +493,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             enabled: _githubEnabled,
             canEnable: _canEnableGithub,
             isConfigured: controller.config.isGitHubConfigured,
+            health: controller.healthFor('github'),
+            onTest: () => _testIntegration('github'),
             onEnabledChanged: (bool v) {
               setState(() => _githubEnabled = v);
               _saveCurrentConfig();
@@ -517,6 +546,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             enabled: _jiraEnabled,
             canEnable: _canEnableJira,
             isConfigured: controller.config.isJiraConfigured,
+            health: controller.healthFor('jira'),
+            onTest: () => _testIntegration('jira'),
             onEnabledChanged: (bool v) {
               setState(() => _jiraEnabled = v);
               _saveCurrentConfig();
@@ -579,6 +610,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             enabled: _slackEnabled,
             canEnable: _canEnableSlack,
             isConfigured: controller.config.isSlackConfigured,
+            health: controller.healthFor('slack'),
+            onTest: () => _testIntegration('slack'),
             onEnabledChanged: (bool v) {
               setState(() => _slackEnabled = v);
               _saveCurrentConfig();
@@ -693,6 +726,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             enabled: _openAiEnabled,
             canEnable: _canEnableOpenAi,
             isConfigured: controller.config.isOpenAiConfigured,
+            health: controller.healthFor('openai'),
+            onTest: () => _testIntegration('openai'),
             onEnabledChanged: (bool v) {
               setState(() => _openAiEnabled = v);
               _saveCurrentConfig();
@@ -738,6 +773,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             enabled: _geminiEnabled,
             canEnable: _canEnableGemini,
             isConfigured: controller.config.isGeminiConfigured,
+            health: controller.healthFor('gemini'),
+            onTest: () => _testIntegration('gemini'),
             onEnabledChanged: (bool v) {
               setState(() => _geminiEnabled = v);
               _saveCurrentConfig();
@@ -783,6 +820,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             enabled: _claudeEnabled,
             canEnable: _canEnableClaude,
             isConfigured: controller.config.isClaudeConfigured,
+            health: controller.healthFor('claude'),
+            onTest: () => _testIntegration('claude'),
             onEnabledChanged: (bool v) {
               setState(() => _claudeEnabled = v);
               _saveCurrentConfig();
@@ -828,6 +867,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             enabled: _grokEnabled,
             canEnable: _canEnableGrok,
             isConfigured: controller.config.isGrokConfigured,
+            health: controller.healthFor('grok'),
+            onTest: () => _testIntegration('grok'),
             onEnabledChanged: (bool v) {
               setState(() => _grokEnabled = v);
               _saveCurrentConfig();
@@ -873,6 +914,8 @@ class _IntegrationsScreenState extends State<IntegrationsScreen> {
             enabled: _cursorEnabled,
             canEnable: _canEnableCursor,
             isConfigured: controller.config.isCursorConfigured,
+            health: controller.healthFor('cursor'),
+            onTest: () => _testIntegration('cursor'),
             onEnabledChanged: (bool v) {
               setState(() => _cursorEnabled = v);
               _saveCurrentConfig();
@@ -1362,8 +1405,10 @@ class _CollapsibleIntegration extends StatefulWidget {
     required this.enabled,
     required this.canEnable,
     required this.isConfigured,
+    required this.health,
     required this.onEnabledChanged,
     required this.children,
+    this.onTest,
     this.syncMinutes,
     this.onSyncMinutesChanged,
     this.fieldCount = 0,
@@ -1379,8 +1424,10 @@ class _CollapsibleIntegration extends StatefulWidget {
   final bool enabled;
   final bool canEnable;
   final bool isConfigured;
+  final IntegrationHealth health;
   final ValueChanged<bool> onEnabledChanged;
   final List<Widget> children;
+  final VoidCallback? onTest;
   final int? syncMinutes;
   final ValueChanged<int>? onSyncMinutesChanged;
   final int fieldCount;
@@ -1395,6 +1442,17 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
     with SingleTickerProviderStateMixin {
   bool _expanded = false;
 
+  Color get _borderColor {
+    if (!widget.enabled) return AppColors.outline.withValues(alpha: 0.4);
+    if (widget.isConfigured && widget.health.isConnected) {
+      return AppColors.success.withValues(alpha: 0.25);
+    }
+    if (widget.health.isError) {
+      return AppColors.danger.withValues(alpha: 0.3);
+    }
+    return widget.brandColor.withValues(alpha: 0.15);
+  }
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -1407,14 +1465,7 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: widget.enabled
-              ? (widget.isConfigured
-                  ? AppColors.success.withValues(alpha: 0.25)
-                  : widget.brandColor.withValues(alpha: 0.15))
-              : AppColors.outline.withValues(alpha: 0.4),
-          width: 0.5,
-        ),
+        border: Border.all(color: _borderColor, width: 0.5),
         boxShadow: <BoxShadow>[
           BoxShadow(
             color: Colors.black.withValues(alpha: widget.enabled ? 0.04 : 0.02),
@@ -1459,6 +1510,7 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
                             _StatusChip(
                               enabled: widget.enabled,
                               isConfigured: widget.isConfigured,
+                              health: widget.health,
                             ),
                           ],
                         ),
@@ -1576,7 +1628,18 @@ class _CollapsibleIntegrationState extends State<_CollapsibleIntegration>
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: widget.children,
+                  children: <Widget>[
+                    if (widget.enabled &&
+                        widget.isConfigured &&
+                        widget.onTest != null) ...<Widget>[
+                      _ConnectionStatusSection(
+                        health: widget.health,
+                        onTest: widget.onTest!,
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    ...widget.children,
+                  ],
                 ),
               ),
             ),
@@ -1640,10 +1703,15 @@ class _BrandAvatar extends StatelessWidget {
 }
 
 class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.enabled, required this.isConfigured});
+  const _StatusChip({
+    required this.enabled,
+    required this.isConfigured,
+    required this.health,
+  });
 
   final bool enabled;
   final bool isConfigured;
+  final IntegrationHealth health;
 
   @override
   Widget build(BuildContext context) {
@@ -1654,27 +1722,175 @@ class _StatusChip extends StatelessWidget {
         AppColors.softSurface,
       );
     }
-    if (isConfigured) {
-      return _buildChip('Connected', AppColors.success, AppColors.successLight);
+    if (!isConfigured) {
+      return _buildChip(
+        'Setup required',
+        AppColors.warning,
+        AppColors.warningLight,
+      );
     }
-    return _buildChip('Not set up', AppColors.warning, AppColors.warningLight);
+    // Configured: report the *verified* connection state, never assume.
+    switch (health.status) {
+      case IntegrationStatus.checking:
+        return _buildChip(
+          'Verifying...',
+          AppColors.info,
+          AppColors.infoLight,
+          spinner: true,
+        );
+      case IntegrationStatus.connected:
+        return _buildChip(
+          'Connected',
+          AppColors.success,
+          AppColors.successLight,
+        );
+      case IntegrationStatus.error:
+        return _buildChip(
+          'Connection failed',
+          AppColors.danger,
+          AppColors.dangerLight,
+        );
+      case IntegrationStatus.unknown:
+        return _buildChip(
+          'Not verified',
+          AppColors.secondaryInk,
+          AppColors.softSurface,
+        );
+    }
   }
 
-  Widget _buildChip(String label, Color fg, Color bg) {
+  Widget _buildChip(String label, Color fg, Color bg, {bool spinner = false}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 9,
-          fontWeight: FontWeight.w600,
-          color: fg,
-          letterSpacing: 0.2,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (spinner) ...<Widget>[
+            SizedBox(
+              width: 8,
+              height: 8,
+              child: CircularProgressIndicator(strokeWidth: 1.4, color: fg),
+            ),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+              color: fg,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Shows the verified connection state inside the expanded card together with
+/// the failure reason (when any) and a "Test connection" action.
+class _ConnectionStatusSection extends StatelessWidget {
+  const _ConnectionStatusSection({required this.health, required this.onTest});
+
+  final IntegrationHealth health;
+  final VoidCallback onTest;
+
+  @override
+  Widget build(BuildContext context) {
+    final (IconData icon, Color color, Color bgColor, String text) =
+        switch (health.status) {
+      IntegrationStatus.checking => (
+          Icons.sync_rounded,
+          AppColors.info,
+          AppColors.infoLight,
+          'Verifying connection...',
         ),
+      IntegrationStatus.connected => (
+          Icons.check_circle_rounded,
+          AppColors.success,
+          AppColors.successLight,
+          health.message.isEmpty ? 'Connection verified.' : health.message,
+        ),
+      IntegrationStatus.error => (
+          Icons.error_outline_rounded,
+          AppColors.danger,
+          AppColors.dangerLight,
+          health.message.isEmpty ? 'Connection failed.' : health.message,
+        ),
+      IntegrationStatus.unknown => (
+          Icons.help_outline_rounded,
+          AppColors.secondaryInk,
+          AppColors.surface,
+          health.message.isEmpty
+              ? 'Connection not verified yet.'
+              : health.message,
+        ),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.2), width: 0.5),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: health.isChecking
+                ? SizedBox(
+                    width: 13,
+                    height: 13,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 1.6,
+                      color: color,
+                    ),
+                  )
+                : Icon(icon, size: 14, color: color),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: color,
+                    height: 1.35,
+                  ),
+                ),
+                if (health.checkedAt != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      'Checked ${formatRelativeTime(health.checkedAt!)}',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: AppColors.tertiaryInk,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (!health.isChecking)
+            _SmallAction(
+              label: 'Test connection',
+              icon: Icons.wifi_tethering_rounded,
+              onTap: onTest,
+            ),
+        ],
       ),
     );
   }
