@@ -78,6 +78,23 @@ class ClaudeProvider extends AiProvider {
     required String userMessage,
     required ConnectorConfig config,
     required http.Client client,
+  }) {
+    return chatWithSystemPrompt(
+      systemPrompt: buildChatSystemPrompt(context: context, review: review),
+      history: history,
+      userMessage: userMessage,
+      config: config,
+      client: client,
+    );
+  }
+
+  @override
+  Future<AiChatMessage> chatWithSystemPrompt({
+    required String systemPrompt,
+    required List<AiChatMessage> history,
+    required String userMessage,
+    required ConnectorConfig config,
+    required http.Client client,
   }) async {
     final List<Map<String, String>> messages = <Map<String, String>>[
       for (final AiChatMessage msg in history)
@@ -88,7 +105,7 @@ class ClaudeProvider extends AiProvider {
     final http.Response response = await _postMessages(
       model: model(config),
       messages: messages,
-      systemPrompt: buildChatSystemPrompt(context: context, review: review),
+      systemPrompt: systemPrompt,
       config: config,
       client: client,
       tag: '$displayName Chat',

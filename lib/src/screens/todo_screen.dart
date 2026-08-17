@@ -52,7 +52,7 @@ class _TodoScreenState extends State<TodoScreen> {
           doneCount: doneCount,
           onCreateTodo: () => _showCreateTodoSheet(context, controller),
         ),
-        if (totalCount > 0)
+        if (totalCount >= 5)
           Padding(
             padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
             child: SizedBox(
@@ -278,11 +278,16 @@ class _TodoRow extends StatelessWidget {
   final TodoItem todo;
   final VoidCallback onTap;
 
+  bool get _isManualSource => todo.sourceLabel.trim().toLowerCase() == 'manual';
+
   @override
   Widget build(BuildContext context) {
     final EngiTrackController controller = EngiTrackScope.of(context);
     final ThemeData theme = Theme.of(context);
     final bool done = todo.completed;
+    final bool overdue = !done &&
+        todo.reminderDate != null &&
+        todo.reminderDate!.isBefore(DateTime.now());
 
     return Dismissible(
       key: ValueKey<String>('dismiss-${todo.id}'),
@@ -373,15 +378,17 @@ class _TodoRow extends StatelessWidget {
                         const SizedBox(height: 6),
                         Row(
                           children: <Widget>[
-                            SoftTag(
-                              label: todo.sourceLabel,
-                              backgroundColor: _sourceColor(
-                                todo.sourceLabel,
-                              ).withValues(alpha: 0.08),
-                              foregroundColor: _sourceColor(todo.sourceLabel),
-                              dense: true,
-                            ),
-                            const SizedBox(width: 6),
+                            if (!_isManualSource) ...<Widget>[
+                              SoftTag(
+                                label: todo.sourceLabel,
+                                backgroundColor: _sourceColor(
+                                  todo.sourceLabel,
+                                ).withValues(alpha: 0.08),
+                                foregroundColor: _sourceColor(todo.sourceLabel),
+                                dense: true,
+                              ),
+                              const SizedBox(width: 6),
+                            ],
                             const Icon(
                               Icons.schedule_rounded,
                               size: 10,
@@ -402,26 +409,36 @@ class _TodoRow extends StatelessWidget {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.accentSuperLight,
+                                  color: overdue
+                                      ? AppColors.dangerLight
+                                      : AppColors.accentSuperLight,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: <Widget>[
-                                    const Icon(
-                                      Icons.notifications_active_rounded,
+                                    Icon(
+                                      overdue
+                                          ? Icons.alarm_rounded
+                                          : Icons.notifications_active_rounded,
                                       size: 10,
-                                      color: AppColors.accent,
+                                      color: overdue
+                                          ? AppColors.danger
+                                          : AppColors.accent,
                                     ),
                                     const SizedBox(width: 3),
                                     Text(
-                                      DateFormat(
-                                        'MMM d, h:mm a',
-                                      ).format(todo.reminderDate!),
-                                      style: const TextStyle(
+                                      overdue
+                                          ? 'Overdue \u2022 ${DateFormat('MMM d, h:mm a').format(todo.reminderDate!)}'
+                                          : DateFormat(
+                                              'MMM d, h:mm a',
+                                            ).format(todo.reminderDate!),
+                                      style: TextStyle(
                                         fontSize: 9,
                                         fontWeight: FontWeight.w600,
-                                        color: AppColors.accent,
+                                        color: overdue
+                                            ? AppColors.danger
+                                            : AppColors.accent,
                                       ),
                                     ),
                                   ],
@@ -543,6 +560,17 @@ class _CreateTodoSheetState extends State<_CreateTodoSheet> {
   String _reminderRepeat = 'none';
   bool _titleEmpty = true;
 
+  Future<void> _ensureReminderPermissions() async {
+    final bool granted =
+        await widget.controller.requestNotificationPermissions();
+    if (!granted && mounted) {
+      showInfoSnackBar(
+        context,
+        'Notification permission denied -- the reminder may not fire.',
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -586,6 +614,7 @@ class _CreateTodoSheetState extends State<_CreateTodoSheet> {
         time.minute,
       );
     });
+    await _ensureReminderPermissions();
   }
 
   Future<void> _create() async {
@@ -594,18 +623,9 @@ class _CreateTodoSheetState extends State<_CreateTodoSheet> {
       title: _titleCtl.text,
       subtitle: _subtitleCtl.text,
       sourceLabel: 'Manual',
+      reminderDate: _reminderDate,
+      reminderRepeat: _reminderRepeat,
     );
-    if (_reminderDate != null || _reminderRepeat != 'none') {
-      final List<TodoItem> todos = widget.controller.sortedTodos;
-      if (todos.isNotEmpty) {
-        widget.controller.updateTodo(
-          todos.first.copyWith(
-            reminderDate: _reminderDate,
-            reminderRepeat: _reminderRepeat,
-          ),
-        );
-      }
-    }
     if (!mounted) return;
     Navigator.of(context).pop(true);
   }
@@ -990,6 +1010,14 @@ class _TodoDetailSheetState extends State<_TodoDetailSheet> {
       );
     });
     _save();
+    final bool granted =
+        await EngiTrackScope.of(context).requestNotificationPermissions();
+    if (!granted && mounted) {
+      showInfoSnackBar(
+        context,
+        'Notification permission denied -- the reminder may not fire.',
+      );
+    }
   }
 
   @override
@@ -1088,15 +1116,19 @@ class _TodoDetailSheetState extends State<_TodoDetailSheet> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      SoftTag(
-                        label: widget.todo.sourceLabel,
-                        backgroundColor: _sourceColor(
-                          widget.todo.sourceLabel,
-                        ).withValues(alpha: 0.08),
-                        foregroundColor: _sourceColor(widget.todo.sourceLabel),
-                        dense: true,
-                      ),
+                      if (widget.todo.sourceLabel.trim().toLowerCase() !=
+                          'manual') ...<Widget>[
+                        const SizedBox(width: 8),
+                        SoftTag(
+                          label: widget.todo.sourceLabel,
+                          backgroundColor: _sourceColor(
+                            widget.todo.sourceLabel,
+                          ).withValues(alpha: 0.08),
+                          foregroundColor:
+                              _sourceColor(widget.todo.sourceLabel),
+                          dense: true,
+                        ),
+                      ],
                       const Spacer(),
                       IconButton(
                         onPressed: () {

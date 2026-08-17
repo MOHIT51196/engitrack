@@ -881,4 +881,167 @@ void main() {
       );
     });
   });
+
+  group('chatWithSystemPrompt', () {
+    final AiChatMessage priorAssistant = AiChatMessage(
+      id: 'm1',
+      role: 'assistant',
+      content: 'Earlier answer',
+      timestamp: DateTime.utc(2026),
+    );
+
+    test('OpenAI sends system prompt, history, and user message', () async {
+      String? capturedBody;
+      when(
+        () => mockClient.post(
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        ),
+      ).thenAnswer((Invocation invocation) async {
+        capturedBody = invocation.namedArguments[#body] as String?;
+        return http.Response(_chatCompletionResponse('Assist reply'), 200);
+      });
+
+      final message = await OpenAiProvider().chatWithSystemPrompt(
+        systemPrompt: 'You are a Jira discovery assistant.',
+        history: <AiChatMessage>[priorAssistant],
+        userMessage: 'What should the spike answer?',
+        config: const ConnectorConfig(
+          openAiEnabled: true,
+          openAiApiKey: 'sk-key',
+        ),
+        client: mockClient,
+      );
+
+      expect(message.role, 'assistant');
+      expect(message.content, 'Assist reply');
+      final Map<String, dynamic> body =
+          jsonDecode(capturedBody!) as Map<String, dynamic>;
+      final List<dynamic> messages = body['messages'] as List<dynamic>;
+      expect(messages, hasLength(3));
+      expect((messages[0] as Map<String, dynamic>)['role'], 'system');
+      expect(
+        (messages[0] as Map<String, dynamic>)['content'],
+        'You are a Jira discovery assistant.',
+      );
+      expect((messages[1] as Map<String, dynamic>)['role'], 'assistant');
+      expect((messages[2] as Map<String, dynamic>)['role'], 'user');
+    });
+
+    test('Grok posts to api.x.ai with the system prompt', () async {
+      Uri? capturedUri;
+      when(
+        () => mockClient.post(
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        ),
+      ).thenAnswer((Invocation invocation) async {
+        capturedUri = invocation.positionalArguments.first as Uri;
+        return http.Response(_chatCompletionResponse('Grok reply'), 200);
+      });
+
+      final message = await GrokProvider().chatWithSystemPrompt(
+        systemPrompt: 'system',
+        history: const <AiChatMessage>[],
+        userMessage: 'hello',
+        config: const ConnectorConfig(grokEnabled: true, grokApiKey: 'xai'),
+        client: mockClient,
+      );
+
+      expect(message.content, 'Grok reply');
+      expect(capturedUri!.host, 'api.x.ai');
+    });
+
+    test('Claude passes the system prompt via the system field', () async {
+      String? capturedBody;
+      when(
+        () => mockClient.post(
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        ),
+      ).thenAnswer((Invocation invocation) async {
+        capturedBody = invocation.namedArguments[#body] as String?;
+        return http.Response(
+          jsonEncode(<String, dynamic>{
+            'content': <Map<String, dynamic>>[
+              <String, dynamic>{'type': 'text', 'text': 'Claude reply'},
+            ],
+          }),
+          200,
+        );
+      });
+
+      final message = await ClaudeProvider().chatWithSystemPrompt(
+        systemPrompt: 'You are a Jira discovery assistant.',
+        history: const <AiChatMessage>[],
+        userMessage: 'hello',
+        config: const ConnectorConfig(
+          claudeEnabled: true,
+          claudeApiKey: 'sk-ant',
+        ),
+        client: mockClient,
+      );
+
+      expect(message.content, 'Claude reply');
+      final Map<String, dynamic> body =
+          jsonDecode(capturedBody!) as Map<String, dynamic>;
+      expect(body['system'], 'You are a Jira discovery assistant.');
+      final List<dynamic> messages = body['messages'] as List<dynamic>;
+      expect(messages, hasLength(1));
+      expect((messages.first as Map<String, dynamic>)['role'], 'user');
+    });
+
+    test('Gemini uses its OpenAI-compatible endpoint', () async {
+      Uri? capturedUri;
+      when(
+        () => mockClient.post(
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        ),
+      ).thenAnswer((Invocation invocation) async {
+        capturedUri = invocation.positionalArguments.first as Uri;
+        return http.Response(_chatCompletionResponse('Gemini reply'), 200);
+      });
+
+      final message = await GeminiProvider().chatWithSystemPrompt(
+        systemPrompt: 'system',
+        history: const <AiChatMessage>[],
+        userMessage: 'hello',
+        config: const ConnectorConfig(
+          geminiEnabled: true,
+          geminiApiKey: 'AIza',
+        ),
+        client: mockClient,
+      );
+
+      expect(message.content, 'Gemini reply');
+      expect(capturedUri!.host, 'generativelanguage.googleapis.com');
+    });
+
+    test('Cursor does not support standalone chat', () {
+      expect(
+        () => CursorProvider().chatWithSystemPrompt(
+          systemPrompt: 'system',
+          history: const <AiChatMessage>[],
+          userMessage: 'hello',
+          config: const ConnectorConfig(
+            cursorEnabled: true,
+            cursorApiKey: 'key_x',
+          ),
+          client: mockClient,
+        ),
+        throwsA(
+          isA<ServiceException>().having(
+            (ServiceException e) => e.message,
+            'message',
+            contains('does not support standalone chat'),
+          ),
+        ),
+      );
+    });
+  });
 }

@@ -18,7 +18,6 @@ class AppStorage {
   static const String _configKey = 'engitrack.config.v1';
   static const String _todosKey = 'engitrack.todos.v1';
   static const String _notesKey = 'engitrack.notes.v1';
-  static const String _seenAlertsKey = 'engitrack.seenAlerts.v1';
   static const String _resolvedItemsKey = 'engitrack.resolvedItems.v1';
   static const String _cursorRunsKey = 'engitrack.cursorRuns.v1';
   static const String _aiChatPrefix = 'engitrack.aiChat.';
@@ -120,19 +119,6 @@ class AppStorage {
   Future<void> saveNotes(List<NoteItem> notes) async {
     final payload = notes.map((NoteItem note) => note.toJson()).toList();
     await _preferences.setString(_notesKey, jsonEncode(payload));
-  }
-
-  Future<Set<String>> loadSeenAlertIds() async {
-    final raw = await _preferences.getString(_seenAlertsKey);
-    if (raw == null || raw.isEmpty) {
-      return <String>{};
-    }
-    final decoded = jsonDecode(raw) as List<dynamic>;
-    return decoded.map((dynamic item) => item.toString()).toSet();
-  }
-
-  Future<void> saveSeenAlertIds(Set<String> ids) async {
-    await _preferences.setString(_seenAlertsKey, jsonEncode(ids.toList()));
   }
 
   Future<Set<String>> loadResolvedItemIds() async {

@@ -105,6 +105,90 @@ void main() {
     });
   });
 
+  group('isSpikeIssueType', () {
+    test('detects spike issue types case-insensitively', () {
+      expect(isSpikeIssueType('Spike'), isTrue);
+      expect(isSpikeIssueType('spike'), isTrue);
+      expect(isSpikeIssueType('Tech Spike'), isTrue);
+      expect(isSpikeIssueType('  SPIKE '), isTrue);
+    });
+
+    test('rejects non-spike issue types', () {
+      expect(isSpikeIssueType('Story'), isFalse);
+      expect(isSpikeIssueType('Bug'), isFalse);
+      expect(isSpikeIssueType(''), isFalse);
+    });
+  });
+
+  group('buildJiraAssistSystemPrompt', () {
+    String buildPrompt({String issueType = 'Story'}) {
+      return buildJiraAssistSystemPrompt(
+        issueKey: 'PROJ-7',
+        title: 'Evaluate caching options',
+        issueType: issueType,
+        status: 'To Do',
+        priority: 'High',
+        projectName: 'Platform',
+        parentSummary: 'PROJ-1: Performance epic',
+        description: 'Compare Redis vs in-memory caching.',
+      );
+    }
+
+    test('includes ticket fields', () {
+      final prompt = buildPrompt();
+      expect(prompt, contains('Key: PROJ-7'));
+      expect(prompt, contains('Title: Evaluate caching options'));
+      expect(prompt, contains('Status: To Do'));
+      expect(prompt, contains('Priority: High'));
+      expect(prompt, contains('Project: Platform'));
+      expect(prompt, contains('Parent: PROJ-1: Performance epic'));
+      expect(prompt, contains('Compare Redis vs in-memory caching.'));
+    });
+
+    test('spike issue type produces the spike breakdown instructions', () {
+      final prompt = buildPrompt(issueType: 'Spike');
+      expect(prompt, contains('SPIKE'));
+      expect(prompt, contains('Key questions to answer'));
+      expect(prompt, contains('Investigation plan'));
+      expect(prompt, contains('Suggested timebox'));
+      expect(prompt, contains('Expected deliverables'));
+      expect(prompt, isNot(contains('Proposed approach')));
+    });
+
+    test('non-spike issue type produces code-change instructions', () {
+      final prompt = buildPrompt(issueType: 'Story');
+      expect(prompt, contains('Requirement summary'));
+      expect(prompt, contains('Proposed approach'));
+      expect(prompt, contains('Components likely affected'));
+      expect(prompt, contains('Acceptance and testing checklist'));
+      expect(prompt, isNot(contains('Suggested timebox')));
+    });
+
+    test('always includes the no-GitHub guardrail', () {
+      for (final String type in <String>['Spike', 'Story']) {
+        final prompt = buildPrompt(issueType: type);
+        expect(prompt, contains('NO access to any codebase, GitHub'));
+        expect(prompt, contains('discovery and analysis only'));
+      }
+    });
+
+    test('uses placeholders for missing fields', () {
+      final prompt = buildJiraAssistSystemPrompt(
+        issueKey: '',
+        title: 'T',
+        issueType: '',
+        status: '',
+        priority: '',
+        projectName: '',
+        parentSummary: '',
+        description: '',
+      );
+      expect(prompt, contains('Key: unknown'));
+      expect(prompt, contains('No description was provided.'));
+      expect(prompt, isNot(contains('Parent:')));
+    });
+  });
+
   group('parseStructuredReview', () {
     test('parses valid JSON review', () {
       final jsonStr = jsonEncode(<String, dynamic>{

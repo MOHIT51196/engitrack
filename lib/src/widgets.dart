@@ -441,6 +441,117 @@ class StatusBadge extends StatelessWidget {
   }
 }
 
+class LabeledTextField extends StatelessWidget {
+  const LabeledTextField({
+    super.key,
+    required this.controller,
+    required this.label,
+    required this.hint,
+    this.keyboardType,
+    this.prefixIcon,
+    this.onSubmitted,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final String hint;
+  final TextInputType? keyboardType;
+  final IconData? prefixIcon;
+  final ValueChanged<String>? onSubmitted;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      style: const TextStyle(fontSize: 13),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: prefixIcon != null
+            ? Icon(prefixIcon, size: 16, color: AppColors.tertiaryInk)
+            : null,
+        fillColor: AppColors.surface,
+      ),
+      onSubmitted: onSubmitted,
+    );
+  }
+}
+
+class SecretTextField extends StatefulWidget {
+  const SecretTextField({
+    super.key,
+    required this.controller,
+    required this.label,
+    required this.hint,
+    this.onSubmitted,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final String hint;
+  final ValueChanged<String>? onSubmitted;
+
+  @override
+  State<SecretTextField> createState() => _SecretTextFieldState();
+}
+
+class _SecretTextFieldState extends State<SecretTextField> {
+  bool _obscure = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: widget.controller,
+      obscureText: _obscure,
+      style: const TextStyle(fontSize: 13),
+      decoration: InputDecoration(
+        labelText: widget.label,
+        hintText: widget.hint,
+        prefixIcon: const Icon(
+          Icons.key_rounded,
+          size: 16,
+          color: AppColors.tertiaryInk,
+        ),
+        fillColor: AppColors.surface,
+        suffixIcon: IconButton(
+          onPressed: () => setState(() => _obscure = !_obscure),
+          icon: Icon(
+            _obscure ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+            size: 16,
+            color: AppColors.tertiaryInk,
+          ),
+        ),
+      ),
+      onSubmitted: widget.onSubmitted,
+    );
+  }
+}
+
+class FieldSectionLabel extends StatelessWidget {
+  const FieldSectionLabel({super.key, required this.label, this.trailing});
+
+  final String label;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontSize: 12,
+                color: AppColors.secondaryInk,
+              ),
+        ),
+        const Spacer(),
+        if (trailing != null) trailing!,
+      ],
+    );
+  }
+}
+
 class CountBadge extends StatelessWidget {
   const CountBadge({super.key, required this.count, required this.color});
 

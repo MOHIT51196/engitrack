@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 
 import 'ai/ai_provider.dart';
 import 'ai/ai_provider_registry.dart';
+import 'ai/ai_review_helpers.dart';
 import 'ai/cursor_provider.dart';
 import 'integrations/github_provider.dart';
 import 'integrations/integration_provider.dart';
@@ -71,7 +72,6 @@ class EngiTrackController extends ChangeNotifier {
   ];
 
   final Map<String, Timer> _syncTimers = <String, Timer>{};
-  Set<String> _seenAlertIds = <String>{};
   Set<String> _resolvedItemIds = <String>{};
   Map<String, IntegrationHealth> _integrationHealth =
       <String, IntegrationHealth>{};
@@ -238,21 +238,23 @@ class EngiTrackController extends ChangeNotifier {
           await _slackProvider.service.validateToken(token: config.slackToken);
         }
         return 'Workspace token verified';
+      // AI providers: a successful models call proves the key works. The
+      // status chip already says "Connected", so no extra message is needed.
       case 'openai':
         await _aiModelService.fetchOpenAiModels(apiKey: config.openAiApiKey);
-        return 'API key valid';
+        return '';
       case 'gemini':
         await _aiModelService.fetchGeminiModels(apiKey: config.geminiApiKey);
-        return 'API key valid';
+        return '';
       case 'claude':
         await _aiModelService.fetchClaudeModels(apiKey: config.claudeApiKey);
-        return 'API key valid';
+        return '';
       case 'grok':
         await _aiModelService.fetchGrokModels(apiKey: config.grokApiKey);
-        return 'API key valid';
+        return '';
       case 'cursor':
         await _aiModelService.fetchCursorModels(apiKey: config.cursorApiKey);
-        return 'API key valid';
+        return '';
       default:
         throw ServiceException('Unknown integration "$integrationId".');
     }
@@ -335,7 +337,6 @@ class EngiTrackController extends ChangeNotifier {
     config = await _storage.loadConfig();
     todos = await _storage.loadTodos();
     notes = await _storage.loadNotes();
-    _seenAlertIds = await _storage.loadSeenAlertIds();
     _resolvedItemIds = await _storage.loadResolvedItemIds();
     _pendingCursorRuns = await _storage.loadPendingCursorRuns();
 
@@ -419,10 +420,6 @@ class EngiTrackController extends ChangeNotifier {
       final List<IntegrationItem> items = await provider.fetchItems(config);
       _itemsByProvider[providerId] = items;
       _setHealth(providerId, IntegrationHealth.connected(_syncDetail(items)));
-
-      if (providerId == 'slack') {
-        await _processSlackAlertNotifications(items);
-      }
     } on ServiceException catch (error) {
       if (providerId == 'slack' && _isSlackTokenExpired(error)) {
         final bool refreshed = await _attemptSlackTokenRefresh();
@@ -505,10 +502,6 @@ class EngiTrackController extends ChangeNotifier {
             provider.id,
             IntegrationHealth.connected(_syncDetail(items)),
           );
-
-          if (provider.id == 'slack') {
-            await _processSlackAlertNotifications(items);
-          }
         } on ServiceException catch (error) {
           if (provider.id == 'slack' && _isSlackTokenExpired(error)) {
             final bool refreshed = await _attemptSlackTokenRefresh();
@@ -521,7 +514,6 @@ class EngiTrackController extends ChangeNotifier {
                   provider.id,
                   IntegrationHealth.connected(_syncDetail(retryItems)),
                 );
-                await _processSlackAlertNotifications(retryItems);
                 continue;
               } catch (_) {}
             }
@@ -554,55 +546,10 @@ class EngiTrackController extends ChangeNotifier {
     }
   }
 
-  Future<void> _processSlackAlertNotifications(
-    List<IntegrationItem> items,
-  ) async {
-    final bool allowNotifications =
-        config.notificationsEnabled && lastSyncedAt != null;
-    final List<IntegrationItem> alertItems = items
-        .where((IntegrationItem i) => i.reason == ItemReason.alert)
-        .toList();
-
-    final Set<String> previousIds = Set<String>.from(_seenAlertIds);
-    final List<IntegrationItem> newAlerts = alertItems
-        .where((IntegrationItem a) => !previousIds.contains(a.id))
-        .toList();
-
-    _seenAlertIds = <String>{
-      ..._seenAlertIds,
-      ...alertItems.map((IntegrationItem a) => a.id),
-    };
-    await _storage.saveSeenAlertIds(_seenAlertIds);
-
-    if (allowNotifications) {
-      for (final IntegrationItem alert in newAlerts.take(5)) {
-        try {
-          await _notificationsService.showAlertNotification(
-            SlackAlert(
-              id: alert.id,
-              channel: alert.meta<String>('channel') ?? '',
-              title: alert.title,
-              message: alert.meta<String>('message') ?? '',
-              createdAt: alert.timestamp,
-              severity: AlertSeverity.values.firstWhere(
-                (AlertSeverity s) => s.name == alert.meta<String>('severity'),
-                orElse: () => AlertSeverity.info,
-              ),
-              url: alert.url,
-            ),
-          );
-        } catch (error) {
-          if (kDebugMode) {
-            debugPrint('Failed to show alert notification: $error');
-          }
-        }
-      }
-    }
-  }
-
   Future<void> updateConfig(
     ConnectorConfig nextConfig, {
     bool refresh = true,
+    bool verifyChanged = true,
   }) async {
     final ConnectorConfig previous = config;
     config = nextConfig;
@@ -624,8 +571,12 @@ class EngiTrackController extends ChangeNotifier {
 
     if (refresh) {
       await refreshAll();
+    }
+    if (verifyChanged) {
       // Sync outcomes above already updated github/jira/slack health;
       // run the strict credential check for anything whose secrets changed.
+      // _canVerify gates on the enable flag, so disabled integrations are
+      // never contacted.
       for (final String id in changed) {
         if (_canVerify(id)) {
           unawaited(verifyIntegration(id));
@@ -634,15 +585,68 @@ class EngiTrackController extends ChangeNotifier {
     }
   }
 
-  Future<bool> requestNotificationPermissions() async {
-    final bool granted = await _notificationsService.requestPermissions();
-    if (granted && !config.notificationsEnabled) {
-      config = config.copyWith(notificationsEnabled: true);
-      await _storage.saveConfig(config);
-      notifyListeners();
+  static const Set<String> _syncProviderIds = <String>{
+    'github',
+    'jira',
+    'slack',
+  };
+
+  /// Flips an integration's enable switch. When enabling, runs the credential
+  /// check so the status reflects reality and kicks off a data sync for the
+  /// sync providers. Returns false when enabling failed verification (the
+  /// failure reason is in [healthFor]).
+  Future<bool> setIntegrationEnabled(String integrationId, bool enabled) async {
+    await updateConfig(
+      _withIntegrationEnabled(config, integrationId, enabled),
+      refresh: false,
+      verifyChanged: false,
+    );
+    if (!enabled) {
+      if (_syncProviderIds.contains(integrationId)) {
+        _itemsByProvider[integrationId] = <IntegrationItem>[];
+        notifyListeners();
+      }
+      return true;
     }
-    return granted;
+
+    final bool ok = await verifyIntegration(integrationId);
+    if (ok && _syncProviderIds.contains(integrationId)) {
+      unawaited(refreshProvider(integrationId));
+    }
+    return ok;
   }
+
+  ConnectorConfig _withIntegrationEnabled(
+    ConnectorConfig base,
+    String integrationId,
+    bool enabled,
+  ) {
+    switch (integrationId) {
+      case 'github':
+        return base.copyWith(githubEnabled: enabled);
+      case 'jira':
+        return base.copyWith(jiraEnabled: enabled);
+      case 'slack':
+        return base.copyWith(slackEnabled: enabled);
+      case 'openai':
+        return base.copyWith(openAiEnabled: enabled);
+      case 'gemini':
+        return base.copyWith(geminiEnabled: enabled);
+      case 'claude':
+        return base.copyWith(claudeEnabled: enabled);
+      case 'grok':
+        return base.copyWith(grokEnabled: enabled);
+      case 'cursor':
+        return base.copyWith(cursorEnabled: enabled);
+      default:
+        return base;
+    }
+  }
+
+  /// Requests the notification (and exact alarm) permissions ToDo reminders
+  /// need. Called from the reminder flow, not from settings.
+  Future<bool> requestNotificationPermissions() =>
+      _notificationsService.requestPermissions();
 
   Future<void> _syncAllReminders() async {
     for (final TodoItem todo in todos) {
@@ -684,6 +688,8 @@ class EngiTrackController extends ChangeNotifier {
     required String subtitle,
     required String sourceLabel,
     String sourceUrl = '',
+    DateTime? reminderDate,
+    String reminderRepeat = 'none',
   }) async {
     final bool alreadyExists = sourceUrl.isNotEmpty &&
         todos.any(
@@ -700,10 +706,15 @@ class EngiTrackController extends ChangeNotifier {
       sourceLabel: sourceLabel.trim(),
       sourceUrl: sourceUrl.trim(),
       createdAt: now,
+      reminderDate: reminderDate,
+      reminderRepeat: reminderRepeat,
     );
 
     todos = <TodoItem>[todo, ...todos];
     await _storage.saveTodos(todos);
+    if (reminderDate != null) {
+      await _scheduleOrCancelReminder(todo);
+    }
     notifyListeners();
     return true;
   }
@@ -1187,6 +1198,75 @@ class EngiTrackController extends ChangeNotifier {
       config: config,
       client: _httpClient,
     );
+  }
+
+  // ---------------------------------------------------------------------
+  // Jira discovery assist
+  // ---------------------------------------------------------------------
+
+  /// AI providers usable for the Jira discovery assist. Cursor is excluded:
+  /// its cloud agent clones the GitHub repository, and the assist must never
+  /// touch GitHub.
+  List<AiProvider> get jiraAssistProviders => configuredAiProviders
+      .where((AiProvider provider) => provider.id != 'cursor')
+      .toList();
+
+  Map<String, String> _assistProviderCache = <String, String>{};
+
+  /// The AI provider last used to assist on this item, if any.
+  String? assistProviderFor(String itemId) => _assistProviderCache[itemId];
+
+  /// Chat-based discovery on a Jira item, built purely from the ticket
+  /// metadata the Jira sync already stores. No GitHub or repository access
+  /// of any kind.
+  Future<AiChatMessage> chatAboutJiraItem({
+    required IntegrationItem item,
+    required List<AiChatMessage> history,
+    required String userMessage,
+    String? providerId,
+  }) async {
+    final List<AiProvider> available = jiraAssistProviders;
+    final String resolvedId = providerId ??
+        _assistProviderCache[item.id] ??
+        (available.isNotEmpty ? available.first.id : '');
+    final AiProvider? aiProvider =
+        resolvedId.isEmpty ? null : AiProviderRegistry.byId(resolvedId);
+    if (aiProvider == null ||
+        aiProvider.id == 'cursor' ||
+        !aiProvider.isConfigured(config)) {
+      throw ServiceException(
+        'No AI provider is available for Jira assist. '
+        'Enable OpenAI, Gemini, Claude, or Grok in Integrations.',
+      );
+    }
+
+    final String parentKey = item.meta<String>('parentKey') ?? '';
+    final String parentTitle = item.meta<String>('parentTitle') ?? '';
+    final String systemPrompt = buildJiraAssistSystemPrompt(
+      issueKey: item.meta<String>('key') ?? '',
+      title: item.title,
+      issueType: item.meta<String>('issueType') ?? '',
+      status: item.meta<String>('status') ?? '',
+      priority: item.meta<String>('priority') ?? '',
+      projectName: item.meta<String>('projectName') ?? '',
+      parentSummary: parentKey.isEmpty
+          ? ''
+          : (parentTitle.isEmpty ? parentKey : '$parentKey: $parentTitle'),
+      description: item.meta<String>('description') ?? '',
+    );
+
+    final AiChatMessage response = await aiProvider.chatWithSystemPrompt(
+      systemPrompt: systemPrompt,
+      history: history,
+      userMessage: userMessage,
+      config: config,
+      client: _httpClient,
+    );
+    _assistProviderCache = <String, String>{
+      ..._assistProviderCache,
+      item.id: resolvedId,
+    };
+    return response;
   }
 }
 

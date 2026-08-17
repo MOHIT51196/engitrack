@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart';
 
 import 'package:engitrack/src/controller.dart';
@@ -19,6 +22,8 @@ class MockSlackService extends Mock implements SlackService {}
 
 class MockAiModelService extends Mock implements AiModelService {}
 
+class MockHttpClient extends Mock implements http.Client {}
+
 void main() {
   late MockAppStorage mockStorage;
   late MockNotificationsService mockNotifications;
@@ -35,6 +40,19 @@ void main() {
     registerFallbackValue(<NoteItem>[]);
     registerFallbackValue(<String>{});
     registerFallbackValue(<String, PendingCursorRun>{});
+    registerFallbackValue(Uri.parse('https://example.com'));
+    registerFallbackValue(
+      GithubPullRequest(
+        id: 'o/r#1',
+        owner: 'o',
+        repo: 'r',
+        number: 1,
+        title: 't',
+        author: 'a',
+        url: 'https://github.com/o/r/pull/1',
+        updatedAt: DateTime.utc(2020),
+      ),
+    );
   });
 
   setUp(() {
@@ -46,22 +64,21 @@ void main() {
     mockAiModels = MockAiModelService();
   });
 
-  EngiTrackController createController({ConnectorConfig? initialConfig}) {
+  EngiTrackController createController({
+    ConnectorConfig? initialConfig,
+    http.Client? httpClient,
+  }) {
     when(
       () => mockStorage.loadConfig(),
     ).thenAnswer((_) async => initialConfig ?? defaultConfig());
     when(() => mockStorage.loadTodos()).thenAnswer((_) async => <TodoItem>[]);
     when(() => mockStorage.loadNotes()).thenAnswer((_) async => <NoteItem>[]);
     when(
-      () => mockStorage.loadSeenAlertIds(),
-    ).thenAnswer((_) async => <String>{});
-    when(
       () => mockStorage.loadResolvedItemIds(),
     ).thenAnswer((_) async => <String>{});
     when(() => mockStorage.saveTodos(any())).thenAnswer((_) async {});
     when(() => mockStorage.saveNotes(any())).thenAnswer((_) async {});
     when(() => mockStorage.saveConfig(any())).thenAnswer((_) async {});
-    when(() => mockStorage.saveSeenAlertIds(any())).thenAnswer((_) async {});
     when(() => mockStorage.saveResolvedItemIds(any())).thenAnswer((_) async {});
     when(
       () => mockStorage.loadPendingCursorRuns(),
@@ -153,8 +170,14 @@ void main() {
       jiraService: mockJira,
       slackService: mockSlack,
       aiModelService: mockAiModels,
+      httpClient: httpClient,
     );
   }
+
+  /// Lets any `unawaited` verification/sync kicked off by the call under
+  /// test complete before assertions run.
+  Future<void> pumpAsync() =>
+      Future<void>.delayed(const Duration(milliseconds: 20));
 
   group('Todo CRUD', () {
     test('addToTodo adds a todo and persists', () async {
@@ -576,21 +599,35 @@ void main() {
 
       expect(ok, isTrue);
       expect(controller.healthFor('claude').isConnected, isTrue);
-      expect(controller.healthFor('claude').message, 'API key valid');
+      // No "API key valid" style message -- the chip already says Connected.
+      expect(controller.healthFor('claude').message, isEmpty);
     });
 
-    test('updateConfig resets health when credentials change', () async {
+    test('updateConfig re-verifies automatically when credentials change',
+        () async {
       final controller = createController();
       await controller.updateConfig(githubConfig, refresh: false);
-      await controller.verifyIntegration('github');
+      await pumpAsync();
       expect(controller.healthFor('github').isConnected, isTrue);
+
+      when(
+        () => mockGitHub.verifyCredentials(
+          username: any(named: 'username'),
+          token: any(named: 'token'),
+        ),
+      ).thenThrow(ServiceException('GitHub token is invalid or expired.'));
 
       await controller.updateConfig(
         githubConfig.copyWith(githubToken: 'different'),
         refresh: false,
       );
+      await pumpAsync();
 
-      expect(controller.healthFor('github').status, IntegrationStatus.unknown);
+      expect(controller.healthFor('github').isError, isTrue);
+      expect(
+        controller.healthFor('github').message,
+        contains('invalid or expired'),
+      );
       controller.dispose();
     });
 
@@ -611,6 +648,7 @@ void main() {
     test('refreshAll records connected health after successful sync', () async {
       final controller = createController();
       await controller.updateConfig(githubConfig, refresh: false);
+      await pumpAsync();
 
       await controller.refreshAll();
 
@@ -629,6 +667,7 @@ void main() {
         ),
       ).thenThrow(ServiceException('GitHub token is invalid or expired.'));
       await controller.updateConfig(githubConfig, refresh: false);
+      await pumpAsync();
 
       await controller.refreshAll();
 
@@ -639,6 +678,280 @@ void main() {
       );
       expect(controller.errorMessage, contains('GitHub'));
       controller.dispose();
+    });
+  });
+
+  group('provider gating', () {
+    test('verifyIntegration never hits the network for a disabled provider',
+        () async {
+      final controller = createController();
+      // Key saved but the provider switch is OFF.
+      await controller.updateConfig(
+        const ConnectorConfig(grokApiKey: 'xai-key'),
+        refresh: false,
+      );
+      await pumpAsync();
+
+      final ok = await controller.verifyIntegration('grok');
+
+      expect(ok, isFalse);
+      expect(controller.healthFor('grok').isError, isTrue);
+      verifyNever(
+        () => mockAiModels.fetchGrokModels(apiKey: any(named: 'apiKey')),
+      );
+    });
+
+    test('updateConfig verifies changed credentials without a full refresh',
+        () async {
+      final controller = createController();
+
+      await controller.updateConfig(
+        const ConnectorConfig(
+          githubEnabled: true,
+          githubUsername: 'alice',
+          githubToken: 'tok',
+        ),
+        refresh: false,
+      );
+      await pumpAsync();
+
+      expect(controller.healthFor('github').isConnected, isTrue);
+      verify(
+        () => mockGitHub.verifyCredentials(
+          username: any(named: 'username'),
+          token: any(named: 'token'),
+        ),
+      ).called(1);
+      // refresh: false must not trigger a data sync.
+      verifyNever(
+        () => mockGitHub.fetchPendingReviews(
+          username: any(named: 'username'),
+          token: any(named: 'token'),
+        ),
+      );
+      controller.dispose();
+    });
+
+    test('updateConfig with verifyChanged=false skips verification', () async {
+      final controller = createController();
+
+      await controller.updateConfig(
+        const ConnectorConfig(
+          githubEnabled: true,
+          githubUsername: 'alice',
+          githubToken: 'tok',
+        ),
+        refresh: false,
+        verifyChanged: false,
+      );
+      await pumpAsync();
+
+      expect(controller.healthFor('github').status, IntegrationStatus.unknown);
+      verifyNever(
+        () => mockGitHub.verifyCredentials(
+          username: any(named: 'username'),
+          token: any(named: 'token'),
+        ),
+      );
+      controller.dispose();
+    });
+  });
+
+  group('setIntegrationEnabled', () {
+    test('enabling verifies credentials and syncs the provider', () async {
+      final controller = createController();
+      await controller.updateConfig(
+        const ConnectorConfig(githubUsername: 'alice', githubToken: 'tok'),
+        refresh: false,
+        verifyChanged: false,
+      );
+
+      final ok = await controller.setIntegrationEnabled('github', true);
+      await pumpAsync();
+
+      expect(ok, isTrue);
+      expect(controller.config.githubEnabled, isTrue);
+      expect(controller.healthFor('github').isConnected, isTrue);
+      verify(
+        () => mockGitHub.verifyCredentials(
+          username: any(named: 'username'),
+          token: any(named: 'token'),
+        ),
+      ).called(1);
+      verify(
+        () => mockGitHub.fetchPendingReviews(
+          username: any(named: 'username'),
+          token: any(named: 'token'),
+        ),
+      ).called(1);
+      controller.dispose();
+    });
+
+    test('enabling returns false and records failure for bad credentials',
+        () async {
+      final controller = createController();
+      // Stub after createController so the failure overrides the default
+      // success answer registered there.
+      when(
+        () => mockGitHub.verifyCredentials(
+          username: any(named: 'username'),
+          token: any(named: 'token'),
+        ),
+      ).thenThrow(ServiceException('GitHub token is invalid or expired.'));
+
+      await controller.updateConfig(
+        const ConnectorConfig(githubUsername: 'alice', githubToken: 'bad'),
+        refresh: false,
+        verifyChanged: false,
+      );
+
+      final ok = await controller.setIntegrationEnabled('github', true);
+
+      expect(ok, isFalse);
+      expect(controller.healthFor('github').isError, isTrue);
+      expect(
+        controller.healthFor('github').message,
+        contains('invalid or expired'),
+      );
+      controller.dispose();
+    });
+
+    test('disabling skips verification and clears synced items', () async {
+      final controller = createController();
+      await controller.updateConfig(
+        const ConnectorConfig(
+          githubEnabled: true,
+          githubUsername: 'alice',
+          githubToken: 'tok',
+        ),
+        refresh: false,
+        verifyChanged: false,
+      );
+
+      final ok = await controller.setIntegrationEnabled('github', false);
+      await pumpAsync();
+
+      expect(ok, isTrue);
+      expect(controller.config.githubEnabled, isFalse);
+      expect(controller.itemsForProvider('github'), isEmpty);
+      verifyNever(
+        () => mockGitHub.verifyCredentials(
+          username: any(named: 'username'),
+          token: any(named: 'token'),
+        ),
+      );
+    });
+  });
+
+  group('Jira assist', () {
+    IntegrationItem jiraItem({String issueType = 'Spike'}) {
+      return IntegrationItem(
+        id: 'jira-1',
+        providerId: 'jira',
+        category: IntegrationCategory.issueTracker,
+        title: 'Investigate caching options',
+        subtitle: 'PROJ-1 · Platform',
+        url: 'https://x.atlassian.net/browse/PROJ-1',
+        timestamp: DateTime.utc(2026),
+        reason: ItemReason.assigned,
+        metadata: <String, dynamic>{
+          'key': 'PROJ-1',
+          'issueType': issueType,
+          'status': 'To Do',
+          'priority': 'High',
+          'projectName': 'Platform',
+          'description': 'Compare Redis vs in-memory caching.',
+        },
+      );
+    }
+
+    test('jiraAssistProviders excludes the Cursor cloud agent', () async {
+      final controller = createController();
+      await controller.updateConfig(
+        const ConnectorConfig(
+          openAiEnabled: true,
+          openAiApiKey: 'sk-key',
+          cursorEnabled: true,
+          cursorApiKey: 'key_x',
+        ),
+        refresh: false,
+        verifyChanged: false,
+      );
+
+      expect(
+        controller.jiraAssistProviders.map((p) => p.id).toList(),
+        <String>['openai'],
+      );
+    });
+
+    test('chatAboutJiraItem throws when no assist provider is available',
+        () async {
+      final controller = createController();
+
+      expect(
+        () => controller.chatAboutJiraItem(
+          item: jiraItem(),
+          history: const <AiChatMessage>[],
+          userMessage: 'Analyze this ticket',
+        ),
+        throwsA(isA<ServiceException>()),
+      );
+    });
+
+    test('chatAboutJiraItem chats via the provider without touching GitHub',
+        () async {
+      final MockHttpClient mockHttp = MockHttpClient();
+      when(
+        () => mockHttp.post(
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        ),
+      ).thenAnswer(
+        (_) async => http.Response(
+          jsonEncode(<String, dynamic>{
+            'choices': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'message': <String, dynamic>{'content': 'Spike breakdown'},
+              },
+            ],
+          }),
+          200,
+        ),
+      );
+
+      final controller = createController(httpClient: mockHttp);
+      await controller.updateConfig(
+        const ConnectorConfig(grokEnabled: true, grokApiKey: 'xai-key'),
+        refresh: false,
+        verifyChanged: false,
+      );
+
+      final item = jiraItem();
+      final reply = await controller.chatAboutJiraItem(
+        item: item,
+        history: const <AiChatMessage>[],
+        userMessage: 'Analyze this ticket',
+      );
+
+      expect(reply.role, 'assistant');
+      expect(reply.content, 'Spike breakdown');
+      expect(controller.assistProviderFor(item.id), 'grok');
+
+      final Uri uri = verify(
+        () => mockHttp.post(
+          captureAny(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        ),
+      ).captured.single as Uri;
+      expect(uri.host, 'api.x.ai');
+      verifyNever(
+        () => mockGitHub.fetchPullRequestContext(
+          pullRequest: any(named: 'pullRequest'),
+          token: any(named: 'token'),
+        ),
+      );
     });
   });
 

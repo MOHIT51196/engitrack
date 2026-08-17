@@ -354,7 +354,9 @@ class ItemDetailScreen extends StatelessWidget {
           content.add(
             _DescriptionCard(label: 'Description', text: description),
           );
+          content.add(const SizedBox(height: 12));
         }
+        content.add(_JiraAssistSection(item: item));
       case IntegrationCategory.messaging:
         final String message = item.meta<String>('message') ?? '';
         if (message.isNotEmpty) {
@@ -843,9 +845,16 @@ class _AiReviewButton extends StatelessWidget {
 }
 
 class _AiProviderPicker extends StatelessWidget {
-  const _AiProviderPicker({required this.providers, required this.config});
+  const _AiProviderPicker({
+    required this.providers,
+    required this.config,
+    this.title = 'AI Review',
+    this.subtitle = 'Choose a provider to review this PR',
+  });
   final List<AiProvider> providers;
   final ConnectorConfig config;
+  final String title;
+  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -892,14 +901,14 @@ class _AiProviderPicker extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          'AI Review',
+                          title,
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                             fontSize: 15,
                           ),
                         ),
                         Text(
-                          'Choose a provider to review this PR',
+                          subtitle,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: AppColors.secondaryInk,
                           ),
@@ -985,6 +994,314 @@ class _AiProviderPicker extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Chat-based AI discovery on a Jira item. Built purely from the ticket
+/// content -- it never fetches anything from GitHub (the Cursor cloud-agent
+/// provider is excluded for that reason).
+class _JiraAssistSection extends StatefulWidget {
+  const _JiraAssistSection({required this.item});
+  final IntegrationItem item;
+
+  @override
+  State<_JiraAssistSection> createState() => _JiraAssistSectionState();
+}
+
+class _JiraAssistSectionState extends State<_JiraAssistSection> {
+  final TextEditingController _inputController = TextEditingController();
+  List<AiChatMessage> _history = <AiChatMessage>[];
+  bool _loading = false;
+  bool _didLoad = false;
+
+  /// Storage key is prefixed so an assist thread can never collide with a
+  /// PR review chat thread.
+  String get _chatKey => 'assist-${widget.item.id}';
+
+  bool get _isSpike =>
+      isSpikeIssueType(widget.item.meta<String>('issueType') ?? '');
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_didLoad) {
+      _didLoad = true;
+      _loadHistory();
+    }
+  }
+
+  @override
+  void dispose() {
+    _inputController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadHistory() async {
+    final EngiTrackController controller = EngiTrackScope.of(context);
+    _history = await controller.loadAiChat(_chatKey);
+    if (mounted) setState(() {});
+  }
+
+  Future<String?> _pickProvider() async {
+    final EngiTrackController controller = EngiTrackScope.of(context);
+    final List<AiProvider> providers = controller.jiraAssistProviders;
+    if (providers.isEmpty) return null;
+    if (providers.length == 1) return providers.first.id;
+
+    return showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (BuildContext ctx) => _AiProviderPicker(
+        providers: providers,
+        config: controller.config,
+        title: 'AI Assist',
+        subtitle: 'Choose a provider to analyze this ticket',
+      ),
+    );
+  }
+
+  Future<void> _startAnalysis() async {
+    final String? providerId = await _pickProvider();
+    if (providerId == null || !mounted) return;
+    await _send(jiraAssistKickoffMessage, providerId: providerId);
+  }
+
+  Future<void> _send(String text, {String? providerId}) async {
+    final String trimmed = text.trim();
+    if (trimmed.isEmpty) return;
+
+    final EngiTrackController controller = EngiTrackScope.of(context);
+    final List<AiChatMessage> prior = List<AiChatMessage>.from(_history);
+    final AiChatMessage userMsg = AiChatMessage(
+      id: '${DateTime.now().microsecondsSinceEpoch}',
+      role: 'user',
+      content: trimmed,
+      timestamp: DateTime.now(),
+    );
+
+    setState(() {
+      _history = <AiChatMessage>[..._history, userMsg];
+      _loading = true;
+      _inputController.clear();
+    });
+
+    try {
+      final AiChatMessage response = await controller.chatAboutJiraItem(
+        item: widget.item,
+        history: prior,
+        userMessage: trimmed,
+        providerId: providerId,
+      );
+      _history = <AiChatMessage>[..._history, response];
+      await controller.saveAiChat(_chatKey, _history);
+    } catch (error) {
+      // Roll back the optimistic user message so a failed kickoff returns
+      // to the "Analyze" card instead of a dangling one-sided chat.
+      _history = prior;
+      if (mounted) showInfoSnackBar(context, 'AI assist failed: $error');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _clearChat() async {
+    final EngiTrackController controller = EngiTrackScope.of(context);
+    _history = <AiChatMessage>[];
+    await controller.saveAiChat(_chatKey, _history);
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final EngiTrackController controller = EngiTrackScope.of(context);
+    final ThemeData theme = Theme.of(context);
+    final bool available = controller.jiraAssistProviders.isNotEmpty;
+
+    if (_history.isEmpty && !available) return const SizedBox.shrink();
+    if (_history.isEmpty) return _buildKickoffCard(theme, available);
+    return _buildChat(controller, theme);
+  }
+
+  Widget _buildKickoffCard(ThemeData theme, bool available) {
+    return AppSurface(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              const Icon(
+                Icons.auto_awesome_rounded,
+                size: 15,
+                color: AppColors.accent,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'AI Assist',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: AppColors.accent,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _isSpike
+                ? 'Get a structured spike breakdown: questions to answer, '
+                    'investigation plan, timebox, and deliverables.'
+                : 'Get a discovery summary of the code change this ticket '
+                    'needs: approach, affected areas, edge cases, and a test '
+                    'checklist.',
+            style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Chat only -- nothing is fetched from GitHub.',
+            style: TextStyle(fontSize: 10, color: AppColors.tertiaryInk),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _loading || !available ? null : _startAnalysis,
+              icon: _loading
+                  ? const SizedBox(
+                      width: 13,
+                      height: 13,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 1.5,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.auto_awesome_rounded, size: 14),
+              label: Text(
+                _loading
+                    ? 'Analyzing...'
+                    : _isSpike
+                        ? 'Analyze spike'
+                        : 'Explain code change',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChat(EngiTrackController controller, ThemeData theme) {
+    final String? providerId = controller.assistProviderFor(widget.item.id);
+    final AiProvider? provider =
+        providerId == null ? null : AiProviderRegistry.byId(providerId);
+
+    return AppSurface(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              const Icon(
+                Icons.auto_awesome_rounded,
+                size: 15,
+                color: AppColors.accent,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'AI Assist',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: AppColors.accent,
+                  fontSize: 12,
+                ),
+              ),
+              const Spacer(),
+              if (provider != null)
+                SoftTag(
+                  label: provider.displayName,
+                  icon: provider.icon,
+                  backgroundColor: provider.brandColorLight,
+                  foregroundColor: provider.brandColor,
+                  dense: true,
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 360),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _history.length,
+              itemBuilder: (BuildContext context, int index) {
+                final AiChatMessage msg = _history[index];
+                final bool isUser = msg.role == 'user';
+                return Align(
+                  alignment:
+                      isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 6),
+                    padding: const EdgeInsets.all(10),
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width *
+                          (isUser ? 0.7 : 0.85),
+                    ),
+                    decoration: BoxDecoration(
+                      color: isUser
+                          ? AppColors.accentLight
+                          : AppColors.softSurface,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: SelectableText(
+                      msg.content,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontSize: 12,
+                        height: 1.45,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: TextField(
+                  controller: _inputController,
+                  style: const TextStyle(fontSize: 13),
+                  decoration: const InputDecoration(
+                    hintText: 'Ask a follow-up about this ticket...',
+                    isDense: true,
+                  ),
+                  onSubmitted: _loading ? null : (String v) => _send(v),
+                ),
+              ),
+              const SizedBox(width: 6),
+              IconButton(
+                onPressed: _loading ? null : () => _send(_inputController.text),
+                icon: _loading
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.send_rounded, size: 18),
+              ),
+            ],
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: _clearChat,
+              icon: const Icon(Icons.delete_outline_rounded, size: 14),
+              label: const Text(
+                'Clear conversation',
+                style: TextStyle(fontSize: 11),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

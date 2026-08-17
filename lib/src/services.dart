@@ -78,14 +78,6 @@ class NotificationsService {
         _plugin.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
 
-    const AndroidNotificationChannel alertsChannel = AndroidNotificationChannel(
-      'engitrack_alerts',
-      'EngiTrack alerts',
-      description: 'Slack alert notifications surfaced by EngiTrack.',
-      importance: Importance.max,
-    );
-    await androidPlugin?.createNotificationChannel(alertsChannel);
-
     const AndroidNotificationChannel remindersChannel =
         AndroidNotificationChannel(
       'engitrack_reminders',
@@ -98,12 +90,16 @@ class NotificationsService {
     await androidPlugin?.createNotificationChannel(remindersChannel);
   }
 
+  /// Requests the runtime permissions ToDo reminders need: the notification
+  /// permission (Android 13+/iOS/macOS) and, on Android 12+, exact alarms so
+  /// scheduled reminders fire at the chosen time.
   Future<bool> requestPermissions() async {
-    final bool androidGranted = await _plugin
-            .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin>()
-            ?.requestNotificationsPermission() ??
-        true;
+    final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
+        _plugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    final bool androidGranted =
+        await androidPlugin?.requestNotificationsPermission() ?? true;
+    await androidPlugin?.requestExactAlarmsPermission();
     final bool iosGranted = await _plugin
             .resolvePlatformSpecificImplementation<
                 IOSFlutterLocalNotificationsPlugin>()
@@ -115,31 +111,6 @@ class NotificationsService {
             ?.requestPermissions(alert: true, badge: true, sound: true) ??
         true;
     return androidGranted && iosGranted && macGranted;
-  }
-
-  Future<void> showAlertNotification(SlackAlert alert) async {
-    const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
-      'engitrack_alerts',
-      'EngiTrack alerts',
-      channelDescription: 'Slack alert notifications surfaced by EngiTrack.',
-      importance: Importance.max,
-      priority: Priority.high,
-    );
-    const DarwinNotificationDetails darwinDetails = DarwinNotificationDetails();
-    const NotificationDetails details = NotificationDetails(
-      android: androidDetails,
-      iOS: darwinDetails,
-      macOS: darwinDetails,
-    );
-
-    await _plugin.show(
-      id: alert.id.hashCode & 0x7fffffff,
-      title: alert.title,
-      body: alert.message,
-      notificationDetails: details,
-      payload: alert.url,
-    );
   }
 
   int _notificationId(String todoId) => todoId.hashCode & 0x7fffffff;

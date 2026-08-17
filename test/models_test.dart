@@ -83,7 +83,6 @@ void main() {
 
     test('toExportJson / fromExportJson roundtrip preserves all fields', () {
       const config = ConnectorConfig(
-        notificationsEnabled: true,
         githubEnabled: true,
         githubUsername: 'alice',
         githubToken: 'gh-tok',

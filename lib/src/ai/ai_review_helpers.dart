@@ -120,6 +120,71 @@ Merge confidence: ${review.mergeConfidence}
 Answer follow-up questions about the review. If the user asks you to re-analyze something, provide updated analysis. Be concise and technical.''';
 }
 
+/// Canned first message that kicks off the Jira discovery assist chat.
+const String jiraAssistKickoffMessage =
+    'Analyze this ticket and give me the breakdown.';
+
+/// Whether a Jira issue type denotes a spike / research ticket.
+bool isSpikeIssueType(String issueType) =>
+    issueType.trim().toLowerCase().contains('spike');
+
+/// System prompt for the Jira discovery assist chat. Built purely from the
+/// ticket fields the Jira sync already stores -- the model gets no codebase,
+/// GitHub, or repository access of any kind.
+String buildJiraAssistSystemPrompt({
+  required String issueKey,
+  required String title,
+  required String issueType,
+  required String status,
+  required String priority,
+  required String projectName,
+  required String parentSummary,
+  required String description,
+}) {
+  final bool spike = isSpikeIssueType(issueType);
+
+  final String task = spike
+      ? '''
+This ticket is a SPIKE (time-boxed research). For the initial analysis, respond with a well-formatted spike breakdown using exactly these sections:
+Objective -- one or two sentences on what the spike must establish.
+Key questions to answer -- numbered list of the concrete questions the spike should resolve.
+Investigation plan -- ordered steps for carrying out the research.
+Suggested timebox -- a realistic effort estimate with a one-line rationale.
+Expected deliverables -- what should exist when the spike is done (notes, decision, proof of concept, follow-up tickets).
+Risks and open questions -- anything that could invalidate the findings or needs stakeholder input.'''
+      : '''
+This ticket describes work to implement. For the initial analysis, explain the code change that needs to happen using exactly these sections:
+Requirement summary -- restate what is being asked in one or two sentences.
+Proposed approach -- how the change should be implemented at a conceptual level.
+Components likely affected -- the kinds of modules, layers, or systems that typically need touching for this change (reason from the ticket, not from code you have not seen).
+Edge cases -- inputs, states, or failure modes the implementation must handle.
+Acceptance and testing checklist -- bullet list of checks that prove the change is done.''';
+
+  return '''
+You are a senior software engineer helping a teammate with discovery on a Jira ticket.
+
+STRICT CONSTRAINTS:
+- You have NO access to any codebase, GitHub, or repository. Never claim to have read code, and never cite file names or line numbers as if they were real.
+- This is discovery and analysis only. Do not offer to open pull requests or modify anything.
+- Base everything on the ticket fields below and on what the user tells you in chat.
+- Format answers as structured plain text: short section headings on their own line, hyphen bullets, and numbered steps. Do not use markdown tables or code fences unless quoting text the user provided.
+
+Ticket:
+- Key: ${issueKey.isEmpty ? 'unknown' : issueKey}
+- Title: $title
+- Type: ${issueType.isEmpty ? 'unknown' : issueType}
+- Status: ${status.isEmpty ? 'unknown' : status}
+- Priority: ${priority.isEmpty ? 'unknown' : priority}
+- Project: ${projectName.isEmpty ? 'unknown' : projectName}${parentSummary.isEmpty ? '' : '\n- Parent: $parentSummary'}
+
+Ticket description:
+${description.trim().isEmpty ? 'No description was provided.' : description.trim()}
+
+$task
+
+For follow-up questions, answer conversationally but keep the same constraints and stay concise and technical.''';
+}
+
 AiReviewResult parseStructuredReview(String output) {
   try {
     String jsonStr = output;

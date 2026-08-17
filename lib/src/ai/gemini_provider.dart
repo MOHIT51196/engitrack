@@ -78,12 +78,26 @@ class GeminiProvider extends AiProvider {
     required String userMessage,
     required ConnectorConfig config,
     required http.Client client,
+  }) {
+    return chatWithSystemPrompt(
+      systemPrompt: buildChatSystemPrompt(context: context, review: review),
+      history: history,
+      userMessage: userMessage,
+      config: config,
+      client: client,
+    );
+  }
+
+  @override
+  Future<AiChatMessage> chatWithSystemPrompt({
+    required String systemPrompt,
+    required List<AiChatMessage> history,
+    required String userMessage,
+    required ConnectorConfig config,
+    required http.Client client,
   }) async {
     final List<Map<String, String>> messages = <Map<String, String>>[
-      <String, String>{
-        'role': 'system',
-        'content': buildChatSystemPrompt(context: context, review: review),
-      },
+      <String, String>{'role': 'system', 'content': systemPrompt},
       for (final AiChatMessage msg in history)
         <String, String>{'role': msg.role, 'content': msg.content},
       <String, String>{'role': 'user', 'content': userMessage},

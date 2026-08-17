@@ -74,7 +74,6 @@ class IntegrationHealth {
 
 class ConnectorConfig {
   const ConnectorConfig({
-    this.notificationsEnabled = false,
     this.githubEnabled = false,
     this.jiraEnabled = false,
     this.slackEnabled = false,
@@ -110,7 +109,6 @@ class ConnectorConfig {
     this.slackSyncMinutes = 5,
   });
 
-  final bool notificationsEnabled;
   final bool githubEnabled;
   final bool jiraEnabled;
   final bool slackEnabled;
@@ -146,7 +144,6 @@ class ConnectorConfig {
   final int slackSyncMinutes;
 
   ConnectorConfig copyWith({
-    bool? notificationsEnabled,
     bool? githubEnabled,
     bool? jiraEnabled,
     bool? slackEnabled,
@@ -182,7 +179,6 @@ class ConnectorConfig {
     int? slackSyncMinutes,
   }) {
     return ConnectorConfig(
-      notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       githubEnabled: githubEnabled ?? this.githubEnabled,
       jiraEnabled: jiraEnabled ?? this.jiraEnabled,
       slackEnabled: slackEnabled ?? this.slackEnabled,
@@ -221,7 +217,6 @@ class ConnectorConfig {
 
   Map<String, dynamic> toPreferencesJson() {
     return <String, dynamic>{
-      'notificationsEnabled': notificationsEnabled,
       'githubEnabled': githubEnabled,
       'jiraEnabled': jiraEnabled,
       'slackEnabled': slackEnabled,
@@ -263,7 +258,6 @@ class ConnectorConfig {
   }) {
     final data = json ?? <String, dynamic>{};
     return ConnectorConfig(
-      notificationsEnabled: data['notificationsEnabled'] as bool? ?? false,
       githubEnabled: data['githubEnabled'] as bool? ?? false,
       jiraEnabled: data['jiraEnabled'] as bool? ?? false,
       slackEnabled: data['slackEnabled'] as bool? ?? false,
@@ -314,7 +308,6 @@ class ConnectorConfig {
   Map<String, dynamic> toExportJson() {
     return <String, dynamic>{
       '_format': 'engitrack_integrations_v1',
-      'notificationsEnabled': notificationsEnabled,
       'githubEnabled': githubEnabled,
       'jiraEnabled': jiraEnabled,
       'slackEnabled': slackEnabled,
@@ -353,7 +346,6 @@ class ConnectorConfig {
 
   factory ConnectorConfig.fromExportJson(Map<String, dynamic> json) {
     return ConnectorConfig(
-      notificationsEnabled: json['notificationsEnabled'] as bool? ?? false,
       githubEnabled: json['githubEnabled'] as bool? ?? true,
       jiraEnabled: json['jiraEnabled'] as bool? ?? true,
       slackEnabled: json['slackEnabled'] as bool? ?? true,
