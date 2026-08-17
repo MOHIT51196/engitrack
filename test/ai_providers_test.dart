@@ -8,6 +8,7 @@ import 'package:engitrack/src/ai/openai_provider.dart';
 import 'package:engitrack/src/ai/gemini_provider.dart';
 import 'package:engitrack/src/ai/claude_provider.dart';
 import 'package:engitrack/src/ai/grok_provider.dart';
+import 'package:engitrack/src/ai/cursor_provider.dart';
 import 'package:engitrack/src/models.dart';
 import 'package:engitrack/src/services.dart';
 
@@ -381,6 +382,70 @@ void main() {
         config: const ConnectorConfig(
           grokEnabled: true,
           grokApiKey: 'grok-key',
+        ),
+        client: mockClient,
+      );
+
+      expect(result.verdict, 'Approve');
+    });
+  });
+
+  group('CursorProvider', () {
+    final provider = CursorProvider();
+
+    test('metadata', () {
+      expect(provider.id, 'cursor');
+      expect(provider.displayName, 'Cursor');
+      expect(
+        provider.chatCompletionsUri.toString(),
+        contains('api.cursor.com'),
+      );
+    });
+
+    test('isConfigured', () {
+      expect(
+        provider.isConfigured(
+          const ConnectorConfig(cursorEnabled: true, cursorApiKey: 'key'),
+        ),
+        isTrue,
+      );
+    });
+
+    test('model defaults when empty', () {
+      expect(
+        provider.model(const ConnectorConfig(cursorModel: '')),
+        'cursor-small',
+      );
+    });
+
+    test('reviewPullRequest throws when key missing', () {
+      expect(
+        () => provider.reviewPullRequest(
+          context: _makeContext(),
+          config: const ConnectorConfig(cursorEnabled: true),
+          client: mockClient,
+        ),
+        throwsA(isA<ServiceException>()),
+      );
+    });
+
+    test('reviewPullRequest succeeds with mock', () async {
+      when(
+        () => mockClient.post(
+          any(),
+          headers: any(named: 'headers'),
+          body: any(named: 'body'),
+        ),
+      ).thenAnswer(
+        (_) async =>
+            http.Response(_chatCompletionResponse(_validReviewJson()), 200),
+      );
+
+      final result = await provider.reviewPullRequest(
+        context: _makeContext(),
+        config: const ConnectorConfig(
+          cursorEnabled: true,
+          cursorApiKey: 'cur-key',
         ),
         client: mockClient,
       );

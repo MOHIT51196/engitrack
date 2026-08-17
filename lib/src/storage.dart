@@ -35,6 +35,7 @@ class AppStorage {
   static const String _geminiApiKeyKey = 'engitrack.secret.geminiApiKey';
   static const String _claudeApiKeyKey = 'engitrack.secret.claudeApiKey';
   static const String _grokApiKeyKey = 'engitrack.secret.grokApiKey';
+  static const String _cursorApiKeyKey = 'engitrack.secret.cursorApiKey';
 
   Future<ConnectorConfig> loadConfig() async {
     final rawConfig = await _preferences.getString(_configKey);
@@ -57,6 +58,7 @@ class AppStorage {
       geminiApiKey: await _secureStorage.read(key: _geminiApiKeyKey) ?? '',
       claudeApiKey: await _secureStorage.read(key: _claudeApiKeyKey) ?? '',
       grokApiKey: await _secureStorage.read(key: _grokApiKeyKey) ?? '',
+      cursorApiKey: await _secureStorage.read(key: _cursorApiKeyKey) ?? '',
     );
   }
 
@@ -83,6 +85,7 @@ class AppStorage {
       _secureStorage.write(key: _geminiApiKeyKey, value: config.geminiApiKey),
       _secureStorage.write(key: _claudeApiKeyKey, value: config.claudeApiKey),
       _secureStorage.write(key: _grokApiKeyKey, value: config.grokApiKey),
+      _secureStorage.write(key: _cursorApiKeyKey, value: config.cursorApiKey),
     ]);
   }
 

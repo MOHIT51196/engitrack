@@ -1135,6 +1135,29 @@ class AiModelService {
     models.sort((a, b) => a.label.compareTo(b.label));
     return models;
   }
+
+  Future<List<({String value, String label})>> fetchCursorModels({
+    required String apiKey,
+  }) async {
+    final Uri uri = Uri.https('api.cursor.com', '/v1/models');
+    final http.Response response = await _client.get(
+      uri,
+      headers: <String, String>{'Authorization': 'Bearer ${apiKey.trim()}'},
+    );
+    final Map<String, dynamic> json = _decodeJsonBody(response);
+    final List<dynamic> data =
+        json['data'] as List<dynamic>? ?? const <dynamic>[];
+    final List<({String value, String label})> models =
+        <({String value, String label})>[];
+    for (final dynamic item in data) {
+      final Map<String, dynamic> map = item as Map<String, dynamic>;
+      final String id = map['id'] as String? ?? '';
+      if (id.isEmpty) continue;
+      models.add((value: id, label: id));
+    }
+    models.sort((a, b) => a.label.compareTo(b.label));
+    return models;
+  }
 }
 
 Map<String, dynamic> _decodeJsonBody(http.Response response) {

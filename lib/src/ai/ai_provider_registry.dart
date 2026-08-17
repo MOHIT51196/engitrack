@@ -1,6 +1,7 @@
 import '../models.dart';
 import 'ai_provider.dart';
 import 'claude_provider.dart';
+import 'cursor_provider.dart';
 import 'gemini_provider.dart';
 import 'grok_provider.dart';
 import 'openai_provider.dart';
@@ -13,6 +14,7 @@ class AiProviderRegistry {
     GeminiProvider(),
     ClaudeProvider(),
     GrokProvider(),
+    CursorProvider(),
   ];
 
   static List<AiProvider> get all => List<AiProvider>.unmodifiable(_all);

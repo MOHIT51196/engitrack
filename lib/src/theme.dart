@@ -41,6 +41,8 @@ abstract final class AppColors {
   static const Color claudeLight = Color(0xFFFDF0EB);
   static const Color grok = Color(0xFF1D1D1B);
   static const Color grokLight = Color(0xFFEDEDED);
+  static const Color cursor = Color(0xFF2D2D2D);
+  static const Color cursorLight = Color(0xFFEFEFEF);
 }
 
 ThemeData buildEngiTrackTheme() {
